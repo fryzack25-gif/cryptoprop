@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Support — CryptoProp</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .support-wrap { max-width: 680px; margin: 80px auto; padding: 0 24px 80px; text-align: center; }
+    .support-wrap h1 { font-size: 2rem; margin-bottom: 12px; }
+    .support-wrap p { color: var(--muted, #aaa); line-height: 1.75; margin-bottom: 12px; }
+    .email-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 36px 32px; margin: 32px auto; max-width: 420px; }
+    .email-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #aaa); margin-bottom: 10px; }
+    .email-card a { font-size: 1.2rem; font-weight: 600; color: var(--accent, #7c5cff); text-decoration: none; word-break: break-all; }
+    .email-card a:hover { text-decoration: underline; }
+    .back { display: inline-block; margin-bottom: 40px; font-size: 0.9rem; color: var(--accent, #7c5cff); text-decoration: none; }
+    .back:hover { text-decoration: underline; }
+    .hours { font-size: 0.85rem; color: var(--muted, #aaa); margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="support-wrap">
+    <a class="back" href="/">← Back to CryptoProp</a>
+    <h1>Support</h1>
+    <p>Have a question about your challenge, account, or payouts? We're here to help. Reach out and we'll get back to you as soon as possible.</p>
+
+    <div class="email-card">
+      <div class="label">Email us at</div>
+      <a href="mailto:help@thecryptoprop.com">help@thecryptoprop.com</a>
+    </div>
+
+    <p class="hours">Please include your account email and a description of your issue for the fastest response.</p>
+  </div>
+</body>
+</html>
