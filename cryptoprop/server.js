@@ -2111,6 +2111,48 @@ app.post("/api/auth/logout", (req, res) => {
   });
 });
 
+// ---- Forgot / Reset Password ----
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  if(!email) return res.status(400).json({ error:"Email required" });
+  const db = ensureUsers(readData());
+  const u = db.users[email];
+  // Always return ok to avoid user enumeration
+  if(!u) return res.json({ ok:true });
+  const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  u.resetToken = token;
+  u.resetTokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
+  db.users[email] = u;
+  writeData(db);
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
+  const resetLink = `${baseUrl}/reset-password.html?token=${token}&email=${encodeURIComponent(email)}`;
+  console.log("[CryptoProp] Password reset link for", email, "=>", resetLink);
+  await sendEmail({
+    to: email,
+    subject: "Reset your CryptoProp password",
+    html: `<p>Hi,</p><p>We received a request to reset your CryptoProp password.</p><p><a href="${resetLink}" style="background:#7c5cff;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Reset Password</a></p><p>This link expires in 1 hour.</p><p>If you didn't request this, you can safely ignore this email.</p>`
+  });
+  return res.json({ ok:true });
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  const token = (req.body?.token || "").toString().trim();
+  const password = (req.body?.password || "").toString();
+  if(!email || !token || !password || password.length < 8)
+    return res.status(400).json({ error:"Email, token, and new password (min 8 chars) required" });
+  const db = ensureUsers(readData());
+  const u = db.users[email];
+  if(!u || u.resetToken !== token) return res.status(400).json({ error:"Invalid or expired reset link" });
+  if(!u.resetTokenExpiry || Date.now() > u.resetTokenExpiry) return res.status(400).json({ error:"Reset link has expired" });
+  u.passwordHash = await bcrypt.hash(password, 12);
+  u.resetToken = null;
+  u.resetTokenExpiry = null;
+  db.users[email] = u;
+  writeData(db);
+  return res.json({ ok:true });
+});
+
 app.post("/api/auth/admin-elevate", (req, res) => {
   const key = (req.body?.adminKey || "").toString();
   if(!ADMIN_KEY || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid admin key" });
