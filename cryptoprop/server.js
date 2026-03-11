@@ -6,7 +6,7 @@ import fs from "fs";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
-import { initDb, readData, writeData, getUser, saveUser, getAccount, saveAccount } from "./db.js";
+import { initDb, readData, writeData, getUser, saveUser, getAccount, saveAccount, pool } from "./db.js";
 
 // ---- EMAIL via Resend ----
 const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
@@ -2181,28 +2181,111 @@ const PLANS = {
   "100k": { startEquity: 100000, price: 499 }
 };
 
+
+// ---- PROMO CODES ----
+// Admin creates codes via POST /api/admin/promo/create
+// Format: { code, discountPct, maxUses, expiresAt }
+
+async function getPromoCodes() {
+  const res = await pool.query("SELECT value FROM kv WHERE key = 'promoCodes'");
+  return res.rows.length ? res.rows[0].value : {};
+}
+
+async function savePromoCodes(codes) {
+  await pool.query(`
+    INSERT INTO kv (key, value) VALUES ('promoCodes', $1::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `, [JSON.stringify(codes)]);
+}
+
+app.post("/api/promo/validate", requireAuth, async (req, res) => {
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const planId = (req.body?.planId || "").toString();
+  if(!code) return res.status(400).json({ error: "No code provided" });
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error: "Invalid plan" });
+
+  const codes = await getPromoCodes();
+  const promo = codes[code];
+  if(!promo) return res.status(404).json({ error: "Invalid promo code" });
+  if(promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime())
+    return res.status(400).json({ error: "Promo code has expired" });
+  if(promo.maxUses && (promo.uses || 0) >= promo.maxUses)
+    return res.status(400).json({ error: "Promo code has reached its usage limit" });
+
+  const discountAmt = Math.round(plan.price * (promo.discountPct / 100));
+  const finalPrice = Math.max(0, plan.price - discountAmt);
+  return res.json({ ok: true, code, discountPct: promo.discountPct, discountAmt, originalPrice: plan.price, finalPrice });
+});
+
+// Admin: create promo code
+app.post("/api/admin/promo/create", requireAdmin, async (req, res) => {
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const discountPct = Number(req.body?.discountPct || 0);
+  const maxUses = req.body?.maxUses ? Number(req.body.maxUses) : null;
+  const expiresAt = req.body?.expiresAt || null;
+  if(!code || discountPct <= 0 || discountPct > 100)
+    return res.status(400).json({ error: "code and discountPct (1-100) required" });
+  const codes = await getPromoCodes();
+  codes[code] = { code, discountPct, maxUses, expiresAt, uses: 0, createdAt: new Date().toISOString() };
+  await savePromoCodes(codes);
+  return res.json({ ok: true, promo: codes[code] });
+});
+
+// Admin: list promo codes
+app.get("/api/admin/promo/list", requireAdmin, async (req, res) => {
+  const codes = await getPromoCodes();
+  return res.json({ ok: true, codes: Object.values(codes) });
+});
+
+// Admin: delete promo code
+app.post("/api/admin/promo/delete", requireAdmin, async (req, res) => {
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const codes = await getPromoCodes();
+  delete codes[code];
+  await savePromoCodes(codes);
+  return res.json({ ok: true });
+});
+
 app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
   const planId = (req.body?.planId || "").toString();
+  const promoCode = (req.body?.promoCode || "").toString().trim().toUpperCase();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
 
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
 
+  // Apply promo code if provided
+  let paid = plan.price;
+  let promoApplied = null;
+  if(promoCode){
+    const codes = await getPromoCodes();
+    const promo = codes[promoCode];
+    if(!promo) return res.status(400).json({ error: "Invalid promo code" });
+    if(promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime())
+      return res.status(400).json({ error: "Promo code has expired" });
+    if(promo.maxUses && (promo.uses || 0) >= promo.maxUses)
+      return res.status(400).json({ error: "Promo code has reached its usage limit" });
+    const discountAmt = Math.round(plan.price * (promo.discountPct / 100));
+    paid = Math.max(0, plan.price - discountAmt);
+    promo.uses = (promo.uses || 0) + 1;
+    codes[promoCode] = promo;
+    await savePromoCodes(codes);
+    promoApplied = { code: promoCode, discountPct: promo.discountPct, discountAmt, originalPrice: plan.price, finalPrice: paid };
+  }
+
   acct.attemptsByPlan = acct.attemptsByPlan || {};
   acct.retryOfferUsed = acct.retryOfferUsed || {};
   const prevAttempts = Number(acct.attemptsByPlan[planId] || 0);
   acct.attemptsByPlan[planId] = prevAttempts + 1;
 
-  // apply plan
   acct.planId = planId;
-  const paid = plan.price;
-  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: paid, type: "initial" };
+  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: paid, type: "initial", promo: promoApplied };
   acct.startEquity = plan.startEquity;
   acct.cash = Number(acct.cash || plan.startEquity);
   acct.equity = Number(acct.equity || plan.startEquity);
 
-  // one-time referral credit on first successful "purchase"
   if(acct.referredBy && !acct.firstPurchaseCredited){
     await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
     acct.firstPurchaseCredited = true;
@@ -2210,7 +2293,7 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
 
   resetChallengeAttempt(acct);
   await saveAccount(email, acct);
-  return res.json({ ok:true, account: acct });
+  return res.json({ ok:true, account: acct, promoApplied });
 });
 
 // ------------------- Admin Ops Console -------------------
