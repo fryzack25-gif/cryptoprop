@@ -469,6 +469,7 @@ async function hydrateOnceWithREST(){
   }
   render();
   updateRiskMeter(account);
+  if(window.updateCheckoutBanner) window.updateCheckoutBanner(account);
   updateChallengeProgress(account);
   updatePayoutPanel(account);
   updateRetryOffer(account);
@@ -757,3 +758,154 @@ document.addEventListener("click", async (e) => {
     if(msg) msg.textContent = err.message;
   }
 });
+
+// ===== CHECKOUT MODAL =====
+(function(){
+  const PRICES = { "25k": 149, "50k": 279, "100k": 499 };
+  const LABELS = { "25k": "$25K Account", "50k": "$50K Account", "100k": "$100K Account" };
+
+  let selectedPlan = null;
+  let promoData = null; // { discountPct, discountAmt, finalPrice, code }
+
+  const overlay   = document.getElementById("checkoutOverlay");
+  const closeBtn  = document.getElementById("checkoutClose");
+  const openBtn   = document.getElementById("openCheckoutBtn");
+  const confirmBtn = document.getElementById("checkoutConfirm");
+  const promoInput = document.getElementById("promoInput");
+  const promoApply = document.getElementById("promoApply");
+  const promoMsg  = document.getElementById("promoMsg");
+  const checkoutMsg = document.getElementById("checkoutMsg");
+  const noPlanBanner = document.getElementById("noPlanBanner");
+  const challengeProgress = document.getElementById("challengeProgress");
+
+  // Show/hide no-plan banner based on account state
+  window.updateCheckoutBanner = function(account) {
+    if(!account || !account.planId) {
+      if(noPlanBanner) noPlanBanner.style.display = "block";
+      if(challengeProgress) challengeProgress.style.display = "none";
+    } else {
+      if(noPlanBanner) noPlanBanner.style.display = "none";
+      if(challengeProgress) challengeProgress.style.display = "";
+    }
+  };
+
+  function openModal() {
+    if(overlay) overlay.style.display = "flex";
+    selectedPlan = null;
+    promoData = null;
+    if(promoInput) promoInput.value = "";
+    if(promoMsg) promoMsg.textContent = "";
+    if(checkoutMsg) checkoutMsg.textContent = "";
+    updateSummary();
+    document.querySelectorAll(".checkout-plan").forEach(el => el.classList.remove("selected"));
+  }
+
+  function closeModal() {
+    if(overlay) overlay.style.display = "none";
+  }
+
+  function updateSummary() {
+    const summaryPlan = document.getElementById("summaryPlan");
+    const summaryTotal = document.getElementById("summaryTotal");
+    const summaryDiscountRow = document.getElementById("summaryDiscountRow");
+    const summaryDiscount = document.getElementById("summaryDiscount");
+    const summaryDiscountLabel = document.getElementById("summaryDiscountLabel");
+
+    if(!selectedPlan) {
+      if(summaryPlan) summaryPlan.textContent = "—";
+      if(summaryTotal) summaryTotal.textContent = "—";
+      if(summaryDiscountRow) summaryDiscountRow.style.display = "none";
+      if(confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Select a plan to continue"; }
+      return;
+    }
+
+    const basePrice = PRICES[selectedPlan];
+    if(summaryPlan) summaryPlan.textContent = LABELS[selectedPlan];
+
+    if(promoData) {
+      if(summaryDiscountRow) summaryDiscountRow.style.display = "flex";
+      if(summaryDiscountLabel) summaryDiscountLabel.textContent = `Promo (${promoData.code}) −${promoData.discountPct}%`;
+      if(summaryDiscount) summaryDiscount.textContent = `−$${promoData.discountAmt}`;
+      if(summaryTotal) summaryTotal.textContent = `$${promoData.finalPrice}`;
+    } else {
+      if(summaryDiscountRow) summaryDiscountRow.style.display = "none";
+      if(summaryTotal) summaryTotal.textContent = `$${basePrice}`;
+    }
+
+    if(confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "Confirm & Start Challenge"; }
+  }
+
+  // Plan card selection
+  document.querySelectorAll(".checkout-plan").forEach(card => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".checkout-plan").forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+      selectedPlan = card.dataset.plan;
+      promoData = null;
+      if(promoMsg) promoMsg.textContent = "";
+      if(promoInput) promoInput.value = "";
+      updateSummary();
+    });
+  });
+
+  // Apply promo code
+  if(promoApply) promoApply.addEventListener("click", async () => {
+    const code = (promoInput?.value || "").trim();
+    if(!code) return;
+    if(!selectedPlan) { if(promoMsg) { promoMsg.textContent = "Please select a plan first."; promoMsg.style.color = "#f87171"; } return; }
+    promoApply.disabled = true;
+    promoApply.textContent = "Checking…";
+    if(promoMsg) promoMsg.textContent = "";
+    try {
+      const res = await apiFetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, planId: selectedPlan })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "Invalid code");
+      promoData = data;
+      if(promoMsg) { promoMsg.textContent = `✅ ${data.discountPct}% off applied! You save $${data.discountAmt}.`; promoMsg.style.color = "#4ade80"; }
+      updateSummary();
+    } catch(err) {
+      promoData = null;
+      if(promoMsg) { promoMsg.textContent = `❌ ${err.message}`; promoMsg.style.color = "#f87171"; }
+      updateSummary();
+    } finally {
+      promoApply.disabled = false;
+      promoApply.textContent = "Apply";
+    }
+  });
+
+  // Allow pressing Enter in promo input
+  if(promoInput) promoInput.addEventListener("keydown", e => { if(e.key === "Enter") promoApply?.click(); });
+
+  // Confirm purchase
+  if(confirmBtn) confirmBtn.addEventListener("click", async () => {
+    if(!selectedPlan) return;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Processing…";
+    if(checkoutMsg) checkoutMsg.textContent = "";
+    try {
+      const body = { planId: selectedPlan };
+      if(promoData) body.promoCode = promoData.code;
+      const res = await apiFetch("/api/plan/choose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "Purchase failed");
+      closeModal();
+      location.reload();
+    } catch(err) {
+      if(checkoutMsg) { checkoutMsg.textContent = err.message; checkoutMsg.style.color = "#f87171"; }
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Confirm & Start Challenge";
+    }
+  });
+
+  if(openBtn) openBtn.addEventListener("click", openModal);
+  if(closeBtn) closeBtn.addEventListener("click", closeModal);
+  if(overlay) overlay.addEventListener("click", e => { if(e.target === overlay) closeModal(); });
+})();
