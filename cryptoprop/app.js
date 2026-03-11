@@ -100,7 +100,7 @@ document.addEventListener("click", async (e) => {
 
 async function requireLoginIfNeeded(){
   const path = window.location.pathname;
-  const publicPaths = ["/", "/index.html", "/auth.html", "/terms.html", "/risk.html", "/privacy.html", "/kyc.html", "/payout.html"];
+  const publicPaths = ["/", "/index.html", "/auth.html", "/terms.html", "/risk.html", "/privacy.html", "/kyc.html", "/payout.html", "/admin.html", "/support.html", "/reset-password.html"];
   if(publicPaths.includes(path)) return;
   try{
     const res = await fetch("/api/auth/me");
