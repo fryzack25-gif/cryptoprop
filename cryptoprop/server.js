@@ -6,7 +6,7 @@ import fs from "fs";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
-import { initDb, readData, writeData } from "./db.js";
+import { initDb, readData, writeData, getUser, saveUser, getAccount, saveAccount } from "./db.js";
 
 // ---- EMAIL via Resend ----
 const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
@@ -321,10 +321,9 @@ app.get("/api/applications", requireAuth, async (req, res) => {
 
 // ---- Accounts (server-side liquidity for demo) ----
 async function getOrCreateAccount(email){
-  const data = await readData();
-  if(!data.accounts) data.accounts = {};
-  if(!data.accounts[email]){
-    data.accounts[email] = {
+  let acct = await getAccount(email);
+  if(!acct){
+    acct = {
       cash: 0,
       baseEquity: 0,
       firmProfit: 0,
@@ -369,17 +368,12 @@ async function getOrCreateAccount(email){
       referralAppliedAt: null,
       firstPurchaseCredited: false
     };
-    await writeData(data);
+    await saveAccount(email, acct);
   }
-  return data.accounts[email];
+  return acct;
 }
 
-async function saveAccount(email, account){
-  const data = await readData();
-  if(!data.accounts) data.accounts = {};
-  data.accounts[email] = account;
-  await writeData(data);
-}
+// saveAccount is imported directly from db.js — no wrapper needed
 
 function allowlistProduct(product){
   if(Array.isArray(top50ProductIds) && top50ProductIds.includes(product)) return true;
@@ -2061,12 +2055,11 @@ app.post("/api/auth/signup", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const password = (req.body?.password || "").toString();
   if(!email || !password || password.length < 8) return res.status(400).json({ error:"Email and password (min 8 chars) required" });
-  const db = ensureUsers(await readData());
-  if(db.users[email]) return res.status(400).json({ error:"Account already exists" });
+  const existing = await getUser(email);
+  if(existing) return res.status(400).json({ error:"Account already exists" });
   const hash = await bcrypt.hash(password, 12);
   const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-  db.users[email] = { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false };
-  await writeData(db);
+  await saveUser(email, { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false });
   // In production: send verifyCode via email.
   console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
   await sendEmail({
@@ -2080,23 +2073,20 @@ app.post("/api/auth/signup", async (req, res) => {
 app.post("/api/auth/verify-email", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const code = (req.body?.code || "").toString().trim().toUpperCase();
-  const db = ensureUsers(await readData());
-  const u = db.users[email];
+  const u = await getUser(email);
   if(!u) return res.status(404).json({ error:"Not found" });
   if(u.emailVerified) return res.json({ ok:true, verified:true });
   if(!code || code !== u.verifyCode) return res.status(400).json({ error:"Invalid code" });
   u.emailVerified = true;
   u.verifyCode = null;
-  db.users[email] = u;
-  await writeData(db);
+  await saveUser(email, u);
   return res.json({ ok:true, verified:true });
 });
 
 app.post("/api/auth/login", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const password = (req.body?.password || "").toString();
-  const db = ensureUsers(await readData());
-  const u = db.users[email];
+  const u = await getUser(email);
   if(!u) return res.status(400).json({ error:"Invalid credentials" });
   const ok = await bcrypt.compare(password, u.passwordHash);
   if(!ok) return res.status(400).json({ error:"Invalid credentials" });
@@ -2116,15 +2106,13 @@ app.post("/api/auth/logout", async (req, res) => {
 app.post("/api/auth/forgot-password", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   if(!email) return res.status(400).json({ error:"Email required" });
-  const db = ensureUsers(await readData());
-  const u = db.users[email];
+  const u = await getUser(email);
   // Always return ok to avoid user enumeration
   if(!u) return res.json({ ok:true });
   const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   u.resetToken = token;
   u.resetTokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
-  db.users[email] = u;
-  await writeData(db);
+  await saveUser(email, u);
   const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
   const resetLink = `${baseUrl}/reset-password.html?token=${token}&email=${encodeURIComponent(email)}`;
   console.log("[CryptoProp] Password reset link for", email, "=>", resetLink);
@@ -2142,15 +2130,13 @@ app.post("/api/auth/reset-password", async (req, res) => {
   const password = (req.body?.password || "").toString();
   if(!email || !token || !password || password.length < 8)
     return res.status(400).json({ error:"Email, token, and new password (min 8 chars) required" });
-  const db = ensureUsers(await readData());
-  const u = db.users[email];
+  const u = await getUser(email);
   if(!u || u.resetToken !== token) return res.status(400).json({ error:"Invalid or expired reset link" });
   if(!u.resetTokenExpiry || Date.now() > u.resetTokenExpiry) return res.status(400).json({ error:"Reset link has expired" });
   u.passwordHash = await bcrypt.hash(password, 12);
   u.resetToken = null;
   u.resetTokenExpiry = null;
-  db.users[email] = u;
-  await writeData(db);
+  await saveUser(email, u);
   return res.json({ ok:true });
 });
 
@@ -2160,10 +2146,10 @@ app.post("/api/auth/admin-elevate", async (req, res) => {
   const u = getSessionUser(req);
   if(!u) return res.status(401).json({ error:"Not authenticated" });
   req.session.user.isAdmin = true;
-  const db = ensureUsers(await readData());
-  if(db.users[u.email]){
-    db.users[u.email].isAdmin = true;
-    await writeData(db);
+  const adminUser = await getUser(u.email);
+  if(adminUser){
+    adminUser.isAdmin = true;
+    await saveUser(u.email, adminUser);
   }
   return res.json({ ok:true, isAdmin:true });
 });
