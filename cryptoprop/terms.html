@@ -1,366 +1,81 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CryptoProp — Crypto Spot Prop Trading</title>
-  <meta name="description" content="CryptoProp funds disciplined spot crypto traders through a transparent evaluation with clear risk rules and payouts." />
+  <title>Terms & Conditions — CryptoProp</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .legal-wrap { max-width: 780px; margin: 60px auto; padding: 0 24px 60px; }
+    .legal-wrap h1 { font-size: 2rem; margin-bottom: 8px; }
+    .legal-wrap h2 { font-size: 1.1rem; margin-top: 32px; margin-bottom: 6px; color: var(--accent, #7c5cff); }
+    .legal-wrap p { line-height: 1.75; color: var(--muted, #aaa); margin: 0 0 12px; }
+    .legal-wrap a.back { display: inline-block; margin-bottom: 32px; font-size: 0.9rem; color: var(--accent, #7c5cff); text-decoration: none; }
+    .legal-wrap a.back:hover { text-decoration: underline; }
+    .last-updated { font-size: 0.8rem; color: var(--muted, #aaa); margin-bottom: 32px; }
+  </style>
 </head>
-<body><div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;"><a class="btn" href="/auth.html">Login</a><button class="btn" id="logoutBtn" type="button">Logout</button></div>
-  <header>
-    <div class="wrap nav">
-      <a class="brand" href="#top">
-        <span class="logo" aria-hidden="true"></span>
-        <span>CryptoProp</span>
-      </a>
+<body>
+  <div class="legal-wrap">
+    <a class="back" href="/">← Back to CryptoProp</a>
+    <h1>Terms &amp; Conditions</h1>
+    <p class="last-updated">Last updated: March 2026</p>
 
-      <nav class="links" aria-label="Primary">
-        <a href="#how">How it works</a>
-        <a href="#plans">Plans</a>
-        <a href="#faq">FAQ</a>
-      </nav>
+    <h2>1. Acceptance of Terms</h2>
+    <p>By creating an account or using the CryptoProp platform, users agree to the Terms &amp; Conditions, Risk Disclosure, Privacy Policy, KYC / AML Policy, and Payout Policy. Acceptance is logged with timestamp, IP address, Terms version, and user agent.</p>
 
-      <div class="right-tools">
-        <a class="btn ghost" href="login.html">Trader login</a>
-        <a class="btn primary" href="#apply">Apply</a>
-      </div>
-    </div>
-  </header>
+    <h2>2. Nature of the Service</h2>
+    <p>CryptoProp provides a simulated trading evaluation platform used to assess trading skill. All trading activity is simulated. No real assets are traded and CryptoProp does not act as a broker, exchange, or investment advisor.</p>
 
-  <main id="top" class="wrap">
-    <div class="hero">
-      <section class="card hero-left glass" aria-label="Hero">
-        <span class="badge">Crypto spot only • Risk rules • Performance payouts</span>
-        <h1>Trade spot. Earn payouts. Scale responsibly.</h1>
-        <p class="sub">
-          CryptoProp funds disciplined <b>spot</b> crypto traders through a transparent evaluation.
-          Clear risk limits, simple targets, and a dashboard built for consistency.
-        </p>
-        <div class="cta">
-          <a class="btn primary" href="#apply">Start application</a>
-          <a class="btn teal" href="login.html">Login to dashboard</a>
-          <a class="btn ghost" href="#plans">View evaluation tiers</a>
-        </div>
-        <div class="fine">
-          <b>Note:</b> This is a working demo site. Replace rules, payouts, and legal language to match your real program.
-        </div>
-      </section>
+    <h2>3. Challenge Program Rules</h2>
+    <p>Step 1: Profit target 8%, time limit 30 days, trailing drawdown 5%, minimum 5 trading days.</p>
+    <p>Step 2: Profit target 5%, time limit 45 days, trailing drawdown 4%, minimum 7 trading days.</p>
+    <p>Failure occurs if drawdown is breached, time expires, or rules are violated.</p>
 
-      <aside class="card hero-right glass" aria-label="Credibility and stats">
-        <div class="stats">
-          <div class="stat">
-            <b>Spot only</b>
-            <span>No perps or leverage required</span>
-          </div>
-          <div class="stat">
-            <b>Up to 90%</b>
-            <span>Example profit split</span>
-          </div>
-          <div class="stat">
-            <b>Risk-first</b>
-            <span>Daily + total loss limits</span>
-          </div>
-          <div class="stat">
-            <b>Fast dashboards</b>
-            <span>Track performance & rules</span>
-          </div>
-        </div>
-        <div class="callout">
-          <b>CryptoProp is spot-only.</b> Trade BTC/ETH/major alts with defined risk limits.
-        </div>
-        <div class="pillrow" aria-label="Markets">
-          <span class="pill">Crypto spot only</span>
-          <span class="pill">BTC / ETH</span>
-          <span class="pill">Major alts</span>
-        </div>
-      </aside>
-    </div>
+    <h2>4. Funded Accounts</h2>
+    <p>After passing both steps, users may qualify for a simulated funded account with an 80% trader / 20% firm profit split. Payout eligibility requires an 8% profit buffer and daily profit counted toward payouts is capped at 4%.</p>
 
-    <section id="how">
-      <div class="section-title">
-        <h2>How it works</h2>
-        <p>From evaluation to funded — three steps.</p>
-      </div>
-      <div class="grid3">
-        <div class="card tile glass">
-          <div class="icon">1</div>
-          <h3>Choose a tier</h3>
-          <p>Pick an evaluation size that fits your spot strategy and risk tolerance.</p>
-        </div>
-        <div class="card tile glass">
-          <div class="icon">2</div>
-          <h3>Pass the rules</h3>
-          <p>Hit the profit target while staying within daily and total drawdown limits.</p>
-        </div>
-        <div class="card tile glass">
-          <div class="icon">3</div>
-          <h3>Get funded</h3>
-          <p>Trade a funded spot account with rules monitoring and scheduled payouts.</p>
-        </div>
-      </div>
-    </section>
+    <h2>5. Simulated Environment</h2>
+    <p>All trading is conducted in a simulated environment and may include simulated slippage, delays, or execution differences.</p>
 
-    <section id="plans">
-      <div class="section-title">
-        <h2>Evaluation tiers</h2>
-        <p>Example pricing/targets — swap with your actual numbers.</p>
-      </div>
+    <h2>6. Fees and Purchases</h2>
+    <p>Users may pay fees for challenge attempts, retry offers, account resets, or extensions. These are fees for digital evaluation services and are generally non-refundable.</p>
 
-      <div class="pricing">
-        <div class="card plan glass">
-          <h3>Starter</h3>
-          <div class="price">$149<span class="muted">/mo</span></div>
-          <p class="muted">For new evaluators and smaller size.</p>
-          <ul>
-            <li>Account size: $25,000</li>
-            <li>Step 1: 8% profit in 30 days</li>
-            <li>Step 2: 5% profit in 45 days</li>
-            <li>Max daily loss: $500</li>
-            <li>Step 1 trailing drawdown: 5%</li>
-            <li>Step 2 trailing drawdown: 4%</li>
-          </ul>
-          <div style="margin-top:12px">
-            <a class="btn primary" href="#apply">Apply</a>
-          </div>
-        </div>
+    <h2>7. Payout Policy</h2>
+    <p>Payouts are discretionary and subject to review. KYC verification may be required before payouts.</p>
 
-        <div class="card plan glass" style="border-color: rgba(124,92,255,.35);">
-          <h3>Core</h3>
-          <div class="price">$279<span class="muted">/mo</span></div>
-          <p class="muted">Balanced rules for most spot strategies.</p>
-          <ul>
-            <li>Account size: $50,000</li>
-            <li>Step 1: 8% profit in 30 days</li>
-            <li>Step 2: 5% profit in 45 days</li>
-            <li>Max daily loss: $1,000</li>
-            <li>Step 1 trailing drawdown: 5%</li>
-            <li>Step 2 trailing drawdown: 4%</li>
-          </ul>
-          <div style="margin-top:12px">
-            <a class="btn primary" href="#apply">Apply</a>
-          </div>
-        </div>
+    <h2>8. Account Termination</h2>
+    <p>CryptoProp reserves the right to terminate accounts at its sole discretion for rule violations, fraud, or abuse.</p>
 
-        <div class="card plan glass">
-          <h3>Pro</h3>
-          <div class="price">$499<span class="muted">/mo</span></div>
-          <p class="muted">For experienced spot traders seeking scale.</p>
-          <ul>
-            <li>Account size: $100,000</li>
-            <li>Step 1: 8% profit in 30 days</li>
-            <li>Step 2: 5% profit in 45 days</li>
-            <li>Max daily loss: $2,000</li>
-            <li>Step 1 trailing drawdown: 5%</li>
-            <li>Step 2 trailing drawdown: 4%</li>
-          </ul>
-          <div style="margin-top:12px">
-            <a class="btn primary" href="#apply">Apply</a>
-          </div>
-        </div>
-      </div>
+    <h2>9. Prohibited Activities</h2>
+    <p>Users may not exploit bugs, coordinate accounts, manipulate simulated pricing, or abuse the system.</p>
 
-      <div class="disclaimer small muted" style="margin-top:10px">
-        Replace with accurate fees, targets, and risk limits. Avoid implying guaranteed funding or profits.
-      </div>
-    </section>
+    <h2>10. Risk Disclosure</h2>
+    <p>Trading involves risk. CryptoProp provides no financial advice and does not guarantee profits.</p>
 
-    <section id="testimonials">
-      <div class="section-title">
-        <h2>Trader feedback</h2>
-        <p>Example quotes — replace with real testimonials.</p>
-      </div>
-      <div class="grid3">
-        <div class="card quote glass">
-          <p>“Clear rules, quick answers, and a dashboard that helps manage risk.”</p>
-          <span>— Spot BTC/ETH trader</span>
-        </div>
-        <div class="card quote glass">
-          <p>“The drawdown rules forced me to tighten my process — payouts became consistent.”</p>
-          <span>— Spot alt trader</span>
-        </div>
-        <div class="card quote glass">
-          <p>“Scaling felt fair. I didn’t need to swing for the fences to grow.”</p>
-          <span>— Spot swing trader</span>
-        </div>
-      </div>
-    </section>
+    <h2>11. Limitation of Liability</h2>
+    <p>CryptoProp is not liable for outages, data inaccuracies, or lost profits.</p>
 
-    <section id="faq">
-      <div class="section-title">
-        <h2>FAQ</h2>
-        <p>Common questions evaluators ask.</p>
-      </div>
-      <div class="card glass" style="padding:18px">
-        <details>
-          <summary>Is this real funding or a simulated evaluation?</summary>
-          <p>
-            Many prop firms use simulated evaluation accounts and then fund traders under specific terms. Update this text to match your model and disclosures.
-          </p>
-        </details>
-        <details>
-          <summary>How do payouts work?</summary>
-          <p>
-            Define payout frequency, minimum thresholds, profit split, and any restrictions. Be clear about requirements (e.g., consistency rules).
-          </p>
-        </details>
-        <details>
-          <summary>What markets can I trade?</summary>
-          <p>
-            CryptoProp is <b>spot-only</b>. List supported spot pairs, supported exchanges, and any platform requirements.
-          </p>
-        </details>
-        <details>
-          <summary>What happens if I breach a loss limit?</summary>
-          <p>
-            Typically the account fails or is paused. State your reset policy and how traders can restart.
-          </p>
-        </details>
-      </div>
-    </section>
+    <h2>12. Arbitration Agreement</h2>
+    <p>All disputes must be resolved through binding arbitration. Users waive class action and jury trial rights.</p>
 
-    <section id="apply">
-      <div class="section-title">
-        <h2>Application</h2>
-        <p>Submit your info — this demo stores leads in a local backend.</p>
-      </div>
+    <h2>13. Governing Law</h2>
+    <p>These terms are governed by the laws of the State of Indiana, United States.</p>
 
-      <div class="split">
-        <div class="card glass">
-          <form id="applyForm">
-            <div class="row2">
-              <div>
-                <label for="name">Full name</label>
-                <input id="name" name="name" placeholder="Jane Trader" required />
-              </div>
-              <div>
-                <label for="email">Email</label>
-                <input id="email" name="email" type="email" placeholder="jane@example.com" required />
-              </div>
-            </div>
+    <h2>14. Privacy Policy</h2>
+    <p>User data may be collected for security, platform operations, and compliance.</p>
 
-            <div class="row2">
-              <div>
-                <label for="tier">Evaluation tier</label>
-                <select id="tier" name="tier" required>
-                  <option value="" disabled selected>Select a tier</option>
-                  <option>Starter</option>
-                  <option>Core</option>
-                  <option>Pro</option>
-                </select>
-              </div>
-              <div>
-                <label for="experience">Experience level</label>
-                <select id="experience" name="experience" required>
-                  <option value="" disabled selected>Select one</option>
-                  <option>0–6 months</option>
-                  <option>6–24 months</option>
-                  <option>2–5 years</option>
-                  <option>5+ years</option>
-                </select>
-              </div>
-            </div>
+    <h2>15. Modifications</h2>
+    <p>CryptoProp may modify these terms at any time.</p>
 
-            <div>
-              <label for="message">Tell us about your spot strategy (timeframe, risk, pairs)</label>
-              <textarea id="message" name="message" placeholder="Example: 4H trend following, max 0.5% risk, BTC/ETH + top alts..." required></textarea>
-            </div>
+    <h2>16. Digital Services Disclaimer</h2>
+    <p>CryptoProp provides digital evaluation services only. Participation does not involve real trading or investment.</p>
 
-            
-<div style="margin-top:12px;">
-  <label style="font-size:13px; display:flex; gap:8px; align-items:flex-start;">
-    <input type="checkbox" id="termsCheckbox" />
-    <span>
-      I agree to the
-      <a href="/terms.html" target="_blank">Terms & Conditions</a>,
-      <a href="/risk.html" target="_blank">Risk Disclosure</a>,
-      <a href="/privacy.html" target="_blank">Privacy Policy</a>,
-      <a href="/kyc.html" target="_blank">KYC/AML Policy</a>,
-      and <a href="/payout.html" target="_blank">Payout Policy</a>.
-    </span>
-  </label>
-</div>
+    <h2>17. Chargeback Policy</h2>
+    <p>Users agree to contact support before initiating payment disputes. Chargebacks may result in account suspension.</p>
 
-<button class="btn primary" type="submit">Submit application</button>
-            <p id="formMsg" class="small" style="margin:0; color:var(--muted)"></p>
-
-            <div class="disclaimer tiny">
-              Add legal disclosures here (risk disclosure, no guarantee of profits, terms, eligibility, privacy policy).
-            </div>
-          </form>
-        </div>
-
-        <div class="card rules glass">
-          <h3>What happens next?</h3>
-          <ul>
-            <li>We review your application (experience + risk approach).</li>
-            <li>You receive evaluation access and a dashboard invite.</li>
-            <li>Pass the rules → move to funded allocation.</li>
-            <li>Consistent performance → scaling opportunities.</li>
-          </ul>
-          <div class="callout" style="margin-top:12px">
-            <b>Pro tip:</b> Spot pros survive by keeping drawdowns small — not by chasing big days.
-          </div>
-          <div class="notice tiny" style="margin-top:12px">
-            Keyboard: press <span class="kbd">Ctrl</span>+<span class="kbd">L</span> then type <code>login.html</code> to try the dashboard.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <footer>
-      <div class="wrap" style="padding:0">
-        <div class="small">© <span id="year"></span> CryptoProp. All trading involves risk.</div>
-      </div>
-    <div class="tiny muted" style="margin-top:10px"><a href="admin.html" class="muted">Admin</a></div>
-</footer>
-  
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Have a referral code?</h2>
-      <p class="muted small" style="margin-top:6px">Enter a code to link your account to a referrer (codes are created by CryptoProp admins).</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <input id="refCode" class="input" placeholder="Referral code" style="max-width:260px" />
-        <button class="btn primary" id="applyRef">Apply</button>
-        <div class="tiny muted" id="refMsg"></div>
-      </div>
-    </section>
-
-</main>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script type="module">
-    import { setYear, toast, qs } from "./app.js";
-
-    setYear();
-
-    const form = qs("applyForm");
-    const msg = qs("formMsg");
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      msg.textContent = "Submitting…";
-
-      const payload = Object.fromEntries(new FormData(form).entries());
-      try{
-        const res = await fetch("/api/applications", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify(payload)
-        });
-        if(!res.ok){
-          const err = await res.json().catch(()=>({}));
-          throw new Error(err.error || "Submission failed.");
-        }
-        msg.textContent = "Thanks — application received.";
-        toast("Application saved ✅");
-        form.reset();
-      }catch(err){
-        msg.textContent = err.message;
-        toast(err.message);
-      }
-    });
-  </script>
-  <script type="module" src="/app.js"></script>
+    <h2>18. Platform Integrity &amp; Abuse Detection</h2>
+    <p>CryptoProp may investigate suspicious trading behavior and terminate accounts if abuse is detected.</p>
+  </div>
 </body>
 </html>
