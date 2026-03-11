@@ -1,326 +1,271 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>CryptoProp — Admin</title>
-  <link rel="stylesheet" href="styles.css" />
-
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: #03040a; color: #e2e8f8; min-height: 100vh; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;background:#05060a;color:#e2e8f8}
 
-    /* Gate */
-    #adminGate {
-      position: fixed; inset: 0; z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(ellipse 900px 600px at 15% 20%, rgba(124,92,255,.22) 0%, transparent 65%),
-                  radial-gradient(ellipse 700px 500px at 85% 75%, rgba(0,209,178,.14) 0%, transparent 65%), #03040a;
-    }
-    .gate-card {
-      width: min(420px, 92vw);
-      background: rgba(12,15,28,.88); backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,.1); border-radius: 28px;
-      padding: 48px 40px 40px; text-align: center;
-      box-shadow: 0 0 0 1px rgba(124,92,255,.08), 0 60px 120px rgba(0,0,0,.7);
-      animation: gateIn .45s cubic-bezier(.22,1,.36,1) both;
-    }
-    @keyframes gateIn { from { opacity:0; transform:translateY(24px) scale(.97); } to { opacity:1; transform:none; } }
-    .gate-logo {
-      width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 24px;
-      background: conic-gradient(from 220deg, #7c5cff, #00d1b2, #31c4ff, #7c5cff);
-      box-shadow: 0 0 48px rgba(124,92,255,.5), 0 0 96px rgba(124,92,255,.2);
-    }
-    .gate-card h2 { font-family: 'Syne', sans-serif; font-size: 1.55rem; font-weight: 900; letter-spacing: -.03em; margin-bottom: 8px; }
-    .gate-card p  { color: #7a85a8; font-size: .9rem; margin-bottom: 28px; }
-    .gate-iw { position: relative; display: flex; align-items: center; }
-    .gate-iw input {
-      width: 100%; padding: 14px 48px 14px 16px;
-      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-      border-radius: 14px; color: #e2e8f8; font-size: .95rem; outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      font-family: 'JetBrains Mono', monospace; letter-spacing: .05em;
-    }
-    .gate-iw input:focus { border-color: rgba(124,92,255,.6); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
-    .gate-iw button { position: absolute; right: 14px; background: none; border: none; cursor: pointer; color: #7a85a8; font-size: 16px; }
-    .gate-btn {
-      width: 100%; margin-top: 14px; padding: 14px;
-      background: linear-gradient(135deg, #7c5cff, #9a7bff); border: none; border-radius: 14px;
-      color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer;
-      box-shadow: 0 8px 32px rgba(124,92,255,.45); transition: transform .15s, box-shadow .15s;
-    }
-    .gate-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 42px rgba(124,92,255,.6); }
-    .gate-btn:active { transform: translateY(0); }
-    #gateMsg { margin-top: 12px; font-size: .82rem; min-height: 18px; }
+    /* ── Gate ── */
+    #gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+      background:radial-gradient(ellipse 900px 600px at 15% 20%,rgba(124,92,255,.22),transparent 65%),
+                 radial-gradient(ellipse 700px 500px at 85% 75%,rgba(0,209,178,.14),transparent 65%),#05060a}
+    .gc{width:min(420px,92vw);background:rgba(12,15,28,.92);border:1px solid rgba(255,255,255,.1);border-radius:24px;
+      padding:44px 38px 38px;text-align:center;box-shadow:0 60px 120px rgba(0,0,0,.7)}
+    .glogo{width:60px;height:60px;border-radius:20px;margin:0 auto 22px;
+      background:conic-gradient(from 220deg,#7c5cff,#00d1b2,#31c4ff,#7c5cff);
+      box-shadow:0 0 40px rgba(124,92,255,.5)}
+    .gc h2{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:8px}
+    .gc p{color:#7a85a8;font-size:.9rem;margin-bottom:26px}
+    .giw{position:relative;display:flex;align-items:center}
+    .giw input{width:100%;padding:13px 44px 13px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;color:#e2e8f8;font-size:.95rem;outline:none;letter-spacing:.08em;font-family:monospace}
+    .giw input:focus{border-color:rgba(124,92,255,.6);box-shadow:0 0 0 3px rgba(124,92,255,.15)}
+    .giw button{position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#7a85a8;font-size:15px}
+    .gbtn{width:100%;margin-top:13px;padding:13px;background:linear-gradient(135deg,#7c5cff,#9a7bff);
+      border:none;border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;
+      box-shadow:0 8px 28px rgba(124,92,255,.4);transition:transform .15s,box-shadow .15s}
+    .gbtn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(124,92,255,.6)}
+    #gmsg{margin-top:10px;font-size:.82rem;min-height:18px}
 
-    /* Layout */
-    #adminDash { display: none; }
-    .a-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-    @media (max-width:860px) { .a-layout { grid-template-columns: 1fr; } .a-sidebar { display: none; } }
+    /* ── Dashboard ── */
+    #dash{display:none;min-height:100vh}
+    .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+    @media(max-width:800px){.layout{grid-template-columns:1fr}.sidebar{display:none!important}}
 
     /* Sidebar */
-    .a-sidebar {
-      position: sticky; top: 0; height: 100vh; overflow-y: auto;
-      background: rgba(5,7,16,.96); border-right: 1px solid rgba(255,255,255,.055);
-      display: flex; flex-direction: column;
-    }
-    .sb-brand { display: flex; align-items: center; gap: 12px; padding: 28px 22px 22px; border-bottom: 1px solid rgba(255,255,255,.05); }
-    .sb-logo { width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0; background: conic-gradient(from 220deg, #7c5cff, #00d1b2, #31c4ff, #7c5cff); box-shadow: 0 0 20px rgba(124,92,255,.4); }
-    .sb-name { font-family: 'Syne', sans-serif; font-weight: 900; font-size: .95rem; letter-spacing: -.02em; }
-    .sb-badge { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: rgba(124,92,255,.2); color: #c4b5ff; border: 1px solid rgba(124,92,255,.35); padding: 2px 8px; border-radius: 999px; display: inline-block; margin-top: 4px; }
-    .sb-nav { padding: 14px 14px; flex: 1; }
-    .sb-grp { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(168,176,200,.3); padding: 10px 8px 5px; }
-    .sb-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; color: #6a78a0; font-size: .875rem; font-weight: 500; cursor: pointer; transition: all .15s; border: 1px solid transparent; margin-bottom: 2px; user-select: none; }
-    .sb-item:hover { background: rgba(255,255,255,.05); color: #e2e8f8; }
-    .sb-item.active { background: rgba(124,92,255,.16); color: #c4b5ff; border-color: rgba(124,92,255,.28); }
-    .sb-ico { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
-    .sb-foot { padding: 14px 22px 20px; border-top: 1px solid rgba(255,255,255,.05); display: flex; flex-direction: column; gap: 10px; }
-    .sb-foot-row { display: flex; justify-content: space-between; align-items: center; }
-    .sb-foot a { font-size: .8rem; color: #6a78a0; text-decoration: none; transition: color .15s; }
-    .sb-foot a:hover { color: #e2e8f8; }
-    #refresh { padding: 6px 14px; border-radius: 10px; font-size: .8rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); color: #a0a8c0; cursor: pointer; transition: all .15s; }
-    #refresh:hover { background: rgba(255,255,255,.1); color: #e2e8f8; }
-    .lock-btn { background: none; border: none; font-size: .78rem; color: rgba(168,176,200,.4); cursor: pointer; text-align: left; transition: color .15s; }
-    .lock-btn:hover { color: #ff6b6b; }
+    .sidebar{background:rgba(5,7,15,.97);border-right:1px solid rgba(255,255,255,.06);
+      position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+    .sbrand{display:flex;align-items:center;gap:11px;padding:26px 20px 22px;border-bottom:1px solid rgba(255,255,255,.055)}
+    .slogo{width:34px;height:34px;border-radius:11px;flex-shrink:0;
+      background:conic-gradient(from 220deg,#7c5cff,#00d1b2,#31c4ff,#7c5cff);box-shadow:0 0 18px rgba(124,92,255,.4)}
+    .sname{font-weight:900;font-size:.9rem;letter-spacing:-.02em}
+    .sbadge{font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      background:rgba(124,92,255,.2);color:#c4b5ff;border:1px solid rgba(124,92,255,.35);
+      padding:2px 7px;border-radius:999px;display:inline-block;margin-top:3px}
+    .snav{padding:12px;flex:1}
+    .sgrp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      color:rgba(168,176,200,.3);padding:10px 8px 4px}
+    .sitem{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;
+      color:#6a78a0;font-size:.865rem;cursor:pointer;transition:all .15s;
+      border:1px solid transparent;margin-bottom:2px;user-select:none}
+    .sitem:hover{background:rgba(255,255,255,.05);color:#e2e8f8}
+    .sitem.on{background:rgba(124,92,255,.16);color:#c4b5ff;border-color:rgba(124,92,255,.28)}
+    .sico{width:16px;text-align:center;font-size:13px;flex-shrink:0}
+    .sfoot{padding:14px 20px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;gap:8px}
+    .sfoot-r{display:flex;justify-content:space-between;align-items:center}
+    .sfoot a{font-size:.8rem;color:#6a78a0;text-decoration:none}
+    .sfoot a:hover{color:#e2e8f8}
+    #refreshBtn{padding:5px 13px;border-radius:9px;font-size:.78rem;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);color:#a0a8c0;cursor:pointer;transition:all .15s}
+    #refreshBtn:hover{background:rgba(255,255,255,.1);color:#e2e8f8}
+    .lockbtn{background:none;border:none;font-size:.78rem;color:rgba(168,176,200,.35);cursor:pointer;text-align:left;transition:color .15s}
+    .lockbtn:hover{color:#ff6b6b}
 
     /* Main */
-    .a-main { padding: 38px 42px; }
-    @media (max-width:860px) { .a-main { padding: 24px 18px; } }
+    .main{padding:36px 40px;overflow-y:auto}
+    @media(max-width:800px){.main{padding:22px 16px}}
 
     /* Page header */
-    .pg-hd { margin-bottom: 28px; }
-    .pg-hd h1 { font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 900; letter-spacing: -.045em; background: linear-gradient(135deg, #e2e8f8 30%, #8090c0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 6px; }
-    .pg-hd p { color: #6a78a0; font-size: .88rem; }
+    .pghd{margin-bottom:26px}
+    .pghd h1{font-size:1.75rem;font-weight:900;letter-spacing:-.04em;margin-bottom:5px;
+      background:linear-gradient(135deg,#e2e8f8,#8090c0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .pghd p{color:#6a78a0;font-size:.88rem}
 
     /* Sections */
-    .a-sec { display: none; }
-    .a-sec.visible { display: block; }
+    .sec{display:none}.sec.on{display:block}
 
-    /* Stat cards */
-    .sg { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
-    @media (max-width:1000px) { .sg { grid-template-columns: repeat(2,1fr); } }
-    .sc {
-      background: rgba(10,13,24,.75); border: 1px solid rgba(255,255,255,.075);
-      border-radius: 20px; padding: 22px 20px; position: relative; overflow: hidden;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .sc::after { content:''; position:absolute; inset:0; background: radial-gradient(circle at 80% 15%, rgba(124,92,255,.07), transparent 55%); pointer-events:none; }
-    .sc:hover { border-color: rgba(124,92,255,.28); box-shadow: 0 8px 36px rgba(124,92,255,.1); }
-    .sc-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5060a0; margin-bottom: 10px; }
-    .sc-val { font-family: 'Syne', sans-serif; font-size: 2.1rem; font-weight: 900; letter-spacing: -.045em; line-height: 1; }
-    .sc-sub { font-size: .76rem; color: #5060a0; margin-top: 7px; }
+    /* Stat grid */
+    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+    @media(max-width:900px){.sg{grid-template-columns:repeat(2,1fr)}}
+    .sc{background:rgba(10,13,23,.75);border:1px solid rgba(255,255,255,.075);border-radius:18px;padding:20px 18px;
+      position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+    .sc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 15%,rgba(124,92,255,.07),transparent 55%);pointer-events:none}
+    .sc:hover{border-color:rgba(124,92,255,.28);box-shadow:0 6px 28px rgba(124,92,255,.1)}
+    .slbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#4858a0;margin-bottom:9px}
+    .sval{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1}
+    .ssub{font-size:.75rem;color:#4858a0;margin-top:6px}
 
     /* Panel */
-    .panel { background: rgba(9,12,22,.72); border: 1px solid rgba(255,255,255,.065); border-radius: 20px; margin-bottom: 18px; overflow: hidden; }
-    .ph { padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; align-items: center; gap: 10px; }
-    .ph h3 { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; flex: 1; letter-spacing: -.01em; }
-    .ph .phi { font-size: 15px; }
-    .pb { padding: 20px 22px; }
-    .pdesc { font-size: .82rem; color: #5868a0; margin-bottom: 14px; }
+    .panel{background:rgba(9,11,21,.75);border:1px solid rgba(255,255,255,.065);border-radius:18px;margin-bottom:16px;overflow:hidden}
+    .ph{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px}
+    .ph h3{font-size:.92rem;font-weight:800;flex:1}
+    .pb{padding:18px 20px}
+    .pdesc{font-size:.82rem;color:#5060a0;margin-bottom:13px}
 
-    /* Tables */
-    .tw { overflow-x: auto; }
-    table.t { width: 100%; border-collapse: collapse; font-size: .83rem; }
-    table.t th { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4858a0; padding: 10px 14px; text-align: left; background: rgba(0,0,0,.3); border-bottom: 1px solid rgba(255,255,255,.045); white-space: nowrap; }
-    table.t td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.032); color: #7888b0; vertical-align: middle; }
-    table.t td.hi { color: #e2e8f8; font-weight: 600; }
-    table.t tr:last-child td { border-bottom: none; }
-    table.t tr:hover td { background: rgba(124,92,255,.04); }
-    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .04em; }
-    .tg { background: rgba(126,231,135,.1); color: #7ee787; border: 1px solid rgba(126,231,135,.2); }
-    .tr { background: rgba(255,107,107,.1); color: #ff6b6b; border: 1px solid rgba(255,107,107,.2); }
-    .ty { background: rgba(255,204,102,.1); color: #ffcc66; border: 1px solid rgba(255,204,102,.2); }
-    .tp { background: rgba(124,92,255,.14); color: #c4b5ff; border: 1px solid rgba(124,92,255,.25); }
+    /* Table */
+    .tw{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4050a0;
+      padding:9px 13px;text-align:left;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.045);white-space:nowrap}
+    td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.03);color:#7080b0;vertical-align:middle}
+    td.hi{color:#e2e8f8;font-weight:600}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(124,92,255,.04)}
+    .tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:.7rem;font-weight:700}
+    .tg{background:rgba(126,231,135,.1);color:#7ee787;border:1px solid rgba(126,231,135,.2)}
+    .tr{background:rgba(255,107,107,.1);color:#ff6b6b;border:1px solid rgba(255,107,107,.2)}
 
     /* Forms */
-    .fr { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-    .fg { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
-    .fg label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5060a0; }
-    .fg input, .fg select, input.fi, select.fi {
-      padding: 11px 14px; background: rgba(255,255,255,.042);
-      border: 1px solid rgba(255,255,255,.085); border-radius: 12px;
-      color: #e2e8f8; font-size: .87rem; outline: none;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .fg input:focus, .fg select:focus, input.fi:focus { border-color: rgba(124,92,255,.5); box-shadow: 0 0 0 3px rgba(124,92,255,.12); }
+    .fr{display:flex;gap:11px;flex-wrap:wrap;align-items:flex-end}
+    .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:170px}
+    .fg label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#4858a0}
+    input.fi,select.fi{padding:10px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.085);
+      border-radius:11px;color:#e2e8f8;font-size:.87rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+    input.fi:focus,select.fi:focus{border-color:rgba(124,92,255,.5);box-shadow:0 0 0 3px rgba(124,92,255,.12)}
 
     /* Buttons */
-    .ab { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 18px; border-radius: 12px; font-size: .84rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #b0b8d8; transition: all .15s; white-space: nowrap; }
-    .ab:hover { background: rgba(255,255,255,.1); color: #fff; transform: translateY(-1px); }
-    .ab:active { transform: translateY(0); opacity: .85; }
-    .ab.pri { background: linear-gradient(135deg, #7c5cff, #9a7bff); border: none; color: #fff; box-shadow: 0 6px 24px rgba(124,92,255,.4); }
-    .ab.pri:hover { box-shadow: 0 10px 36px rgba(124,92,255,.6); }
-    .ab.sm { padding: 7px 13px; font-size: .77rem; border-radius: 9px; }
-    .ab.dng { background: rgba(255,107,107,.1); border-color: rgba(255,107,107,.2); color: #ff8a8a; }
-    .ab.dng:hover { background: rgba(255,107,107,.2); }
-
-    /* JSON pre */
-    pre.json { background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.75; color: #7080b0; overflow-x: auto; }
-    details summary { cursor: pointer; font-size: .82rem; color: #5868a0; padding: 2px 0; user-select: none; }
-    details summary:hover { color: #a0b0d0; }
+    .ab{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;
+      font-size:.83rem;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.05);color:#b0b8d8;transition:all .15s;white-space:nowrap}
+    .ab:hover{background:rgba(255,255,255,.1);color:#fff;transform:translateY(-1px)}
+    .ab:active{transform:translateY(0);opacity:.85}
+    .ab.pri{background:linear-gradient(135deg,#7c5cff,#9a7bff);border:none;color:#fff;box-shadow:0 5px 20px rgba(124,92,255,.4)}
+    .ab.pri:hover{box-shadow:0 9px 32px rgba(124,92,255,.6)}
+    .ab.sm{padding:6px 11px;font-size:.76rem;border-radius:8px}
+    .ab.dng{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.2);color:#ff8a8a}
+    .ab.dng:hover{background:rgba(255,107,107,.2)}
 
     /* Ops */
-    .og { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
-    @media (max-width:700px) { .og { grid-template-columns: 1fr; } }
-    .oc { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.065); border-radius: 16px; padding: 18px; }
-    .oc-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4858a0; margin-bottom: 8px; }
-    .oc-val { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; }
-    .oc-sub { font-size: .8rem; color: #5868a0; margin-bottom: 12px; }
-    .bc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .og{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:13px}
+    @media(max-width:650px){.og{grid-template-columns:1fr}}
+    .oc{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.065);border-radius:14px;padding:16px}
+    .oclbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#4050a0;margin-bottom:7px}
+    .ocval{font-size:1.1rem;font-weight:800;margin-bottom:3px}
+    .ocsub{font-size:.78rem;color:#5060a0;margin-bottom:10px}
+    .bc{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+
+    /* JSON */
+    pre{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:12px;
+      padding:14px;font-family:monospace;font-size:11px;line-height:1.7;color:#6070a0;overflow-x:auto}
+    details summary{cursor:pointer;font-size:.82rem;color:#5060a0;user-select:none}
+    details summary:hover{color:#a0b0d0}
+    #adstatus{font-size:.8rem;color:#6a78a0;padding:4px 0}
   </style>
 </head>
 <body>
 
-<!-- Gate -->
-<div id="adminGate">
-  <div class="gate-card">
-    <div class="gate-logo"></div>
+<div id="gate">
+  <div class="gc">
+    <div class="glogo"></div>
     <h2>Admin Access</h2>
     <p>Enter your admin key to unlock the dashboard.</p>
-    <div class="gate-iw">
-      <input id="gateKey" type="password" placeholder="••••••••••••••••" autocomplete="off" />
-      <button type="button" onclick="toggleGateVis(this)">👁</button>
+    <div class="giw">
+      <input id="gkey" type="password" placeholder="••••••••••••••••" autocomplete="off"/>
+      <button type="button" onclick="toggleVis()">👁</button>
     </div>
-    <button class="gate-btn" id="gateBtn">Unlock Dashboard →</button>
-    <div id="gateMsg"></div>
+    <button class="gbtn" onclick="tryEnter()">Unlock Dashboard →</button>
+    <div id="gmsg"></div>
   </div>
 </div>
 
-<!-- Dashboard -->
-<div id="adminDash">
-  <div class="a-layout">
-
-    <aside class="a-sidebar">
-      <div class="sb-brand">
-        <div class="sb-logo"></div>
-        <div>
-          <div class="sb-name">CryptoProp</div>
-          <div class="sb-badge">ADMIN PANEL</div>
-        </div>
+<div id="dash">
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sbrand">
+        <div class="slogo"></div>
+        <div><div class="sname">CryptoProp</div><div class="sbadge">ADMIN</div></div>
       </div>
-
-      <nav class="sb-nav">
-        <div class="sb-grp">Overview</div>
-        <div class="sb-item active" onclick="nav('overview',this)"><span class="sb-ico">📊</span> Dashboard</div>
-
-        <div class="sb-grp" style="margin-top:8px;">Management</div>
-        <div class="sb-item" onclick="nav('accounts',this)"><span class="sb-ico">👥</span> Accounts</div>
-        <div class="sb-item" onclick="nav('payouts',this)"><span class="sb-ico">💸</span> Payouts</div>
-        <div class="sb-item" onclick="nav('kyc',this)"><span class="sb-ico">🪪</span> KYC Queue</div>
-        <div class="sb-item" onclick="nav('ops',this)"><span class="sb-ico">⚙️</span> Ops Console</div>
-
-        <div class="sb-grp" style="margin-top:8px;">Tools</div>
-        <div class="sb-item" onclick="nav('referrals',this)"><span class="sb-ico">🔗</span> Referral Codes</div>
-        <div class="sb-item" onclick="nav('risk',this)"><span class="sb-ico">🚨</span> Risk & Flags</div>
-        <div class="sb-item" onclick="nav('audit',this)"><span class="sb-ico">📋</span> Audit Log</div>
-      </nav>
-
-      <div class="sb-foot">
-        <div class="sb-foot-row">
+      <div class="snav">
+        <div class="sgrp">Overview</div>
+        <div class="sitem on" onclick="nav('overview',this)"><span class="sico">📊</span>Dashboard</div>
+        <div class="sgrp" style="margin-top:6px">Management</div>
+        <div class="sitem" onclick="nav('accounts',this)"><span class="sico">👥</span>Accounts</div>
+        <div class="sitem" onclick="nav('payouts',this)"><span class="sico">💸</span>Payouts</div>
+        <div class="sitem" onclick="nav('kyc',this)"><span class="sico">🪪</span>KYC Queue</div>
+        <div class="sitem" onclick="nav('ops',this)"><span class="sico">⚙️</span>Ops Console</div>
+        <div class="sgrp" style="margin-top:6px">Tools</div>
+        <div class="sitem" onclick="nav('referrals',this)"><span class="sico">🔗</span>Referral Codes</div>
+        <div class="sitem" onclick="nav('risk',this)"><span class="sico">🚨</span>Risk &amp; Flags</div>
+        <div class="sitem" onclick="nav('audit',this)"><span class="sico">📋</span>Audit Log</div>
+      </div>
+      <div class="sfoot">
+        <div class="sfoot-r">
           <a href="dashboard.html">← User view</a>
-          <button id="refresh">↻ Refresh</button>
+          <button id="refreshBtn" onclick="loadAll()">↻ Refresh</button>
         </div>
-        <button class="lock-btn" onclick="lockAdmin()">🔒 Lock session</button>
+        <button class="lockbtn" onclick="lockAdmin()">🔒 Lock session</button>
       </div>
-    </aside>
+    </nav>
 
-    <main class="a-main">
-      <!-- Used by admin.js -->
-      <input id="adminKey" type="hidden" />
-      <button id="saveKey" style="display:none;"></button>
-      <div id="status" style="display:none;"></div>
+    <main class="main">
+      <div id="adstatus"></div>
 
       <!-- Overview -->
-      <div id="section-overview" class="a-sec visible">
-        <div class="pg-hd"><h1>Dashboard</h1><p>Platform-wide overview and live metrics.</p></div>
+      <div id="sec-overview" class="sec on">
+        <div class="pghd"><h1>Dashboard</h1><p>Platform-wide overview and live metrics.</p></div>
         <div class="sg">
-          <div class="sc"><div class="sc-lbl">Total accounts</div><div class="sc-val" id="ovTotal">—</div><div class="sc-sub">All registered traders</div></div>
-          <div class="sc"><div class="sc-lbl">In challenge</div><div class="sc-val" id="ovChallenge">—</div><div class="sc-sub">Active challenge accounts</div></div>
-          <div class="sc"><div class="sc-lbl">Pending payouts</div><div class="sc-val" id="ovPending">—</div><div class="sc-sub">Awaiting approval</div></div>
-          <div class="sc"><div class="sc-lbl">Flagged accounts</div><div class="sc-val" id="ovFlagged">—</div><div class="sc-sub">Multi-account flags</div></div>
+          <div class="sc"><div class="slbl">Total accounts</div><div class="sval" id="ovTotal">—</div><div class="ssub">All registered traders</div></div>
+          <div class="sc"><div class="slbl">In challenge</div><div class="sval" id="ovChallenge">—</div><div class="ssub">Active challenges</div></div>
+          <div class="sc"><div class="slbl">Pending payouts</div><div class="sval" id="ovPending">—</div><div class="ssub">Awaiting approval</div></div>
+          <div class="sc"><div class="slbl">Flagged accounts</div><div class="sval" id="ovFlagged">—</div><div class="ssub">Multi-account flags</div></div>
         </div>
         <div class="panel">
-          <div class="ph"><span class="phi">👥</span><h3>All Accounts</h3></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th>Actions</th>
-            </tr></thead><tbody id="acctBody"></tbody></table>
-          </div>
+          <div class="ph"><span>👥</span><h3>All Accounts</h3></div>
+          <div class="tw"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th>Actions</th></tr></thead><tbody id="acctBody"></tbody></table></div>
         </div>
       </div>
 
       <!-- Accounts -->
-      <div id="section-accounts" class="a-sec">
-        <div class="pg-hd"><h1>Accounts</h1><p>View and manage all registered trader accounts.</p></div>
+      <div id="sec-accounts" class="sec">
+        <div class="pghd"><h1>Accounts</h1><p>All registered trader accounts.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">👥</span><h3>Trader Accounts</h3></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th>Actions</th>
-            </tr></thead><tbody id="acctBody2"></tbody></table>
-          </div>
+          <div class="ph"><span>👥</span><h3>Trader Accounts</h3></div>
+          <div class="tw"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th>Actions</th></tr></thead><tbody id="acctBody2"></tbody></table></div>
         </div>
       </div>
 
       <!-- Payouts -->
-      <div id="section-payouts" class="a-sec">
-        <div class="pg-hd"><h1>Payouts</h1><p>Review and approve payout requests from funded traders.</p></div>
+      <div id="sec-payouts" class="sec">
+        <div class="pghd"><h1>Payouts</h1><p>Review and approve payout requests.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">⏳</span><h3>Pending Queue</h3></div>
-          <div class="pb"><p class="pdesc">One-click approval. All caps and rules enforced server-side.</p></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Time</th><th>Email</th><th>Amount</th><th>Period</th><th>Request ID</th><th></th>
-            </tr></thead><tbody id="queueBody"></tbody></table>
-          </div>
+          <div class="ph"><span>⏳</span><h3>Pending Queue</h3></div>
+          <div class="pb"><p class="pdesc">One-click approval. All caps enforced server-side.</p></div>
+          <div class="tw"><table><thead><tr><th>Time</th><th>Email</th><th>Amount</th><th>Period</th><th>Request ID</th><th></th></tr></thead><tbody id="queueBody"></tbody></table></div>
         </div>
         <div class="panel">
-          <div class="ph"><span class="phi">✅</span><h3>Manual Approve</h3></div>
+          <div class="ph"><span>✅</span><h3>Manual Approve</h3></div>
           <div class="pb">
-            <form id="approveForm">
-              <div class="fr">
-                <div class="fg"><label for="payEmail">Trader email</label><input id="payEmail" class="fi" placeholder="user@email.com" /></div>
-                <div class="fg"><label for="payId">Request ID</label><input id="payId" class="fi" placeholder="req_xxxxxxxx" /></div>
-                <button class="ab pri" type="submit" style="align-self:flex-end;">Approve</button>
-              </div>
-              <div style="font-size:.8rem;color:#ff6b6b;margin-top:8px;" id="approveMsg"></div>
-            </form>
+            <div class="fr">
+              <div class="fg"><label>Trader email</label><input id="payEmail" class="fi" placeholder="user@email.com"/></div>
+              <div class="fg"><label>Request ID</label><input id="payId" class="fi" placeholder="req_xxx"/></div>
+              <button class="ab pri" onclick="doApprove()" style="align-self:flex-end">Approve</button>
+            </div>
+            <div id="approveMsg" style="font-size:.8rem;color:#ff6b6b;margin-top:8px"></div>
           </div>
         </div>
       </div>
 
       <!-- KYC -->
-      <div id="section-kyc" class="a-sec">
-        <div class="pg-hd"><h1>KYC Queue</h1><p>Review identity verification submissions. Payouts require KYC approval.</p></div>
+      <div id="sec-kyc" class="sec">
+        <div class="pghd"><h1>KYC Queue</h1><p>Identity verification submissions.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">🪪</span><h3>Submissions</h3></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th>
-            </tr></thead><tbody id="kycBody"></tbody></table>
-          </div>
+          <div class="ph"><span>🪪</span><h3>Submissions</h3></div>
+          <div class="tw"><table><thead><tr><th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th></tr></thead><tbody id="kycBody"></tbody></table></div>
         </div>
       </div>
 
       <!-- Ops -->
-      <div id="section-ops" class="a-sec">
-        <div class="pg-hd"><h1>Ops Console</h1><p>Search any account and take direct actions. All actions are audited.</p></div>
+      <div id="sec-ops" class="sec">
+        <div class="pghd"><h1>Ops Console</h1><p>Search any account and take direct actions. All actions are audited.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">🔍</span><h3>Account Lookup</h3></div>
+          <div class="ph"><span>🔍</span><h3>Account Lookup</h3></div>
           <div class="pb">
             <div class="fr">
-              <div class="fg"><label for="opsEmail">Trader email</label><input id="opsEmail" class="fi" placeholder="user@email.com" /></div>
-              <button class="ab pri" id="opsLoad" style="align-self:flex-end;">Load Account</button>
-              <button class="ab" id="opsRefresh" style="align-self:flex-end;">↻ Refresh</button>
+              <div class="fg"><label>Trader email</label><input id="opsEmail" class="fi" placeholder="user@email.com"/></div>
+              <button class="ab pri" id="opsLoad" style="align-self:flex-end">Load Account</button>
+              <button class="ab" id="opsRefresh" style="align-self:flex-end">↻</button>
             </div>
           </div>
         </div>
-        <div id="opsCards" style="display:none;">
+        <div id="opsCards" style="display:none">
           <div class="og">
             <div class="oc">
-              <div class="oc-lbl">Account Status</div>
-              <div class="oc-val" id="opsStatus">—</div>
-              <div class="oc-sub" id="opsDetail">No account loaded</div>
+              <div class="oclbl">Status</div>
+              <div class="ocval" id="opsStatus">—</div>
+              <div class="ocsub" id="opsDetail"></div>
               <div class="bc">
                 <button class="ab sm" id="opsFreeze">🔒 Freeze</button>
                 <button class="ab sm" id="opsUnfreeze">🔓 Unfreeze</button>
@@ -328,92 +273,66 @@
               </div>
             </div>
             <div class="oc">
-              <div class="oc-lbl">Emergency Actions</div>
-              <div class="oc-sub">All actions are logged.</div>
-              <div style="display:flex;gap:8px;margin-bottom:10px;">
-                <input id="opsFlattenReason" class="fi" style="flex:1;" placeholder="Flatten reason…" />
+              <div class="oclbl">Emergency</div>
+              <div style="display:flex;gap:8px;margin-bottom:9px">
+                <input id="opsFlattenReason" class="fi" style="flex:1" placeholder="Flatten reason…"/>
                 <button class="ab sm dng" id="opsFlatten">Flatten</button>
               </div>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <button class="ab sm dng" id="opsReset">Reset acct</button>
-                <select id="opsPhase" class="fi" style="flex:1;">
-                  <option value="challenge">challenge</option>
-                  <option value="funded">funded</option>
-                </select>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="ab sm dng" id="opsReset">Reset</button>
+                <select id="opsPhase" class="fi" style="flex:1"><option value="challenge">challenge</option><option value="funded">funded</option></select>
                 <button class="ab sm" id="opsSetPhase">Set phase</button>
               </div>
             </div>
           </div>
-          <div class="panel" style="margin-top:14px;">
-            <div class="pb">
-              <details><summary>Raw account JSON</summary><pre class="json" id="opsJson" style="margin-top:12px;"></pre></details>
-            </div>
+          <div class="panel" style="margin-top:13px">
+            <div class="pb"><details><summary>Raw account JSON</summary><pre id="opsJson" style="margin-top:11px"></pre></details></div>
           </div>
         </div>
       </div>
 
       <!-- Referrals -->
-      <div id="section-referrals" class="a-sec">
-        <div class="pg-hd"><h1>Referral Codes</h1><p>Create and manage referral codes. Only admins can create codes.</p></div>
+      <div id="sec-referrals" class="sec">
+        <div class="pghd"><h1>Referral Codes</h1><p>Create and manage referral codes.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">➕</span><h3>Create New Code</h3></div>
+          <div class="ph"><span>➕</span><h3>Create Code</h3></div>
           <div class="pb">
-            <form id="refCreate">
-              <div class="fr">
-                <div class="fg" style="max-width:180px;"><label>Code</label><input id="refNewCode" class="fi" placeholder="AUTO-GENERATE" /></div>
-                <div class="fg" style="max-width:150px;"><label>Max uses</label><input id="refMaxUses" class="fi" placeholder="Unlimited" /></div>
-                <div class="fg" style="max-width:160px;"><label>Commission</label><input id="refCommission" class="fi" placeholder="e.g. 0.20" /></div>
-                <div class="fg"><label>Note</label><input id="refNote" class="fi" placeholder="Optional note" /></div>
-                <button class="ab pri" type="submit" style="align-self:flex-end;">Create</button>
-              </div>
-              <div style="font-size:.8rem;color:#7ee787;margin-top:8px;" id="refCreateMsg"></div>
-            </form>
+            <div class="fr">
+              <div class="fg" style="max-width:170px"><label>Code</label><input id="refNewCode" class="fi" placeholder="AUTO"/></div>
+              <div class="fg" style="max-width:140px"><label>Max uses</label><input id="refMaxUses" class="fi" placeholder="∞"/></div>
+              <div class="fg" style="max-width:150px"><label>Commission</label><input id="refCommission" class="fi" placeholder="0.20"/></div>
+              <div class="fg"><label>Note</label><input id="refNote" class="fi" placeholder="Optional"/></div>
+              <button class="ab pri" onclick="doCreateRef()" style="align-self:flex-end">Create</button>
+            </div>
+            <div id="refCreateMsg" style="font-size:.8rem;color:#7ee787;margin-top:8px"></div>
           </div>
         </div>
         <div class="panel">
-          <div class="ph"><span class="phi">📋</span><h3>All Codes</h3></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Code</th><th>Uses</th><th>Max</th><th>Commission</th><th>Active</th><th>Created</th><th>Note</th><th></th>
-            </tr></thead><tbody id="refBody"></tbody></table>
-          </div>
-          <div class="pb" style="padding-top:14px;">
-            <details><summary>Recent referral uses</summary><pre class="json" id="refUses" style="margin-top:12px;"></pre></details>
-          </div>
+          <div class="ph"><span>📋</span><h3>All Codes</h3></div>
+          <div class="tw"><table><thead><tr><th>Code</th><th>Uses</th><th>Max</th><th>Commission</th><th>Active</th><th>Created</th><th>Note</th><th></th></tr></thead><tbody id="refBody"></tbody></table></div>
+          <div class="pb" style="padding-top:13px"><details><summary>Recent uses</summary><pre id="refUses" style="margin-top:11px"></pre></details></div>
         </div>
       </div>
 
       <!-- Risk -->
-      <div id="section-risk" class="a-sec">
-        <div class="pg-hd"><h1>Risk & Flags</h1><p>Multi-account detection and strategy similarity heuristics.</p></div>
+      <div id="sec-risk" class="sec">
+        <div class="pghd"><h1>Risk &amp; Flags</h1><p>Multi-account detection and strategy similarity.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">🚨</span><h3>Multi-Account Flags</h3></div>
-          <div class="pb">
-            <p class="pdesc">Heuristics only — shared devices and NAT/VPN IPs can trigger false positives.</p>
-            <div id="flagsBox" style="color:#7888b0;font-size:.88rem;">Loading…</div>
-          </div>
+          <div class="ph"><span>🚨</span><h3>Multi-Account Flags</h3></div>
+          <div class="pb"><p class="pdesc">Heuristics only — shared devices/IPs can be false positives.</p><div id="flagsBox" style="color:#7080b0;font-size:.88rem">Loading…</div></div>
         </div>
         <div class="panel">
-          <div class="ph"><span class="phi">🔍</span><h3>Strategy Similarity</h3></div>
-          <div class="pb"><p class="pdesc">High similarity may indicate coordinated or copied trading.</p></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Score</th><th>Account A</th><th>Account B</th><th>A sig size</th><th>B sig size</th>
-            </tr></thead><tbody id="simBody"></tbody></table>
-          </div>
+          <div class="ph"><span>🔍</span><h3>Strategy Similarity</h3></div>
+          <div class="tw"><table><thead><tr><th>Score</th><th>Account A</th><th>Account B</th><th>A trades</th><th>B trades</th></tr></thead><tbody id="simBody"></tbody></table></div>
         </div>
       </div>
 
       <!-- Audit -->
-      <div id="section-audit" class="a-sec">
-        <div class="pg-hd"><h1>Audit Log</h1><p>Complete history of all admin actions. Immutable.</p></div>
+      <div id="sec-audit" class="sec">
+        <div class="pghd"><h1>Audit Log</h1><p>Complete immutable history of all admin actions.</p></div>
         <div class="panel">
-          <div class="ph"><span class="phi">📋</span><h3>Recent Actions</h3></div>
-          <div class="tw">
-            <table class="t"><thead><tr>
-              <th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Meta</th><th>IP</th>
-            </tr></thead><tbody id="auditBody"></tbody></table>
-          </div>
+          <div class="ph"><span>📋</span><h3>Recent Actions</h3></div>
+          <div class="tw"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Meta</th><th>IP</th></tr></thead><tbody id="auditBody"></tbody></table></div>
         </div>
       </div>
 
@@ -422,76 +341,267 @@
 </div>
 
 <script>
-  function nav(name, el) {
-    document.querySelectorAll(".a-sec").forEach(s => s.classList.remove("visible"));
-    document.querySelectorAll(".sb-item").forEach(n => n.classList.remove("active"));
-    document.getElementById("section-" + name)?.classList.add("visible");
-    el?.classList.add("active");
+// ── Helpers ──
+function $(id){return document.getElementById(id)}
+function money(n){try{return new Intl.NumberFormat(undefined,{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n)}catch{return"$"+Math.round(n)}}
+function pct(x){return(Number(x||0)*100).toFixed(2)+"%"}
+function getKey(){return localStorage.getItem("cp_admin_key")||""}
+
+async function api(url,opts={}){
+  const h=opts.headers||{};
+  h["x-admin-key"]=getKey();
+  const res=await fetch(url,{...opts,headers:h});
+  const d=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(d.error||"Request failed");
+  return d;
+}
+
+// ── Gate ──
+function toggleVis(){
+  const i=$("gkey");
+  i.type=i.type==="password"?"text":"password";
+}
+
+async function tryEnter(){
+  const key=$("gkey").value.trim();
+  const msg=$("gmsg");
+  if(!key){msg.style.color="#ff6b6b";msg.textContent="Enter your admin key.";return}
+  msg.style.color="#7a85a8";msg.textContent="Verifying…";
+  try{
+    const res=await fetch("/api/admin/overview",{headers:{"x-admin-key":key}});
+    if(!res.ok)throw new Error();
+    localStorage.setItem("cp_admin_key",key);
+    unlock(res);
+  }catch{
+    msg.style.color="#ff6b6b";msg.textContent="Invalid admin key.";
+    $("gkey").value="";
   }
+}
 
-  function lockAdmin() {
-    localStorage.removeItem("cp_admin_key");
-    document.getElementById("adminDash").style.display = "none";
-    document.getElementById("adminGate").style.display = "flex";
-    document.getElementById("gateKey").value = "";
-    document.getElementById("gateMsg").textContent = "";
-  }
+function unlock(res){
+  $("gate").style.display="none";
+  $("dash").style.display="";
+  parseOverview(res);
+  loadAll();
+  bindEvents();
+}
 
-  function toggleGateVis(btn) {
-    const el = document.getElementById("gateKey");
-    const show = el.type === "password";
-    el.type = show ? "text" : "password";
-    btn.textContent = show ? "🙈" : "👁";
-  }
+function lockAdmin(){
+  localStorage.removeItem("cp_admin_key");
+  $("gate").style.display="flex";
+  $("dash").style.display="none";
+  $("gkey").value="";$("gmsg").textContent="";
+}
 
-  async function tryEnter() {
-    const key = document.getElementById("gateKey").value.trim();
-    const msg = document.getElementById("gateMsg");
-    if (!key) { msg.style.color="#ff6b6b"; msg.textContent="Please enter your admin key."; return; }
-    msg.style.color = "#7a85a8"; msg.textContent = "Verifying…";
-    try {
-      const res = await fetch("/api/admin/overview", { headers: { "x-admin-key": key } });
-      if (!res.ok) throw new Error();
-      localStorage.setItem("cp_admin_key", key);
-      document.getElementById("adminKey").value = key;
-      document.getElementById("adminGate").style.display = "none";
-      document.getElementById("adminDash").style.display = "";
-      loadStats(res);
-      if(window.adminInit) window.adminInit();
-    } catch(e) {
-      msg.style.color = "#ff6b6b"; msg.textContent = "Invalid admin key.";
-      document.getElementById("gateKey").value = "";
-    }
-  }
+// Auto-unlock
+(async()=>{
+  const saved=localStorage.getItem("cp_admin_key");
+  if(!saved)return;
+  try{
+    const res=await fetch("/api/admin/overview",{headers:{"x-admin-key":saved}});
+    if(res.ok){unlock(res)}else{localStorage.removeItem("cp_admin_key")}
+  }catch{}
+})();
 
-  async function loadStats(res) {
-    try {
-      const d = await res.json();
-      if (d.totalAccounts   != null) document.getElementById("ovTotal").textContent     = d.totalAccounts;
-      if (d.inChallenge     != null) document.getElementById("ovChallenge").textContent = d.inChallenge;
-      if (d.pendingPayouts  != null) document.getElementById("ovPending").textContent   = d.pendingPayouts;
-      if (d.flaggedAccounts != null) document.getElementById("ovFlagged").textContent   = d.flaggedAccounts;
-    } catch(e) {}
-  }
+$("gkey").addEventListener("keydown",e=>{if(e.key==="Enter")tryEnter()});
 
-  document.getElementById("gateBtn").addEventListener("click", tryEnter);
-  document.getElementById("gateKey").addEventListener("keydown", e => { if (e.key==="Enter") tryEnter(); });
+// ── Nav ──
+function nav(name,el){
+  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));
+  document.querySelectorAll(".sitem").forEach(n=>n.classList.remove("on"));
+  $("sec-"+name)?.classList.add("on");
+  el?.classList.add("on");
+}
 
-  (async () => {
-    const saved = localStorage.getItem("cp_admin_key");
-    if (!saved) return;
-    try {
-      const res = await fetch("/api/admin/overview", { headers: { "x-admin-key": saved } });
-      if (res.ok) {
-        document.getElementById("adminKey").value = saved;
-        document.getElementById("adminGate").style.display = "none";
-        document.getElementById("adminDash").style.display = "";
-        loadStats(res);
-        if(window.adminInit) window.adminInit();
-      } else { localStorage.removeItem("cp_admin_key"); }
-    } catch(e) {}
-  })();
+// ── Data loading ──
+async function parseOverview(res){
+  try{
+    const d=await res.clone().json();
+    if(d.totalAccounts!=null)$("ovTotal").textContent=d.totalAccounts;
+    if(d.inChallenge!=null)$("ovChallenge").textContent=d.inChallenge;
+    if(d.pendingPayouts!=null)$("ovPending").textContent=d.pendingPayouts;
+    if(d.flaggedAccounts!=null)$("ovFlagged").textContent=d.flaggedAccounts;
+  }catch{}
+}
+
+async function loadAccounts(){
+  try{
+    const d=await api("/api/admin/overview");
+    if(d.totalAccounts!=null)$("ovTotal").textContent=d.totalAccounts;
+    if(d.inChallenge!=null)$("ovChallenge").textContent=d.inChallenge;
+    if(d.pendingPayouts!=null)$("ovPending").textContent=d.pendingPayouts;
+    if(d.flaggedAccounts!=null)$("ovFlagged").textContent=d.flaggedAccounts;
+    const rows=d.accounts||[];
+    const html=rows.length===0
+      ?`<tr><td colspan="8" style="text-align:center;padding:20px;color:#4050a0">No accounts yet.</td></tr>`
+      :rows.map(a=>`<tr>
+        <td class="hi">${a.email}</td>
+        <td>${a.phase}${a.failed?" <span style='color:#ff6b6b;font-size:.75rem'>(FAILED)</span>":""}</td>
+        <td>${money(a.equity)}</td><td>${pct(a.dayDD)}</td><td>${pct(a.totalDD)}</td>
+        <td>${money(a.withdrawable)}</td>
+        <td>${a.frozen?'<span class="tag tr">Yes</span>':'<span class="tag tg">No</span>'}</td>
+        <td><button class="ab sm" data-freeze="${a.email}" data-state="${a.frozen?"0":"1"}">${a.frozen?"Unfreeze":"Freeze"}</button></td>
+      </tr>`).join("");
+    if($("acctBody"))$("acctBody").innerHTML=html;
+    if($("acctBody2"))$("acctBody2").innerHTML=html;
+  }catch(e){console.error(e)}
+}
+
+async function loadQueue(){
+  const b=$("queueBody");if(!b)return;
+  try{
+    const d=await api("/api/admin/payout/pending");
+    const rows=d.pending||[];
+    b.innerHTML=rows.length===0
+      ?`<tr><td colspan="6" style="text-align:center;padding:20px;color:#4050a0">No pending payouts.</td></tr>`
+      :rows.map(r=>`<tr>
+        <td>${r.time?new Date(r.time).toLocaleString():"—"}</td>
+        <td class="hi">${r.email}</td><td>${money(r.amount)}</td><td>${r.period||"—"}</td>
+        <td style="font-family:monospace;font-size:.78rem">${r.id}</td>
+        <td><button class="ab sm pri" data-approve-email="${r.email}" data-approve-id="${r.id}">Approve</button></td>
+      </tr>`).join("");
+  }catch{}
+}
+
+async function loadFlags(){
+  const b=$("flagsBox");if(!b)return;
+  try{
+    const d=await api("/api/admin/risk/flags");
+    const dev=d.deviceFlags||[],ips=d.ipFlags||[];
+    b.innerHTML=(dev.length?`<div style="margin-bottom:10px"><strong>Shared devices</strong><ul style="margin:6px 0 0 18px">${dev.slice(0,20).map(x=>`<li><code>${x.device}</code> → ${x.emails.join(", ")}</li>`).join("")}</ul></div>`:`<div style="color:#4050a0">No shared-device flags.</div>`)
+      +(ips.length?`<div style="margin-top:10px"><strong>Shared IPs</strong><ul style="margin:6px 0 0 18px">${ips.slice(0,20).map(x=>`<li><code>${x.ip}</code> → ${x.emails.join(", ")}</li>`).join("")}</ul></div>`:`<div style="color:#4050a0;margin-top:10px">No shared-IP flags.</div>`);
+  }catch{}
+}
+
+async function loadKyc(){
+  const b=$("kycBody");if(!b)return;
+  try{
+    const d=await api("/api/admin/kyc/pending");
+    const rows=d.pending||[];
+    b.innerHTML=rows.length===0
+      ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:#4050a0">No pending KYC.</td></tr>`
+      :rows.map(r=>`<tr>
+        <td>${r.submittedAt?new Date(r.submittedAt).toLocaleString():"—"}</td>
+        <td class="hi">${r.email}</td><td>${r.profile?.name||"—"}</td><td>${r.profile?.dob||"—"}</td>
+        <td>${r.profile?.address||"—"}</td><td>${r.profile?.docType||"—"}</td>
+        <td style="white-space:nowrap">
+          <button class="ab sm pri" data-kyc="${r.email}" data-status="approved">Approve</button>
+          <button class="ab sm" data-kyc="${r.email}" data-status="rejected">Reject</button>
+        </td></tr>`).join("");
+  }catch{}
+}
+
+async function loadSimilarity(){
+  const b=$("simBody");if(!b)return;
+  try{
+    const d=await api("/api/admin/risk/similarity");
+    const rows=d.pairs||[];
+    b.innerHTML=rows.length===0
+      ?`<tr><td colspan="5" style="text-align:center;padding:20px;color:#4050a0">No high-similarity pairs.</td></tr>`
+      :rows.slice(0,30).map(r=>`<tr><td>${(r.score*100).toFixed(1)}%</td><td>${r.a}</td><td>${r.b}</td><td>${r.aTrades}</td><td>${r.bTrades}</td></tr>`).join("");
+  }catch{}
+}
+
+async function loadAudit(){
+  const b=$("auditBody");if(!b)return;
+  try{
+    const d=await api("/api/admin/audit?limit=200");
+    const rows=d.audit||[];
+    b.innerHTML=rows.length===0
+      ?`<tr><td colspan="6" style="text-align:center;padding:20px;color:#4050a0">No audit entries.</td></tr>`
+      :rows.map(r=>`<tr>
+        <td style="white-space:nowrap;font-size:.78rem">${r.time?new Date(r.time).toLocaleString():"—"}</td>
+        <td>${r.actor||"admin"}</td><td class="hi">${r.action||"—"}</td><td>${r.targetEmail||"—"}</td>
+        <td style="font-size:.75rem">${r.meta?JSON.stringify(r.meta):""}</td>
+        <td style="font-size:.75rem">${r.ip||""}</td></tr>`).join("");
+  }catch{}
+}
+
+async function loadOps(email){
+  const box=$("opsCards"),st=$("opsStatus"),det=$("opsDetail"),pre=$("opsJson");
+  if(!box||!st)return;
+  try{
+    const d=await api(`/api/admin/account?email=${encodeURIComponent(email)}`);
+    const a=d.account;
+    box.style.display="";
+    const locked=a.lockedUntil&&new Date(a.lockedUntil).getTime()>Date.now();
+    st.textContent=`${(a.challengePhase||"challenge").toUpperCase()} • ${money(a.equity)}${a.challengeFailed?" • FAILED":""}${a.frozen?" • FROZEN":""}${locked?" • LOCKED":""}`;
+    if(det)det.textContent=`DD day ${pct(a.dayDD)} • trailing ${pct(a.totalDD)} • withdrawable ${money(a.withdrawable||0)}`;
+    if(pre)pre.textContent=JSON.stringify(a,null,2);
+  }catch(e){alert(e.message)}
+}
+
+async function loadReferrals(){
+  const b=$("refBody"),u=$("refUses");if(!b)return;
+  try{
+    const d=await api("/api/admin/referral/list");
+    const refs=d.referrals||[],uses=d.uses||[];
+    b.innerHTML=refs.length===0
+      ?`<tr><td colspan="8" style="text-align:center;padding:20px;color:#4050a0">No codes yet.</td></tr>`
+      :refs.map(r=>`<tr>
+        <td style="font-family:monospace">${r.code}</td><td>${r.uses||0}</td><td>${r.maxUses??"—"}</td>
+        <td>${Number(r.commissionPct||0).toFixed(2)}</td>
+        <td>${r.active!==false?'<span class="tag tg">Yes</span>':'<span class="tag tr">No</span>'}</td>
+        <td style="white-space:nowrap;font-size:.78rem">${r.createdAt?new Date(r.createdAt).toLocaleString():"—"}</td>
+        <td style="font-size:.78rem">${r.note||""}</td>
+        <td><button class="ab sm" data-ref-toggle="${r.code}" data-active="${r.active!==false?"0":"1"}">${r.active!==false?"Disable":"Enable"}</button></td>
+      </tr>`).join("");
+    if(u)u.textContent=uses.slice(0,50).map(x=>`${x.time} • ${x.code} • ${x.refereeEmail} • $${x.amount}`).join("\n")||"No uses yet.";
+  }catch{}
+}
+
+async function loadAll(){
+  await Promise.allSettled([loadAccounts(),loadQueue(),loadFlags(),loadKyc(),loadSimilarity(),loadAudit(),loadReferrals()]);
+}
+
+// ── Actions ──
+async function doApprove(){
+  const msg=$("approveMsg"),email=$("payEmail")?.value.trim(),id=$("payId")?.value.trim();
+  if(msg)msg.textContent="Approving…";
+  try{await api("/api/admin/payout/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,id})});if(msg)msg.textContent="Approved ✅";await loadAll();}
+  catch(e){if(msg)msg.textContent=e.message;}
+}
+
+async function doCreateRef(){
+  const msg=$("refCreateMsg");
+  if(msg)msg.textContent="Creating…";
+  try{
+    const r=await api("/api/admin/referral/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      code:$("refNewCode")?.value.trim()||null,
+      maxUses:$("refMaxUses")?.value?Number($("refMaxUses").value):null,
+      commissionPct:$("refCommission")?.value?Number($("refCommission").value):null,
+      note:$("refNote")?.value.trim()||""
+    })});
+    if(msg)msg.textContent=`Created ✅ ${r.referral?.code||""}`;
+    await loadReferrals();
+  }catch(e){if(msg)msg.textContent=e.message;}
+}
+
+// ── Event bindings (called once after unlock) ──
+function bindEvents(){
+  $("opsLoad")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;localStorage.setItem("cp_ops_email",e);await loadOps(e);});
+  $("opsRefresh")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim()||localStorage.getItem("cp_ops_email")||"";if(!e)return;if($("opsEmail"))$("opsEmail").value=e;await loadOps(e);});
+  $("opsFreeze")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,frozen:true})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+  $("opsUnfreeze")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,frozen:false})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+  $("opsUnlockDaily")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/unlock-daily",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+  $("opsFlatten")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;const reason=$("opsFlattenReason")?.value.trim()||"";try{await api("/api/admin/account/flatten",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,reason})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+  $("opsReset")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;if(!confirm("Reset this account?"))return;try{await api("/api/admin/account/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+  $("opsSetPhase")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;const phase=$("opsPhase")?.value||"challenge";try{await api("/api/admin/account/set-phase",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,phase})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
+
+  const savedOps=localStorage.getItem("cp_ops_email");
+  if(savedOps&&$("opsEmail"))$("opsEmail").value=savedOps;
+
+  document.addEventListener("click",async e=>{
+    const ab=e.target.closest("[data-approve-email]");
+    if(ab){try{await api("/api/admin/payout/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ab.dataset.approveEmail,id:ab.dataset.approveId})});await loadAll();}catch(err){alert(err.message);}return;}
+    const fb=e.target.closest("[data-freeze]");
+    if(fb){try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:fb.dataset.freeze,frozen:fb.dataset.state==="1"})});await loadAll();}catch(err){alert(err.message);}return;}
+    const kb=e.target.closest("[data-kyc]");
+    if(kb){try{await api("/api/admin/kyc/set-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.status})});await loadKyc();}catch(err){alert(err.message);}return;}
+    const rb=e.target.closest("[data-ref-toggle]");
+    if(rb){try{await api("/api/admin/referral/set-active",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:rb.dataset.refToggle,active:rb.dataset.active==="1"})});await loadReferrals();}catch(err){alert(err.message);}return;}
+  });
+}
 </script>
-<script src="admin.js"></script>
 </body>
 </html>
