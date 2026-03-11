@@ -11,17 +11,20 @@
     <div class="card glass" style="padding:18px;">
       <h1 style="margin:0 0 8px 0;">CryptoProp</h1>
       <p class="muted small" style="margin-top:0;">Create an account or sign in to continue.</p>
+
       <div style="display:flex; gap:10px; margin-top:14px;">
         <button class="btn primary" id="tabLogin" type="button">Login</button>
         <button class="btn" id="tabSignup" type="button">Sign up</button>
       </div>
+
+      <!-- Login box -->
       <div id="loginBox" style="margin-top:14px;">
         <label class="tiny muted">Email</label>
         <input class="input" id="loginEmail" placeholder="you@email.com" />
         <label class="tiny muted" style="margin-top:10px;">Password</label>
         <div style="position:relative; display:flex; align-items:center;">
-          <input class="input" id="loginPass" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
-          <button type="button" onclick="toggleVis('loginPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+          <input class="input" id="loginPass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('loginPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">&#128065;</button>
         </div>
         <button class="btn primary" id="loginBtn" style="margin-top:12px; width:100%;">Login</button>
         <div style="text-align:right; margin-top:8px;">
@@ -38,20 +41,23 @@
         <button class="btn primary" id="forgotBtn" style="margin-top:12px; width:100%;">Send reset link</button>
         <div class="tiny muted" id="forgotMsg" style="margin-top:10px;"></div>
         <div style="margin-top:10px;">
-          <a href="#" id="backToLogin" class="tiny muted" style="color:var(--accent,#7c5cff); text-decoration:none; font-size:12px;">← Back to login</a>
+          <a href="#" id="backToLogin" class="tiny muted" style="color:var(--accent,#7c5cff); text-decoration:none; font-size:12px;">&larr; Back to login</a>
         </div>
+      </div>
+
+      <!-- Sign up box -->
       <div id="signupBox" style="margin-top:14px; display:none;">
         <label class="tiny muted">Email</label>
         <input class="input" id="signupEmail" placeholder="you@email.com" />
         <label class="tiny muted" style="margin-top:10px;">Password (min 8 chars)</label>
         <div style="position:relative; display:flex; align-items:center;">
-          <input class="input" id="signupPass" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
-          <button type="button" onclick="toggleVis('signupPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+          <input class="input" id="signupPass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('signupPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">&#128065;</button>
         </div>
         <label class="tiny muted" style="margin-top:10px;">Confirm password</label>
         <div style="position:relative; display:flex; align-items:center;">
-          <input class="input" id="signupConfirm" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
-          <button type="button" onclick="toggleVis('signupConfirm', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+          <input class="input" id="signupConfirm" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('signupConfirm', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">&#128065;</button>
         </div>
         <button class="btn primary" id="signupBtn" style="margin-top:12px; width:100%;">Create account</button>
         <div class="tiny muted" id="signupMsg" style="margin-top:10px;"></div>
@@ -62,6 +68,8 @@
           <div class="tiny muted" id="verifyMsg" style="margin-top:8px;"></div>
         </div>
       </div>
+
+      <!-- Admin access -->
       <details style="margin-top:14px;">
         <summary class="muted small">Admin access</summary>
         <div class="muted small" style="margin-top:8px;">If you have an admin key, log in first, then elevate.</div>
@@ -71,13 +79,14 @@
       </details>
     </div>
   </div>
+
   <script>
     function toggleVis(id, btn) {
       const el = document.getElementById(id);
       if (!el) return;
-      const show = el.type === "password";
-      el.type = show ? "text" : "password";
-      btn.textContent = show ? "🙈" : "👁";
+      const isPassword = el.type === "password";
+      el.type = isPassword ? "text" : "password";
+      btn.textContent = isPassword ? "\uD83D\uDE48" : "\uD83D\uDC41";
     }
   </script>
   <script type="module" src="/auth.js"></script>
