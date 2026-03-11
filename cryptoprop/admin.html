@@ -130,6 +130,7 @@ details summary:hover{color:#9098c0}
     <button class="nav-btn" onclick="show('kyc',this)">🪪 KYC</button>
     <button class="nav-btn" onclick="show('ops',this)">⚙️ Ops Console</button>
     <button class="nav-btn" onclick="show('referrals',this)">🔗 Referrals</button>
+    <button class="nav-btn" onclick="show('promos',this)">🎟️ Promo Codes</button>
     <button class="nav-btn" onclick="show('risk',this)">🚨 Risk</button>
     <button class="nav-btn" onclick="show('audit',this)">📋 Audit Log</button>
     <div class="side-foot">
@@ -251,6 +252,48 @@ details summary:hover{color:#9098c0}
             <details><summary>Raw JSON</summary><pre id="ops-json" style="margin-top:10px"></pre></details>
           </div>
         </div>
+      </div>
+    </div>
+
+
+    <!-- Promo Codes -->
+    <div id="sec-promos" class="sec">
+      <div class="pg-title">Promo Codes</div>
+      <div class="pg-sub">Create and manage discount codes for checkout</div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-weight:600; margin-bottom:12px">Create Promo Code</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label class="tiny muted">Code</label>
+            <input id="promoCode" type="text" placeholder="e.g. SAVE20" style="width:100%; text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+          </div>
+          <div>
+            <label class="tiny muted">Discount %</label>
+            <input id="promoPct" type="number" min="1" max="100" placeholder="e.g. 20" style="width:100%" />
+          </div>
+          <div>
+            <label class="tiny muted">Max Uses (blank = unlimited)</label>
+            <input id="promoMaxUses" type="number" min="1" placeholder="e.g. 100" style="width:100%" />
+          </div>
+          <div>
+            <label class="tiny muted">Expires At (blank = never)</label>
+            <input id="promoExpires" type="datetime-local" style="width:100%" />
+          </div>
+        </div>
+        <button class="btn" onclick="createPromo()">Create Code</button>
+        <div id="promoCreateMsg" class="msg" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+          <div style="font-weight:600">Active Codes</div>
+          <button class="btn ghost small" onclick="loadPromos()">↻ Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>Code</th><th>Discount</th><th>Uses</th><th>Max</th><th>Expires</th><th>Action</th></tr></thead>
+          <tbody id="promoList"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -565,12 +608,74 @@ async function opsAction(action, param){
 
 // ── Global click delegation ──
 document.addEventListener('click', async function(e){
+  // freeze from table
   var fb = e.target.closest('[data-frz]');
   if(fb){ try{ await api('/api/admin/account/freeze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fb.dataset.frz,frozen:fb.dataset.st==='1'})}); loadAll(); }catch(err){ alert(err.message); } return; }
+  // approve payout
   var ab = e.target.closest('[data-apr-e]');
   if(ab){ try{ await api('/api/admin/payout/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:ab.dataset.aprE,id:ab.dataset.aprI})}); loadAll(); }catch(err){ alert(err.message); } return; }
+  // kyc
   var kb = e.target.closest('[data-kyc]');
   if(kb){ try{ await api('/api/admin/kyc/set-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.ks})}); loadKyc(); }catch(err){ alert(err.message); } return; }
+
+  // ---- Promo Codes ----
+  async function loadPromos() {
+    const tbody = document.getElementById('promoList');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+    try {
+      const d = await api('/api/admin/promo/list');
+      const codes = d.codes || [];
+      if(!codes.length) { if(tbody) tbody.innerHTML = '<tr><td colspan="6" class="muted">No promo codes yet.</td></tr>'; return; }
+      if(tbody) tbody.innerHTML = codes.map(c => `
+        <tr>
+          <td><strong>${c.code}</strong></td>
+          <td>${c.discountPct}%</td>
+          <td>${c.uses || 0}</td>
+          <td>${c.maxUses || '∞'}</td>
+          <td>${c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '—'}</td>
+          <td><button class="btn ghost small" onclick="deletePromo('${c.code}')">Delete</button></td>
+        </tr>
+      `).join('');
+    } catch(e) { if(tbody) tbody.innerHTML = '<tr><td colspan="6">Error: ' + e.message + '</td></tr>'; }
+  }
+
+  async function createPromo() {
+    const code = (document.getElementById('promoCode')?.value || '').trim().toUpperCase();
+    const pct = Number(document.getElementById('promoPct')?.value || 0);
+    const maxUses = document.getElementById('promoMaxUses')?.value || null;
+    const expiresAt = document.getElementById('promoExpires')?.value || null;
+    const msg = document.getElementById('promoCreateMsg');
+    if(!code || !pct) { if(msg) { msg.className='msg err'; msg.textContent='Code and discount % are required.'; } return; }
+    try {
+      const d = await api('/api/admin/promo/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ code, discountPct: pct, maxUses: maxUses ? Number(maxUses) : null, expiresAt: expiresAt || null })
+      });
+      if(msg) { msg.className='msg ok'; msg.textContent='Created ✅ ' + d.promo.code; }
+      document.getElementById('promoCode').value = '';
+      document.getElementById('promoPct').value = '';
+      document.getElementById('promoMaxUses').value = '';
+      document.getElementById('promoExpires').value = '';
+      loadPromos();
+    } catch(e) { if(msg) { msg.className='msg err'; msg.textContent=e.message; } }
+  }
+
+  async function deletePromo(code) {
+    if(!confirm('Delete promo code ' + code + '?')) return;
+    try {
+      await api('/api/admin/promo/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
+      loadPromos();
+    } catch(e) { alert(e.message); }
+  }
+
+  // auto-load promos when section shown
+  const origShow = window.show;
+  window.show = function(id, btn) {
+    origShow(id, btn);
+    if(id === 'promos') loadPromos();
+  };
+
+  // referral toggle
   var rb = e.target.closest('[data-rft]');
   if(rb){ try{ await api('/api/admin/referral/set-active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:rb.dataset.rft,active:rb.dataset.rfa==='1'})}); loadRefs(); }catch(err){ alert(err.message); } return; }
 });
