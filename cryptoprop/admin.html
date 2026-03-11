@@ -3,7 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
   <title>CryptoProp — Admin</title>
+  <script>
+    // Block any redirect attempts from cached scripts
+    const _origAssign = window.location.assign.bind(window.location);
+    const _origReplace = window.location.replace.bind(window.location);
+    Object.defineProperty(window.location, 'assign', { value: function(url) { if(url && url.includes('auth')) return; _origAssign(url); } });
+    Object.defineProperty(window.location, 'replace', { value: function(url) { if(url && url.includes('auth')) return; _origReplace(url); } });
+    Object.defineProperty(window.location, 'href', { set: function(url) { if(url && url.includes('auth')) return; _origAssign(url); }, get: function() { return window.location.toString(); } });
+  </script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;background:#05060a;color:#e2e8f8}
