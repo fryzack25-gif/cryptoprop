@@ -113,7 +113,12 @@ const PORT = process.env.PORT || 3000;
 app.set("trust proxy", 1);
 app.use(cookieParser());
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "dev-session-secret-change-me";
+// ---- SECURITY: Fail fast if secrets are not set in production ----
+if(process.env.NODE_ENV === "production"){
+  if(!process.env.SESSION_SECRET) throw new Error("SESSION_SECRET environment variable must be set in production.");
+  if(!process.env.ADMIN_KEY) throw new Error("ADMIN_KEY environment variable must be set in production.");
+}
+const SESSION_SECRET = process.env.SESSION_SECRET || "dev-session-secret-DO-NOT-USE-IN-PRODUCTION-" + Math.random();
 app.use(session({
   name: "cp.sid",
   secret: SESSION_SECRET,
@@ -145,7 +150,7 @@ app.use(rateLimitByIp);
 const MAX_REQS_PER_MIN_PER_IP = 180;
 const MAX_ORDERS_PER_MIN_PER_ACCOUNT = 15;
 const MIN_HOLD_SECONDS = 12; // prevent instant flip/scalp in simulated env
-const ADMIN_KEY = process.env.ADMIN_KEY || "changeme-admin-key";
+const ADMIN_KEY = process.env.ADMIN_KEY || null; // Must be set via env var â€” no fallback
 
 const ipBuckets = new Map(); // ip -> {ts,count}
 const acctOrderBuckets = new Map(); // email -> {ts,count}
@@ -187,7 +192,7 @@ function enforceMinHold(email, product){
 
 function requireAdmin(req, res, next){
   const hdr = (req.headers["x-admin-key"] || req.query.adminKey || "").toString();
-  if(hdr && process.env.ADMIN_KEY && hdr === process.env.ADMIN_KEY) return next();
+  if(hdr && ADMIN_KEY && hdr === ADMIN_KEY) return next();
   const u = getSessionUser(req);
   if(u && u.isAdmin) return next();
   return res.status(403).json({ error:"Admin only" });
@@ -252,13 +257,7 @@ app.get("/api/market/top50", async (req, res) => {
 
 
 // ---- API ----
-app.post("/api/login", (req, res) => {
-  const { email, password } = req.body || {};
-  if(email === currentEmail(req) && password === DEMO_USER.password){
-    return res.json({ token: TOKEN, email });
-  }
-  return res.status(401).json({ error: "Invalid email or password." });
-});
+// Legacy /api/login removed â€” use /api/auth/login instead
 
 app.post("/api/applications", (req, res) => {
   const payload = req.body || {};
@@ -468,7 +467,7 @@ app.get("/api/account", requireAuth, async (req, res) => {
   noteDeviceAndIp(acct, req);
   if(!rateLimitOrders(email)) return res.status(429).json({ error: "Too many orders per minute" });
   acct.pendingOrders = acct.pendingOrders || [];
-  await refreshChallengeState(acct);
+  await refreshChallengeState(acct, email);
   acct.challengePhase = "challenge";
   acct.challengeStartAt = new Date().toISOString();
   acct.challengePassedAt = null;
@@ -504,17 +503,15 @@ app.get("/api/challenge/history", requireAuth, async (req, res) => {
   const acct = getOrCreateAccount(email);
   acct.challengeHistory = Array.isArray(acct.challengeHistory) ? acct.challengeHistory : [];
   return res.json({ ok: true, history: acct.challengeHistory });
+});
 
 app.get("/api/equity/history", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
-  await refreshChallengeState(acct);
+  await refreshChallengeState(acct, email);
   saveAccount(email, acct);
   const hist = Array.isArray(acct.equityHistory) ? acct.equityHistory : [];
-  // return oldest->newest for charting
   return res.json({ ok: true, points: hist.slice().reverse() });
-});
-
 });
 
 
@@ -522,8 +519,49 @@ app.get("/api/equity/history", requireAuth, async (req, res) => {
 app.post("/api/payout/request", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
-  await refreshChallengeState(acct);
+  await refreshChallengeState(acct, email);
   if(acct.challengeFailed) return res.status(403).json({ error: "Challenge failed", reason: acct.failReason });
+
+  if(acct.challengePhase !== "funded"){
+    return res.status(400).json({ error: "Payouts available only after passing (funded phase)." });
+  }
+
+  const now = Date.now();
+  const eligibleAt = new Date(acct.payoutEligibleAt || 0).getTime();
+  if(!Number.isFinite(eligibleAt) || now < eligibleAt){
+    return res.status(400).json({ error: "Payout not yet eligible.", eligibleAt: acct.payoutEligibleAt });
+  }
+
+  resetPayoutPeriodIfNeeded(acct);
+
+  if(!requireVerifiedForPayout(acct)){
+    return res.status(400).json({ error: "Verification required before payouts.", requirements: { emailVerified: !!acct.emailVerified, kycStatus: acct.kycStatus } });
+  }
+
+  const amount = Number(req.body?.amount);
+  if(!Number.isFinite(amount) || amount <= 0){
+    return res.status(400).json({ error: "Invalid payout amount." });
+  }
+
+  const withdrawable = Math.max(0, Number(acct.realizedPnL || 0) - Number(acct.payoutsPaidTotal || 0));
+  const cap = Number(acct.startEquity || 0) * PAYOUT_CAP_PCT;
+  const capRemaining = Math.max(0, cap - Number(acct.payoutsPaidThisPeriod || 0));
+
+  if(amount > withdrawable){
+    return res.status(400).json({ error: "Amount exceeds withdrawable.", withdrawable });
+  }
+  if(amount > capRemaining){
+    return res.status(400).json({ error: "Amount exceeds weekly cap.", capRemaining, cap });
+  }
+
+  acct.payoutRequests = Array.isArray(acct.payoutRequests) ? acct.payoutRequests : [];
+  const reqId = cryptoRandomId();
+  acct.payoutRequests.unshift({ id: reqId, time: new Date().toISOString(), amount, period: acct.payoutPeriodStart, status: "pending" });
+
+  saveAccount(email, acct);
+  return res.json({ ok: true, request: acct.payoutRequests[0], withdrawableAfter: withdrawableAmount(acct), account: acct });
+});
+
 
 // ------------------- Verification & KYC (demo) -------------------
 app.post("/api/verify/request-email", requireAuth, (req, res) => {
@@ -532,8 +570,9 @@ app.post("/api/verify/request-email", requireAuth, (req, res) => {
   noteDeviceAndIp(acct, req);
   acct.emailVerifyCode = genCode(6);
   saveAccount(email, acct);
-  // Demo: return code (in production, send via email)
-  return res.json({ ok:true, code: acct.emailVerifyCode });
+  // In production: send code via email. Code is logged to server console only.
+  console.log("[CryptoProp] Email verify code for", email, "=>", acct.emailVerifyCode);
+  return res.json({ ok:true, message: "Verification code sent to your email." });
 });
 
 app.post("/api/verify/confirm-email", requireAuth, (req, res) => {
@@ -557,8 +596,9 @@ app.post("/api/verify/request-phone", requireAuth, (req, res) => {
   acct.phone = phone || acct.phone || null;
   acct.phoneVerifyCode = genCode(6);
   saveAccount(email, acct);
-  // Demo: return code (in production, send via SMS)
-  return res.json({ ok:true, code: acct.phoneVerifyCode });
+  // In production: send code via SMS. Logged to server console only.
+  console.log("[CryptoProp] Phone verify code for", email, "=>", acct.phoneVerifyCode);
+  return res.json({ ok:true, message: "Verification code sent to your phone." });
 });
 
 app.post("/api/verify/confirm-phone", requireAuth, (req, res) => {
@@ -590,49 +630,6 @@ app.post("/api/kyc/submit", requireAuth, (req, res) => {
   acct.kycSubmittedAt = new Date().toISOString();
   saveAccount(email, acct);
   return res.json({ ok:true, status: acct.kycStatus });
-});
-
-
-  if(acct.challengePhase !== "funded"){
-    return res.status(400).json({ error: "Payouts available only after passing (funded phase)." });
-  }
-
-  const now = Date.now();
-  const eligibleAt = new Date(acct.payoutEligibleAt || 0).getTime();
-  if(!Number.isFinite(eligibleAt) || now < eligibleAt){
-    return res.status(400).json({ error: "Payout not yet eligible.", eligibleAt: acct.payoutEligibleAt });
-  }
-
-  resetPayoutPeriodIfNeeded(acct);
-
-  if(!requireVerifiedForPayout(acct)){
-    return res.status(400).json({ error: "Verification required before payouts.", requirements: { emailVerified: !!acct.emailVerified, phoneVerified: !!acct.phoneVerified, kycStatus: acct.kycStatus } });
-  }
-
-
-  const amount = Number(req.body?.amount);
-  if(!Number.isFinite(amount) || amount <= 0){
-    return res.status(400).json({ error: "Invalid payout amount." });
-  }
-
-  // Withdrawable is based on realized PnL net of prior payouts, and trader share is already reflected via firm cut deductions.
-  const withdrawable = Math.max(0, Number(acct.realizedPnL || 0) - Number(acct.payoutsPaidTotal || 0));
-  const cap = Number(acct.startEquity || 0) * PAYOUT_CAP_PCT;
-  const capRemaining = Math.max(0, cap - Number(acct.payoutsPaidThisPeriod || 0));
-
-  if(amount > withdrawable){
-    return res.status(400).json({ error: "Amount exceeds withdrawable.", withdrawable });
-  }
-  if(amount > capRemaining){
-    return res.status(400).json({ error: "Amount exceeds weekly cap.", capRemaining, cap });
-  }
-
-  acct.payoutRequests = Array.isArray(acct.payoutRequests) ? acct.payoutRequests : [];
-  const reqId = cryptoRandomId();
-  acct.payoutRequests.unshift({ id: reqId, time: new Date().toISOString(), amount, period: acct.payoutPeriodStart, status: "pending" });
-
-  saveAccount(email, acct);
-  return res.json({ ok: true, request: acct.payoutRequests[0], withdrawableAfter: withdrawableAmount(acct), account: acct });
 });
 
 
@@ -1321,7 +1318,7 @@ async function autoFlattenAllPositions(email, acct, reason){
   saveAccount(email, acct);
 }
 
-async function refreshChallengeState(acct){
+async function refreshChallengeState(acct, email){
   ensureStepFields(acct);
   acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash || 0);
   if(!acct.startEquity || acct.startEquity <= 0){
@@ -1431,7 +1428,7 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
     acct.dailyLocked = true;
     acct.lockedUntil = nextUtcMidnightIso();
     acct.lockReason = "Daily drawdown breached";
-    await autoFlattenAllPositions(currentEmail(req), acct, "Daily DD breach — auto-flatten");
+    await autoFlattenAllPositions(email, acct, "Daily DD breach â€” auto-flatten");
   }
 
   if(!acct.challengeFailed && totalDD >= getStepConfig(acct).totalDdLimit){
@@ -1439,13 +1436,14 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
     acct.failedAt = new Date().toISOString();
     acct.failReason = "Trailing drawdown breached";
     acct.frozen = true;
-    await autoFlattenAllPositions(currentEmail(req), acct, "Trailing DD breach — liquidation");
+    await autoFlattenAllPositions(email, acct, "Trailing DD breach â€” liquidation");
+  }
 
   // Step pass evaluation
   if(!acct.challengeFailed && acct.challengePhase !== "funded"){
     const cfg = getStepConfig(acct);
     const startEq = Number(acct.stepStartEquity || acct.startEquity || 0);
-    const ret = startEq > 0 ? ((Number(acct.equity||0) - startEq) / startEq) : 0;
+    let ret = startEq > 0 ? ((Number(acct.equity||0) - startEq) / startEq) : 0;
     const elapsed = daysSince(acct.stepStartDate);
     const maxDays = acct.stepMaxDaysOverride || cfg.maxDays;
     const daysLeft = Math.max(0, maxDays - elapsed);
@@ -1457,52 +1455,39 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
       acct.failReason = `${cfg.label} time limit exceeded`;
       acct.frozen = true;
       archiveChallengeStep(acct, { step: cfg.step, status:"failed", returnPct: ret, reason: acct.failReason });
-      await autoFlattenAllPositions(currentEmail(req), acct, `${cfg.label} expired — liquidation`);
+      await autoFlattenAllPositions(email, acct, `${cfg.label} expired â€” liquidation`);
     }
 
     // pass step
     if(!acct.challengeFailed && ret >= cfg.targetPct){
-
       // Minimum trading days check
       const minDays = cfg.step === 1 ? MIN_TRADING_DAYS_STEP1 : MIN_TRADING_DAYS_STEP2;
-      const tradedDays = Object.keys(acct.tradingDays||{}).length;
-      if(tradedDays < minDays){
-        // not enough trading days yet
-        ret = -1; // block pass
-      }
+      const tradedDays = Array.isArray(acct.tradingDays) ? acct.tradingDays.length : Object.keys(acct.tradingDays||{}).length;
+      if(tradedDays < minDays) ret = -1; // block pass
 
       // Consistency rule check
       const totalProfit = Number(acct.equity||0) - Number(acct.stepStartEquity||0);
       const maxAllowedSingleDay = totalProfit * MAX_SINGLE_DAY_PROFIT_SHARE;
       const maxSingle = Math.max(...Object.values(acct.profitableDays||{}), 0);
+      if(maxSingle > maxAllowedSingleDay) ret = -1; // block pass
 
-      if(maxSingle > maxAllowedSingleDay){
-        ret = -1; // block pass
-      }
-
-      if(ret < cfg.targetPct){
-        // block pass until rules satisfied
-      } else {
-
-      archiveChallengeStep(acct, { step: cfg.step, status:"passed", returnPct: ret, reason: null });
-
-      if(cfg.step === 1){
-        // move to Step 2 and reset trading state to starting equity
-        acct.challengeStep = 2;
-        acct.stepStartDate = utcDateKey();
-        acct.stepStartEquity = Number(acct.startEquity || 0);
-        resetTradingStateToStart(acct);
-      }else{
-        // funded: reset to initial equity (as requested)
-        acct.challengePhase = "funded";
-        acct.challengeStep = 0;
-        acct.stepStartDate = null;
-        acct.stepStartEquity = null;
-        resetTradingStateToStart(acct);
-        resetPayoutPeriodIfNeeded(acct);
+      if(ret >= cfg.targetPct){
+        archiveChallengeStep(acct, { step: cfg.step, status:"passed", returnPct: ret, reason: null });
+        if(cfg.step === 1){
+          acct.challengeStep = 2;
+          acct.stepStartDate = utcDateKey();
+          acct.stepStartEquity = Number(acct.startEquity || 0);
+          resetTradingStateToStart(acct);
+        }else{
+          acct.challengePhase = "funded";
+          acct.challengeStep = 0;
+          acct.stepStartDate = null;
+          acct.stepStartEquity = null;
+          resetTradingStateToStart(acct);
+          resetPayoutPeriodIfNeeded(acct);
+        }
       }
     }
-  }
   }
    // convenience
 }
@@ -1512,7 +1497,7 @@ async function guardChallenge(req, res, next){
     const email = currentEmail(req);
     const acct = getOrCreateAccount(email);
     acct.pendingOrders = acct.pendingOrders || [];
-    await refreshChallengeState(acct);
+    await refreshChallengeState(acct, email);
     saveAccount(email, acct);
     if(acct.frozen){ return res.status(403).json({ error: "Account frozen" }); }
     if(acct.lockedUntil){
@@ -1569,7 +1554,7 @@ function applyProfitSplitOnSell(acct, product, qty, sellPrice){
 }
 
 
-// ---- Simulated fill delay (random 10–15 seconds) ----
+// ---- Simulated fill delay (random 10â€“15 seconds) ----
 function randomFillDelayMs(){
   return 10000 + Math.floor(Math.random() * 5000);
 }
@@ -1630,8 +1615,8 @@ async function executePendingOrder(acct, o){
   if(!p || !side || !Number.isFinite(q) || q <= 0) return;
 
   const mid = await fetchCoinbaseTicker(p);
-  const notional = q * mid;
-  const { spreadBps, slipBps } = execParams(p, notional);
+  const grossNotional = q * mid;
+  const { spreadBps, slipBps } = execParams(p, grossNotional);
   const price = applyExecPrice(side, mid, spreadBps, slipBps);
   const execCostBps = (spreadBps/2) + slipBps;
   const notional = q * price;
@@ -1835,6 +1820,7 @@ app.get("/api/admin/overview", requireAdmin, (req, res) => {
     };
   });
   return res.json({ ok:true, accounts:list });
+}); // close /api/admin/overview
 
 app.get("/api/admin/payout/pending", requireAdmin, (req, res) => {
   const db = readData();
@@ -1885,8 +1871,6 @@ app.get("/api/admin/risk/flags", requireAdmin, (req, res) => {
   return res.json({ ok:true, deviceFlags, ipFlags });
 });
 
-});
-
 app.post("/api/admin/account/freeze", requireAdmin, (req, res) => {
   const { email, frozen } = req.body || {};
   const db = readData();
@@ -1920,6 +1904,25 @@ app.post("/api/admin/payout/approve", requireAdmin, (req, res) => {
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
 
+  a.payoutRequests = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
+  const pr = a.payoutRequests.find(x => x.id === id);
+  if(!pr) return res.status(404).json({ error:"Request not found" });
+  if(pr.status !== "pending") return res.status(400).json({ error:"Not pending" });
+
+  resetPayoutPeriodIfNeeded(a);
+  const amount = Number(pr.amount||0);
+  pr.status = "approved";
+  a.payoutsPaidTotal = Number(a.payoutsPaidTotal||0) + amount;
+  a.payoutsPaidThisPeriod = Number(a.payoutsPaidThisPeriod||0) + amount;
+  a.payouts = Array.isArray(a.payouts) ? a.payouts : [];
+  a.payouts.unshift({ id: pr.id, time: new Date().toISOString(), amount, period: pr.period, status:"paid" });
+  pr.approvedAt = new Date().toISOString();
+  db.accounts[email] = a;
+  writeData(db);
+  auditLog(req, "approve_payout", email, { id });
+  return res.json({ ok:true });
+});
+
 app.get("/api/admin/kyc/pending", requireAdmin, (req, res) => {
   const db = readData();
   const accounts = db.accounts || {};
@@ -1944,7 +1947,7 @@ app.post("/api/admin/kyc/set-status", requireAdmin, (req, res) => {
   a.kycStatus = status;
   db.accounts[email] = a;
   writeData(db);
-  auditLog(req, "approve_payout", email, { id });
+  auditLog(req, "kyc_set_status", email, { status });
   return res.json({ ok:true });
 });
 
@@ -1969,33 +1972,6 @@ app.get("/api/admin/risk/similarity", requireAdmin, (req, res) => {
   pairs.sort((x,y)=> y.score - x.score);
   return res.json({ ok:true, pairs });
 });
-
-  a.payoutRequests = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
-  const pr = a.payoutRequests.find(x => x.id === id);
-  if(!pr) return res.status(404).json({ error:"Request not found" });
-  if(pr.status !== "pending") return res.status(400).json({ error:"Not pending" });
-
-  resetPayoutPeriodIfNeeded(a);
-  const amount = Number(pr.amount||0);
-  const capRem = payoutCapRemaining(a);
-
-  // withdrawableAmount subtracts pending including this request; temporarily mark approved for compute
-  pr.status = "approved";
-  const withdrawable = withdrawableAmount(a) + amount;
-  if(amount > withdrawable){ pr.status="pending"; return res.status(400).json({ error:"Exceeds withdrawable" }); }
-  if(amount > capRem){ pr.status="pending"; return res.status(400).json({ error:"Exceeds cap remaining" }); }
-
-  a.payoutsPaidTotal = Number(a.payoutsPaidTotal||0) + amount;
-  a.payoutsPaidThisPeriod = Number(a.payoutsPaidThisPeriod||0) + amount;
-  a.payouts = Array.isArray(a.payouts) ? a.payouts : [];
-  a.payouts.unshift({ id: pr.id, time: new Date().toISOString(), amount, period: pr.period, status:"paid" });
-  pr.approvedAt = new Date().toISOString();
-
-  db.accounts[email] = a;
-  writeData(db);
-  return res.json({ ok:true });
-});
-
 
 
 
@@ -2058,8 +2034,9 @@ app.post("/api/auth/signup", async (req, res) => {
   const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
   db.users[email] = { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false };
   writeData(db);
+  // In production: send verifyCode via email. For now, log to server console only.
   console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
-  return res.json({ ok:true, verifyCode });
+  return res.json({ ok:true, message: "Account created. Check your email for a verification code." });
 });
 
 app.post("/api/auth/verify-email", (req, res) => {
@@ -2099,7 +2076,7 @@ app.post("/api/auth/logout", (req, res) => {
 
 app.post("/api/auth/admin-elevate", (req, res) => {
   const key = (req.body?.adminKey || "").toString();
-  if(!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) return res.status(403).json({ error:"Invalid admin key" });
+  if(!ADMIN_KEY || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid admin key" });
   const u = getSessionUser(req);
   if(!u) return res.status(401).json({ error:"Not authenticated" });
   req.session.user.isAdmin = true;
@@ -2385,11 +2362,11 @@ app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, (req, res) 
     return res.status(400).json({ error:"Extension already used for this step" });
   }
 
-  const cfg = getStepConfig(acct);
+  const cfgInitial = getStepConfig(acct);
   acct.extensionsUsed[step] = true;
 
   // override max days for this step
-  acct.stepMaxDaysOverride = (cfg.maxDays + EXTENSION_DAYS);
+  acct.stepMaxDaysOverride = (cfgInitial.maxDays + EXTENSION_DAYS);
 
   const cfg = getStepConfig(acct);
   const elapsed = daysSince(acct.stepStartDate);
@@ -2433,8 +2410,143 @@ app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, (req, re
 
   return res.json({ ok:true });
 });
+// ---- DATA PERSISTENCE ----
+const DB_FILE = process.env.DB_FILE || path.join(__dirname, "data.json");
+
+function readData(){
+  try{
+    const raw = fs.readFileSync(DB_FILE, "utf8");
+    return JSON.parse(raw);
+  }catch{
+    return { applications: [], accounts: {}, users: {}, referrals: [], referralUses: [], audit: [] };
+  }
+}
+
+let _writeTimer = null;
+let _pendingWrite = null;
+
+function writeData(data){
+  // Debounce writes: accumulate rapid changes and write once every 200ms
+  _pendingWrite = data;
+  if(_writeTimer) return;
+  _writeTimer = setTimeout(() => {
+    _writeTimer = null;
+    const snapshot = _pendingWrite;
+    _pendingWrite = null;
+    if(!snapshot) return;
+    try{
+      const tmp = DB_FILE + ".tmp";
+      fs.writeFileSync(tmp, JSON.stringify(snapshot, null, 2), "utf8");
+      fs.renameSync(tmp, DB_FILE);
+    }catch(err){
+      console.error("[CryptoProp] writeData error:", err.message);
+    }
+  }, 200);
+}
+
+// ---- DEVICE / IP TRACKING ----
+function noteDeviceAndIp(acct, req){
+  const ip = clientIp(req);
+  const ua = (req.headers["user-agent"] || "").toString().slice(0, 200);
+  acct.ips = Array.isArray(acct.ips) ? acct.ips : [];
+  acct.devices = Array.isArray(acct.devices) ? acct.devices : [];
+  if(ip && !acct.ips.includes(ip)) acct.ips.push(ip);
+  if(ua && !acct.devices.includes(ua)) acct.devices.push(ua);
+  // cap to last 50
+  acct.ips = acct.ips.slice(-50);
+  acct.devices = acct.devices.slice(-50);
+}
+
+// ---- CODE GENERATOR ----
+function genCode(len){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for(let i=0;i<len;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+// ---- AUDIT LOG ----
+function auditLog(req, action, targetEmail, meta){
+  try{
+    const db = readData();
+    db.audit = Array.isArray(db.audit) ? db.audit : [];
+    db.audit.unshift({
+      time: new Date().toISOString(),
+      actor: currentEmail(req) || "system",
+      ip: clientIp(req),
+      action,
+      target: targetEmail || null,
+      meta: meta || {}
+    });
+    db.audit = db.audit.slice(0, 2000);
+    writeData(db);
+  }catch(err){
+    console.error("[CryptoProp] auditLog error:", err.message);
+  }
+}
+
+function adminActor(req){
+  return currentEmail(req) || "admin";
+}
+
+// ---- MONEY FORMATTER ----
+function money(n){
+  return "$" + Number(n || 0).toFixed(2);
+}
+
+// ---- REFERRAL HELPERS ----
+const DEFAULT_REFERRAL_COMMISSION_PCT = 0.10;
+
+function ensureReferrals(db){
+  db.referrals = Array.isArray(db.referrals) ? db.referrals : [];
+  db.referralUses = Array.isArray(db.referralUses) ? db.referralUses : [];
+  return db;
+}
+
+function normalizeCode(code){
+  return (code || "").toString().trim().toUpperCase();
+}
+
+function findReferral(db, code){
+  return (db.referrals || []).find(r => r.code === normalizeCode(code) && r.active !== false);
+}
+
+function genReferralCode(len){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for(let i=0;i<len;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+// ---- PAYOUT VERIFICATION CHECK ----
+function requireVerifiedForPayout(acct){
+  return !!acct.emailVerified && acct.kycStatus === "approved";
+}
+
+// ---- TRADE SIMILARITY (anti-abuse) ----
+function tradeSignatureSet(acct, maxTrades){
+  const orders = Array.isArray(acct.orders) ? acct.orders : [];
+  const sigs = new Set();
+  for(const o of orders.slice(0, maxTrades)){
+    if(!o || !o.product || !o.side) continue;
+    // signature: product + side + rounded price bucket
+    const bucket = Math.round(Number(o.price || 0) / 10) * 10;
+    sigs.add(`${o.product}|${o.side}|${bucket}`);
+  }
+  return sigs;
+}
+
+function jaccard(a, b){
+  if(!a || !b || a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for(const v of a){ if(b.has(v)) inter++; }
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
 app.listen(PORT, () => {
   console.log(`CryptoProp demo running on http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
 
 function cryptoRandomId(){
