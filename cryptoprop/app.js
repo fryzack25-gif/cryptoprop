@@ -98,16 +98,4 @@ document.addEventListener("click", async (e) => {
 });
 
 
-async function requireLoginIfNeeded(){
-  const path = window.location.pathname;
-  const publicPaths = ["/", "/index.html", "/auth.html", "/terms.html", "/risk.html", "/privacy.html", "/kyc.html", "/payout.html", "/admin.html", "/support.html", "/reset-password.html"];
-  if(publicPaths.includes(path)) return;
-  try{
-    const res = await fetch("/api/auth/me");
-    const data = await res.json().catch(()=>({}));
-    if(!data.user) window.location.href = "/auth.html";
-  }catch(e){
-    window.location.href = "/auth.html";
-  }
-}
-requireLoginIfNeeded();
+// Auth guard removed from app.js - handled per-page in dashboard.html
