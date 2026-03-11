@@ -5,318 +5,493 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CryptoProp — Admin</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: #03040a; color: #e2e8f8; min-height: 100vh; }
+
+    /* Gate */
+    #adminGate {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse 900px 600px at 15% 20%, rgba(124,92,255,.22) 0%, transparent 65%),
+                  radial-gradient(ellipse 700px 500px at 85% 75%, rgba(0,209,178,.14) 0%, transparent 65%), #03040a;
+    }
+    .gate-card {
+      width: min(420px, 92vw);
+      background: rgba(12,15,28,.88); backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 28px;
+      padding: 48px 40px 40px; text-align: center;
+      box-shadow: 0 0 0 1px rgba(124,92,255,.08), 0 60px 120px rgba(0,0,0,.7);
+      animation: gateIn .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes gateIn { from { opacity:0; transform:translateY(24px) scale(.97); } to { opacity:1; transform:none; } }
+    .gate-logo {
+      width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 24px;
+      background: conic-gradient(from 220deg, #7c5cff, #00d1b2, #31c4ff, #7c5cff);
+      box-shadow: 0 0 48px rgba(124,92,255,.5), 0 0 96px rgba(124,92,255,.2);
+    }
+    .gate-card h2 { font-family: 'Syne', sans-serif; font-size: 1.55rem; font-weight: 900; letter-spacing: -.03em; margin-bottom: 8px; }
+    .gate-card p  { color: #7a85a8; font-size: .9rem; margin-bottom: 28px; }
+    .gate-iw { position: relative; display: flex; align-items: center; }
+    .gate-iw input {
+      width: 100%; padding: 14px 48px 14px 16px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; color: #e2e8f8; font-size: .95rem; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      font-family: 'JetBrains Mono', monospace; letter-spacing: .05em;
+    }
+    .gate-iw input:focus { border-color: rgba(124,92,255,.6); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
+    .gate-iw button { position: absolute; right: 14px; background: none; border: none; cursor: pointer; color: #7a85a8; font-size: 16px; }
+    .gate-btn {
+      width: 100%; margin-top: 14px; padding: 14px;
+      background: linear-gradient(135deg, #7c5cff, #9a7bff); border: none; border-radius: 14px;
+      color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 8px 32px rgba(124,92,255,.45); transition: transform .15s, box-shadow .15s;
+    }
+    .gate-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 42px rgba(124,92,255,.6); }
+    .gate-btn:active { transform: translateY(0); }
+    #gateMsg { margin-top: 12px; font-size: .82rem; min-height: 18px; }
+
+    /* Layout */
+    #adminDash { display: none; }
+    .a-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    @media (max-width:860px) { .a-layout { grid-template-columns: 1fr; } .a-sidebar { display: none; } }
+
+    /* Sidebar */
+    .a-sidebar {
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      background: rgba(5,7,16,.96); border-right: 1px solid rgba(255,255,255,.055);
+      display: flex; flex-direction: column;
+    }
+    .sb-brand { display: flex; align-items: center; gap: 12px; padding: 28px 22px 22px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .sb-logo { width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0; background: conic-gradient(from 220deg, #7c5cff, #00d1b2, #31c4ff, #7c5cff); box-shadow: 0 0 20px rgba(124,92,255,.4); }
+    .sb-name { font-family: 'Syne', sans-serif; font-weight: 900; font-size: .95rem; letter-spacing: -.02em; }
+    .sb-badge { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; background: rgba(124,92,255,.2); color: #c4b5ff; border: 1px solid rgba(124,92,255,.35); padding: 2px 8px; border-radius: 999px; display: inline-block; margin-top: 4px; }
+    .sb-nav { padding: 14px 14px; flex: 1; }
+    .sb-grp { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(168,176,200,.3); padding: 10px 8px 5px; }
+    .sb-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; color: #6a78a0; font-size: .875rem; font-weight: 500; cursor: pointer; transition: all .15s; border: 1px solid transparent; margin-bottom: 2px; user-select: none; }
+    .sb-item:hover { background: rgba(255,255,255,.05); color: #e2e8f8; }
+    .sb-item.active { background: rgba(124,92,255,.16); color: #c4b5ff; border-color: rgba(124,92,255,.28); }
+    .sb-ico { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+    .sb-foot { padding: 14px 22px 20px; border-top: 1px solid rgba(255,255,255,.05); display: flex; flex-direction: column; gap: 10px; }
+    .sb-foot-row { display: flex; justify-content: space-between; align-items: center; }
+    .sb-foot a { font-size: .8rem; color: #6a78a0; text-decoration: none; transition: color .15s; }
+    .sb-foot a:hover { color: #e2e8f8; }
+    #refresh { padding: 6px 14px; border-radius: 10px; font-size: .8rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); color: #a0a8c0; cursor: pointer; transition: all .15s; }
+    #refresh:hover { background: rgba(255,255,255,.1); color: #e2e8f8; }
+    .lock-btn { background: none; border: none; font-size: .78rem; color: rgba(168,176,200,.4); cursor: pointer; text-align: left; transition: color .15s; }
+    .lock-btn:hover { color: #ff6b6b; }
+
+    /* Main */
+    .a-main { padding: 38px 42px; }
+    @media (max-width:860px) { .a-main { padding: 24px 18px; } }
+
+    /* Page header */
+    .pg-hd { margin-bottom: 28px; }
+    .pg-hd h1 { font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 900; letter-spacing: -.045em; background: linear-gradient(135deg, #e2e8f8 30%, #8090c0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 6px; }
+    .pg-hd p { color: #6a78a0; font-size: .88rem; }
+
+    /* Sections */
+    .a-sec { display: none; }
+    .a-sec.visible { display: block; }
+
+    /* Stat cards */
+    .sg { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+    @media (max-width:1000px) { .sg { grid-template-columns: repeat(2,1fr); } }
+    .sc {
+      background: rgba(10,13,24,.75); border: 1px solid rgba(255,255,255,.075);
+      border-radius: 20px; padding: 22px 20px; position: relative; overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .sc::after { content:''; position:absolute; inset:0; background: radial-gradient(circle at 80% 15%, rgba(124,92,255,.07), transparent 55%); pointer-events:none; }
+    .sc:hover { border-color: rgba(124,92,255,.28); box-shadow: 0 8px 36px rgba(124,92,255,.1); }
+    .sc-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5060a0; margin-bottom: 10px; }
+    .sc-val { font-family: 'Syne', sans-serif; font-size: 2.1rem; font-weight: 900; letter-spacing: -.045em; line-height: 1; }
+    .sc-sub { font-size: .76rem; color: #5060a0; margin-top: 7px; }
+
+    /* Panel */
+    .panel { background: rgba(9,12,22,.72); border: 1px solid rgba(255,255,255,.065); border-radius: 20px; margin-bottom: 18px; overflow: hidden; }
+    .ph { padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; align-items: center; gap: 10px; }
+    .ph h3 { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 800; flex: 1; letter-spacing: -.01em; }
+    .ph .phi { font-size: 15px; }
+    .pb { padding: 20px 22px; }
+    .pdesc { font-size: .82rem; color: #5868a0; margin-bottom: 14px; }
+
+    /* Tables */
+    .tw { overflow-x: auto; }
+    table.t { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    table.t th { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4858a0; padding: 10px 14px; text-align: left; background: rgba(0,0,0,.3); border-bottom: 1px solid rgba(255,255,255,.045); white-space: nowrap; }
+    table.t td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.032); color: #7888b0; vertical-align: middle; }
+    table.t td.hi { color: #e2e8f8; font-weight: 600; }
+    table.t tr:last-child td { border-bottom: none; }
+    table.t tr:hover td { background: rgba(124,92,255,.04); }
+    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .04em; }
+    .tg { background: rgba(126,231,135,.1); color: #7ee787; border: 1px solid rgba(126,231,135,.2); }
+    .tr { background: rgba(255,107,107,.1); color: #ff6b6b; border: 1px solid rgba(255,107,107,.2); }
+    .ty { background: rgba(255,204,102,.1); color: #ffcc66; border: 1px solid rgba(255,204,102,.2); }
+    .tp { background: rgba(124,92,255,.14); color: #c4b5ff; border: 1px solid rgba(124,92,255,.25); }
+
+    /* Forms */
+    .fr { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .fg { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+    .fg label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5060a0; }
+    .fg input, .fg select, input.fi, select.fi {
+      padding: 11px 14px; background: rgba(255,255,255,.042);
+      border: 1px solid rgba(255,255,255,.085); border-radius: 12px;
+      color: #e2e8f8; font-size: .87rem; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .fg input:focus, .fg select:focus, input.fi:focus { border-color: rgba(124,92,255,.5); box-shadow: 0 0 0 3px rgba(124,92,255,.12); }
+
+    /* Buttons */
+    .ab { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 18px; border-radius: 12px; font-size: .84rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #b0b8d8; transition: all .15s; white-space: nowrap; }
+    .ab:hover { background: rgba(255,255,255,.1); color: #fff; transform: translateY(-1px); }
+    .ab:active { transform: translateY(0); opacity: .85; }
+    .ab.pri { background: linear-gradient(135deg, #7c5cff, #9a7bff); border: none; color: #fff; box-shadow: 0 6px 24px rgba(124,92,255,.4); }
+    .ab.pri:hover { box-shadow: 0 10px 36px rgba(124,92,255,.6); }
+    .ab.sm { padding: 7px 13px; font-size: .77rem; border-radius: 9px; }
+    .ab.dng { background: rgba(255,107,107,.1); border-color: rgba(255,107,107,.2); color: #ff8a8a; }
+    .ab.dng:hover { background: rgba(255,107,107,.2); }
+
+    /* JSON pre */
+    pre.json { background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.75; color: #7080b0; overflow-x: auto; }
+    details summary { cursor: pointer; font-size: .82rem; color: #5868a0; padding: 2px 0; user-select: none; }
+    details summary:hover { color: #a0b0d0; }
+
+    /* Ops */
+    .og { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    @media (max-width:700px) { .og { grid-template-columns: 1fr; } }
+    .oc { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.065); border-radius: 16px; padding: 18px; }
+    .oc-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #4858a0; margin-bottom: 8px; }
+    .oc-val { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; }
+    .oc-sub { font-size: .8rem; color: #5868a0; margin-bottom: 12px; }
+    .bc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  </style>
 </head>
 <body>
 
-<!-- Admin key gate -->
-<div id="adminGate" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:var(--bg, #05060a);">
-  <div class="card glass" style="padding:32px; max-width:380px; width:100%; text-align:center;">
-    <div class="logo" style="width:48px; height:48px; border-radius:16px; margin:0 auto 18px;"></div>
-    <h2 style="margin:0 0 6px;">Admin Access</h2>
-    <p class="muted small" style="margin:0 0 20px;">Enter your admin key to continue.</p>
-    <div style="position:relative; display:flex; align-items:center;">
-      <input id="gateKey" class="input" type="password" placeholder="Admin key" style="width:100%; padding-right:40px;" />
-      <button type="button" onclick="toggleGateVis(this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">&#128065;</button>
+<!-- Gate -->
+<div id="adminGate">
+  <div class="gate-card">
+    <div class="gate-logo"></div>
+    <h2>Admin Access</h2>
+    <p>Enter your admin key to unlock the dashboard.</p>
+    <div class="gate-iw">
+      <input id="gateKey" type="password" placeholder="••••••••••••••••" autocomplete="off" />
+      <button type="button" onclick="toggleGateVis(this)">👁</button>
     </div>
-    <button class="btn primary" id="gateBtn" style="margin-top:14px; width:100%;">Enter</button>
-    <div class="tiny muted" id="gateMsg" style="margin-top:10px; min-height:18px;"></div>
+    <button class="gate-btn" id="gateBtn">Unlock Dashboard →</button>
+    <div id="gateMsg"></div>
   </div>
 </div>
 
-<!-- Admin dashboard (hidden until key verified) -->
-<div id="adminDash" style="display:none;">
-  <div class="container" style="max-width:1100px; padding:24px">
-    <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
-      <div>
-        <h1 style="margin:0">Admin dashboard</h1>
-        <p class="muted" style="margin:6px 0 0">Approve payouts, freeze accounts, monitor drawdowns.</p>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap">
-        <a class="btn" href="dashboard.html">User dashboard</a>
-      </div>
-    </header>
+<!-- Dashboard -->
+<div id="adminDash">
+  <div class="a-layout">
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <div style="flex:1; min-width:260px">
-          <label class="tiny muted" for="adminKey">Admin key</label>
-          <input id="adminKey" class="input" type="password" placeholder="Set ADMIN_KEY env var" />
+    <aside class="a-sidebar">
+      <div class="sb-brand">
+        <div class="sb-logo"></div>
+        <div>
+          <div class="sb-name">CryptoProp</div>
+          <div class="sb-badge">ADMIN PANEL</div>
         </div>
-        <button class="btn primary" id="saveKey">Save</button>
-        <button class="btn" id="refresh">Refresh</button>
-        <div class="tiny muted" id="status"></div>
-      </div>
-    </section>
-
-
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Ops Console</h2>
-      <div class="muted small" style="margin-bottom:10px">Search an account and take actions (all actions are audited).</div>
-
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <div style="flex:1; min-width:260px">
-          <label class="tiny muted" for="opsEmail">User email</label>
-          <input id="opsEmail" class="input" placeholder="user@email.com" />
-        </div>
-        <button class="btn primary" id="opsLoad">Load</button>
-        <button class="btn" id="opsRefresh">Refresh</button>
       </div>
 
-      <div id="opsCards" style="display:none; margin-top:12px" class="row2">
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Status</div>
-          <div id="opsStatus" style="font-weight:800">—</div>
-          <div class="muted small" id="opsDetail"></div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
-            <button class="btn" id="opsFreeze">Freeze</button>
-            <button class="btn" id="opsUnfreeze">Unfreeze</button>
-            <button class="btn" id="opsUnlockDaily">Unlock daily lock</button>
-          </div>
-        </div>
+      <nav class="sb-nav">
+        <div class="sb-grp">Overview</div>
+        <div class="sb-item active" onclick="nav('overview',this)"><span class="sb-ico">📊</span> Dashboard</div>
 
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Emergency</div>
-          <div class="muted small">Force actions immediately.</div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
-            <input id="opsFlattenReason" class="input" placeholder="Flatten reason" style="flex:1; min-width:220px" />
-            <button class="btn primary" id="opsFlatten">Flatten positions</button>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
-            <button class="btn" id="opsReset">Reset account</button>
-            <select id="opsPhase" class="input" style="max-width:200px">
-              <option value="challenge">challenge</option>
-              <option value="funded">funded</option>
-            </select>
-            <button class="btn" id="opsSetPhase">Set phase</button>
+        <div class="sb-grp" style="margin-top:8px;">Management</div>
+        <div class="sb-item" onclick="nav('accounts',this)"><span class="sb-ico">👥</span> Accounts</div>
+        <div class="sb-item" onclick="nav('payouts',this)"><span class="sb-ico">💸</span> Payouts</div>
+        <div class="sb-item" onclick="nav('kyc',this)"><span class="sb-ico">🪪</span> KYC Queue</div>
+        <div class="sb-item" onclick="nav('ops',this)"><span class="sb-ico">⚙️</span> Ops Console</div>
+
+        <div class="sb-grp" style="margin-top:8px;">Tools</div>
+        <div class="sb-item" onclick="nav('referrals',this)"><span class="sb-ico">🔗</span> Referral Codes</div>
+        <div class="sb-item" onclick="nav('risk',this)"><span class="sb-ico">🚨</span> Risk & Flags</div>
+        <div class="sb-item" onclick="nav('audit',this)"><span class="sb-ico">📋</span> Audit Log</div>
+      </nav>
+
+      <div class="sb-foot">
+        <div class="sb-foot-row">
+          <a href="dashboard.html">← User view</a>
+          <button id="refresh">↻ Refresh</button>
+        </div>
+        <button class="lock-btn" onclick="lockAdmin()">🔒 Lock session</button>
+      </div>
+    </aside>
+
+    <main class="a-main">
+      <!-- Used by admin.js -->
+      <input id="adminKey" type="hidden" />
+      <button id="saveKey" style="display:none;"></button>
+      <div id="status" style="display:none;"></div>
+
+      <!-- Overview -->
+      <div id="section-overview" class="a-sec visible">
+        <div class="pg-hd"><h1>Dashboard</h1><p>Platform-wide overview and live metrics.</p></div>
+        <div class="sg">
+          <div class="sc"><div class="sc-lbl">Total accounts</div><div class="sc-val" id="ovTotal">—</div><div class="sc-sub">All registered traders</div></div>
+          <div class="sc"><div class="sc-lbl">In challenge</div><div class="sc-val" id="ovChallenge">—</div><div class="sc-sub">Active challenge accounts</div></div>
+          <div class="sc"><div class="sc-lbl">Pending payouts</div><div class="sc-val" id="ovPending">—</div><div class="sc-sub">Awaiting approval</div></div>
+          <div class="sc"><div class="sc-lbl">Flagged accounts</div><div class="sc-val" id="ovFlagged">—</div><div class="sc-sub">Multi-account flags</div></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="phi">👥</span><h3>All Accounts</h3></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th>Actions</th>
+            </tr></thead><tbody id="acctBody"></tbody></table>
           </div>
         </div>
       </div>
 
-      <details style="margin-top:12px">
-        <summary class="muted small">Raw account JSON</summary>
-        <pre id="opsJson" style="white-space:pre-wrap; margin-top:10px; font-size:12px"></pre>
-      </details>
-    </section>
-
-    
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Referral codes</h2>
-      <div class="muted small" style="margin-bottom:10px">Only admins can create codes. Traders can apply one code once.</div>
-
-      <form id="refCreate" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <input id="refNewCode" class="input" placeholder="Code (optional)" style="max-width:220px" />
-        <input id="refMaxUses" class="input" placeholder="Max uses (optional)" style="max-width:200px" />
-        <input id="refCommission" class="input" placeholder="Commission (e.g. 0.2)" style="max-width:220px" />
-        <input id="refNote" class="input" placeholder="Note (optional)" style="flex:1; min-width:220px" />
-        <button class="btn primary" type="submit">Create</button>
-        <div class="tiny muted" id="refCreateMsg"></div>
-      </form>
-
-      <div style="overflow:auto; margin-top:12px">
-        <table class="table" aria-label="Referral codes">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Uses</th>
-              <th>Max</th>
-              <th>Commission</th>
-              <th>Active</th>
-              <th>Created</th>
-              <th>Note</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="refBody"></tbody>
-        </table>
-      </div>
-
-      <details style="margin-top:10px">
-        <summary class="muted small">Recent referral uses</summary>
-        <pre id="refUses" style="white-space:pre-wrap; margin-top:10px; font-size:12px"></pre>
-      </details>
-    </section>
-
-
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Audit log</h2>
-      <div class="muted small" style="margin-bottom:10px">Most recent admin actions.</div>
-      <div style="overflow:auto">
-        <table class="table" aria-label="Audit log">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Actor</th>
-              <th>Action</th>
-              <th>Target</th>
-              <th>Meta</th>
-              <th>IP</th>
-            </tr>
-          </thead>
-          <tbody id="auditBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Accounts</h2>
-      <div style="overflow:auto">
-        <table class="table" aria-label="Accounts">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Phase</th>
-              <th>Equity</th>
-              <th>Daily DD</th>
-              <th>Trailing DD</th>
-              <th>Withdrawable</th>
-              <th>Pending payouts</th>
-              <th>Frozen</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="acctBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Approve payout</h2>
-      <form id="approveForm" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <div style="flex:1; min-width:260px">
-          <label class="tiny muted" for="payEmail">Email</label>
-          <input id="payEmail" class="input" placeholder="user email" />
+      <!-- Accounts -->
+      <div id="section-accounts" class="a-sec">
+        <div class="pg-hd"><h1>Accounts</h1><p>View and manage all registered trader accounts.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">👥</span><h3>Trader Accounts</h3></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th>Actions</th>
+            </tr></thead><tbody id="acctBody2"></tbody></table>
+          </div>
         </div>
-        <div style="flex:1; min-width:260px">
-          <label class="tiny muted" for="payId">Request ID</label>
-          <input id="payId" class="input" placeholder="request id" />
+      </div>
+
+      <!-- Payouts -->
+      <div id="section-payouts" class="a-sec">
+        <div class="pg-hd"><h1>Payouts</h1><p>Review and approve payout requests from funded traders.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">⏳</span><h3>Pending Queue</h3></div>
+          <div class="pb"><p class="pdesc">One-click approval. All caps and rules enforced server-side.</p></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Time</th><th>Email</th><th>Amount</th><th>Period</th><th>Request ID</th><th></th>
+            </tr></thead><tbody id="queueBody"></tbody></table>
+          </div>
         </div>
-        <button class="btn primary" type="submit">Approve</button>
-        <div class="tiny muted" id="approveMsg"></div>
-      </form>
-      <p class="muted small" style="margin-top:10px">Tip: pending payout request IDs are visible in the user dashboard payout table with “(PENDING)”.</p>
-    
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Pending payout queue</h2>
-      <div class="muted small" style="margin-bottom:10px">One-click approval. Uses the weekly cap and withdrawable checks server-side.</div>
-      <div style="overflow:auto">
-        <table class="table" aria-label="Pending payouts">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Email</th>
-              <th>Amount</th>
-              <th>Period</th>
-              <th>Request ID</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="queueBody"></tbody>
-        </table>
+        <div class="panel">
+          <div class="ph"><span class="phi">✅</span><h3>Manual Approve</h3></div>
+          <div class="pb">
+            <form id="approveForm">
+              <div class="fr">
+                <div class="fg"><label for="payEmail">Trader email</label><input id="payEmail" class="fi" placeholder="user@email.com" /></div>
+                <div class="fg"><label for="payId">Request ID</label><input id="payId" class="fi" placeholder="req_xxxxxxxx" /></div>
+                <button class="ab pri" type="submit" style="align-self:flex-end;">Approve</button>
+              </div>
+              <div style="font-size:.8rem;color:#ff6b6b;margin-top:8px;" id="approveMsg"></div>
+            </form>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Multi-account flags</h2>
-      <div class="muted small" style="margin-bottom:10px">Flags are heuristics only (devices can be shared; IPs can be NAT/VPN).</div>
-      <div id="flagsBox" class="muted small">Loading…</div>
-    </section>
-
-</section>
-  
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">KYC queue</h2>
-      <div class="muted small" style="margin-bottom:10px">Approve/reject KYC (demo). Payouts require KYC approved.</div>
-      <div style="overflow:auto">
-        <table class="table" aria-label="KYC queue">
-          <thead>
-            <tr>
-              <th>Submitted</th>
-              <th>Email</th>
-              <th>Name</th>
-              <th>DOB</th>
-              <th>Address</th>
-              <th>Doc</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="kycBody"></tbody>
-        </table>
+      <!-- KYC -->
+      <div id="section-kyc" class="a-sec">
+        <div class="pg-hd"><h1>KYC Queue</h1><p>Review identity verification submissions. Payouts require KYC approval.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">🪪</span><h3>Submissions</h3></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th>
+            </tr></thead><tbody id="kycBody"></tbody></table>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Strategy similarity</h2>
-      <div class="muted small" style="margin-bottom:10px">High similarity can indicate multi-accounting or copied trading. Heuristic only.</div>
-      <div style="overflow:auto">
-        <table class="table" aria-label="Similarity">
-          <thead>
-            <tr>
-              <th>Score</th>
-              <th>Account A</th>
-              <th>Account B</th>
-              <th>A sig size</th>
-              <th>B sig size</th>
-            </tr>
-          </thead>
-          <tbody id="simBody"></tbody>
-        </table>
+      <!-- Ops -->
+      <div id="section-ops" class="a-sec">
+        <div class="pg-hd"><h1>Ops Console</h1><p>Search any account and take direct actions. All actions are audited.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">🔍</span><h3>Account Lookup</h3></div>
+          <div class="pb">
+            <div class="fr">
+              <div class="fg"><label for="opsEmail">Trader email</label><input id="opsEmail" class="fi" placeholder="user@email.com" /></div>
+              <button class="ab pri" id="opsLoad" style="align-self:flex-end;">Load Account</button>
+              <button class="ab" id="opsRefresh" style="align-self:flex-end;">↻ Refresh</button>
+            </div>
+          </div>
+        </div>
+        <div id="opsCards" style="display:none;">
+          <div class="og">
+            <div class="oc">
+              <div class="oc-lbl">Account Status</div>
+              <div class="oc-val" id="opsStatus">—</div>
+              <div class="oc-sub" id="opsDetail">No account loaded</div>
+              <div class="bc">
+                <button class="ab sm" id="opsFreeze">🔒 Freeze</button>
+                <button class="ab sm" id="opsUnfreeze">🔓 Unfreeze</button>
+                <button class="ab sm" id="opsUnlockDaily">↻ Unlock daily</button>
+              </div>
+            </div>
+            <div class="oc">
+              <div class="oc-lbl">Emergency Actions</div>
+              <div class="oc-sub">All actions are logged.</div>
+              <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <input id="opsFlattenReason" class="fi" style="flex:1;" placeholder="Flatten reason…" />
+                <button class="ab sm dng" id="opsFlatten">Flatten</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="ab sm dng" id="opsReset">Reset acct</button>
+                <select id="opsPhase" class="fi" style="flex:1;">
+                  <option value="challenge">challenge</option>
+                  <option value="funded">funded</option>
+                </select>
+                <button class="ab sm" id="opsSetPhase">Set phase</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:14px;">
+            <div class="pb">
+              <details><summary>Raw account JSON</summary><pre class="json" id="opsJson" style="margin-top:12px;"></pre></details>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
 
+      <!-- Referrals -->
+      <div id="section-referrals" class="a-sec">
+        <div class="pg-hd"><h1>Referral Codes</h1><p>Create and manage referral codes. Only admins can create codes.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">➕</span><h3>Create New Code</h3></div>
+          <div class="pb">
+            <form id="refCreate">
+              <div class="fr">
+                <div class="fg" style="max-width:180px;"><label>Code</label><input id="refNewCode" class="fi" placeholder="AUTO-GENERATE" /></div>
+                <div class="fg" style="max-width:150px;"><label>Max uses</label><input id="refMaxUses" class="fi" placeholder="Unlimited" /></div>
+                <div class="fg" style="max-width:160px;"><label>Commission</label><input id="refCommission" class="fi" placeholder="e.g. 0.20" /></div>
+                <div class="fg"><label>Note</label><input id="refNote" class="fi" placeholder="Optional note" /></div>
+                <button class="ab pri" type="submit" style="align-self:flex-end;">Create</button>
+              </div>
+              <div style="font-size:.8rem;color:#7ee787;margin-top:8px;" id="refCreateMsg"></div>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="phi">📋</span><h3>All Codes</h3></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Code</th><th>Uses</th><th>Max</th><th>Commission</th><th>Active</th><th>Created</th><th>Note</th><th></th>
+            </tr></thead><tbody id="refBody"></tbody></table>
+          </div>
+          <div class="pb" style="padding-top:14px;">
+            <details><summary>Recent referral uses</summary><pre class="json" id="refUses" style="margin-top:12px;"></pre></details>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk -->
+      <div id="section-risk" class="a-sec">
+        <div class="pg-hd"><h1>Risk & Flags</h1><p>Multi-account detection and strategy similarity heuristics.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">🚨</span><h3>Multi-Account Flags</h3></div>
+          <div class="pb">
+            <p class="pdesc">Heuristics only — shared devices and NAT/VPN IPs can trigger false positives.</p>
+            <div id="flagsBox" style="color:#7888b0;font-size:.88rem;">Loading…</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="phi">🔍</span><h3>Strategy Similarity</h3></div>
+          <div class="pb"><p class="pdesc">High similarity may indicate coordinated or copied trading.</p></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Score</th><th>Account A</th><th>Account B</th><th>A sig size</th><th>B sig size</th>
+            </tr></thead><tbody id="simBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit -->
+      <div id="section-audit" class="a-sec">
+        <div class="pg-hd"><h1>Audit Log</h1><p>Complete history of all admin actions. Immutable.</p></div>
+        <div class="panel">
+          <div class="ph"><span class="phi">📋</span><h3>Recent Actions</h3></div>
+          <div class="tw">
+            <table class="t"><thead><tr>
+              <th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Meta</th><th>IP</th>
+            </tr></thead><tbody id="auditBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
 </div>
-</div><!-- /adminDash -->
 
-  <script>
-    function toggleGateVis(btn) {
-      const el = document.getElementById("gateKey");
-      const show = el.type === "password";
-      el.type = show ? "text" : "password";
-      btn.textContent = show ? "\uD83D\uDE48" : "\uD83D\uDC41";
+<script>
+  function nav(name, el) {
+    document.querySelectorAll(".a-sec").forEach(s => s.classList.remove("visible"));
+    document.querySelectorAll(".sb-item").forEach(n => n.classList.remove("active"));
+    document.getElementById("section-" + name)?.classList.add("visible");
+    el?.classList.add("active");
+  }
+
+  function lockAdmin() {
+    localStorage.removeItem("cp_admin_key");
+    document.getElementById("adminDash").style.display = "none";
+    document.getElementById("adminGate").style.display = "flex";
+    document.getElementById("gateKey").value = "";
+    document.getElementById("gateMsg").textContent = "";
+  }
+
+  function toggleGateVis(btn) {
+    const el = document.getElementById("gateKey");
+    const show = el.type === "password";
+    el.type = show ? "text" : "password";
+    btn.textContent = show ? "🙈" : "👁";
+  }
+
+  async function tryEnter() {
+    const key = document.getElementById("gateKey").value.trim();
+    const msg = document.getElementById("gateMsg");
+    if (!key) { msg.style.color="#ff6b6b"; msg.textContent="Please enter your admin key."; return; }
+    msg.style.color = "#7a85a8"; msg.textContent = "Verifying…";
+    try {
+      const res = await fetch("/api/admin/overview", { headers: { "x-admin-key": key } });
+      if (!res.ok) throw new Error();
+      localStorage.setItem("cp_admin_key", key);
+      document.getElementById("adminKey").value = key;
+      document.getElementById("adminGate").style.display = "none";
+      document.getElementById("adminDash").style.display = "";
+      loadStats(res);
+    } catch(e) {
+      msg.style.color = "#ff6b6b"; msg.textContent = "Invalid admin key.";
+      document.getElementById("gateKey").value = "";
     }
+  }
 
-    async function tryEnter() {
-      const key = document.getElementById("gateKey").value.trim();
-      const msg = document.getElementById("gateMsg");
-      if (!key) { msg.textContent = "Please enter your admin key."; return; }
-      msg.textContent = "Verifying…";
-      try {
-        const res = await fetch("/api/admin/overview", {
-          headers: { "x-admin-key": key }
-        });
-        if (!res.ok) throw new Error("Invalid key");
-        localStorage.setItem("cp_admin_key", key);
+  async function loadStats(res) {
+    try {
+      const d = await res.json();
+      if (d.totalAccounts   != null) document.getElementById("ovTotal").textContent     = d.totalAccounts;
+      if (d.inChallenge     != null) document.getElementById("ovChallenge").textContent = d.inChallenge;
+      if (d.pendingPayouts  != null) document.getElementById("ovPending").textContent   = d.pendingPayouts;
+      if (d.flaggedAccounts != null) document.getElementById("ovFlagged").textContent   = d.flaggedAccounts;
+    } catch(e) {}
+  }
+
+  document.getElementById("gateBtn").addEventListener("click", tryEnter);
+  document.getElementById("gateKey").addEventListener("keydown", e => { if (e.key==="Enter") tryEnter(); });
+
+  (async () => {
+    const saved = localStorage.getItem("cp_admin_key");
+    if (!saved) return;
+    try {
+      const res = await fetch("/api/admin/overview", { headers: { "x-admin-key": saved } });
+      if (res.ok) {
+        document.getElementById("adminKey").value = saved;
         document.getElementById("adminGate").style.display = "none";
         document.getElementById("adminDash").style.display = "";
-      } catch(e) {
-        msg.textContent = "Invalid admin key.";
-        document.getElementById("gateKey").value = "";
-      }
-    }
-
-    document.getElementById("gateBtn").addEventListener("click", tryEnter);
-    document.getElementById("gateKey").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") tryEnter();
-    });
-
-    // Auto-unlock if valid key already saved
-    (async function() {
-      const saved = localStorage.getItem("cp_admin_key");
-      if (!saved) return;
-      try {
-        const res = await fetch("/api/admin/overview", {
-          headers: { "x-admin-key": saved }
-        });
-        if (res.ok) {
-          document.getElementById("adminGate").style.display = "none";
-          document.getElementById("adminDash").style.display = "";
-        } else {
-          localStorage.removeItem("cp_admin_key");
-        }
-      } catch(e) {}
-    })();
-  </script>
-  <script type="module" src="admin.js"></script>
-  <script type="module" src="/app.js"></script>
+        loadStats(res);
+      } else { localStorage.removeItem("cp_admin_key"); }
+    } catch(e) {}
+  })();
+</script>
+<script type="module" src="admin.js"></script>
+<script type="module" src="/app.js"></script>
 </body>
 </html>
