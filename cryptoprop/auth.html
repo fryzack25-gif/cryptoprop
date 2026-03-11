@@ -24,8 +24,22 @@
           <button type="button" onclick="toggleVis('loginPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
         </div>
         <button class="btn primary" id="loginBtn" style="margin-top:12px; width:100%;">Login</button>
+        <div style="text-align:right; margin-top:8px;">
+          <a href="#" id="forgotLink" class="tiny muted" style="color:var(--accent,#7c5cff); text-decoration:none; font-size:12px;">Forgot password?</a>
+        </div>
         <div class="tiny muted" id="loginMsg" style="margin-top:10px;"></div>
       </div>
+
+      <!-- Forgot password box -->
+      <div id="forgotBox" style="margin-top:14px; display:none;">
+        <p class="muted small" style="margin:0 0 10px;">Enter your email and we'll send you a reset link.</p>
+        <label class="tiny muted">Email</label>
+        <input class="input" id="forgotEmail" placeholder="you@email.com" />
+        <button class="btn primary" id="forgotBtn" style="margin-top:12px; width:100%;">Send reset link</button>
+        <div class="tiny muted" id="forgotMsg" style="margin-top:10px;"></div>
+        <div style="margin-top:10px;">
+          <a href="#" id="backToLogin" class="tiny muted" style="color:var(--accent,#7c5cff); text-decoration:none; font-size:12px;">← Back to login</a>
+        </div>
       <div id="signupBox" style="margin-top:14px; display:none;">
         <label class="tiny muted">Email</label>
         <input class="input" id="signupEmail" placeholder="you@email.com" />
