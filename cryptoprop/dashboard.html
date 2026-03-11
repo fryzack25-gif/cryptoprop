@@ -31,6 +31,13 @@
   </header>
   
     
+    <!-- Start challenge CTA (shown when no plan is active) -->
+    <div id="noPlanBanner" style="display:none; text-align:center; padding:32px 16px; margin-top:20px;">
+      <h2 style="font-size:1.4rem; margin-bottom:8px;">Ready to get funded?</h2>
+      <p class="muted" style="margin-bottom:20px;">Choose a challenge size and start trading today.</p>
+      <button class="btn primary" id="openCheckoutBtn" style="font-size:1rem; padding:13px 32px;">Start a Challenge →</button>
+    </div>
+
     <section class="card glass" id="challengeProgress" style="padding:18px; margin-top:14px">
       <div class="section-title" style="margin-bottom:10px">
         <h2 style="font-size:1.15rem">Challenge progress</h2>
@@ -459,5 +466,71 @@
   </script>
   <script type="module" src="dashboard.js"></script>
   <script type="module" src="/app.js"></script>
+  <script>
+    (async function(){
+      try{
+        const res = await fetch("/api/auth/me");
+        const data = await res.json().catch(()=>({}));
+        if(!data.user) window.location.href = "/auth.html";
+      }catch(e){ window.location.href = "/auth.html"; }
+    })();
+  </script>
+
+  <!-- ===== CHECKOUT MODAL ===== -->
+  <div id="checkoutOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:32px; width:100%; max-width:460px; margin:16px; position:relative;">
+      <button id="checkoutClose" style="position:absolute; top:14px; right:18px; background:none; border:none; color:#aaa; font-size:1.4rem; cursor:pointer; line-height:1;">×</button>
+      <h2 style="margin:0 0 6px; font-size:1.3rem">Start your challenge</h2>
+      <p class="muted small" style="margin:0 0 24px">Select your account size and complete checkout to begin.</p>
+
+      <!-- Plan selector -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px;">
+        <div class="checkout-plan" data-plan="25k" style="border:2px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 10px; text-align:center; cursor:pointer; transition:border-color .2s;">
+          <div style="font-weight:700; font-size:1.1rem">$25K</div>
+          <div class="muted small">$149</div>
+        </div>
+        <div class="checkout-plan" data-plan="50k" style="border:2px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 10px; text-align:center; cursor:pointer; transition:border-color .2s;">
+          <div style="font-weight:700; font-size:1.1rem">$50K</div>
+          <div class="muted small">$279</div>
+        </div>
+        <div class="checkout-plan" data-plan="100k" style="border:2px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px 10px; text-align:center; cursor:pointer; transition:border-color .2s;">
+          <div style="font-weight:700; font-size:1.1rem">$100K</div>
+          <div class="muted small">$499</div>
+        </div>
+      </div>
+
+      <!-- Promo code -->
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <input id="promoInput" type="text" placeholder="Promo code (optional)" style="flex:1; padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); color:inherit; font-size:.95rem; text-transform:uppercase;" />
+        <button id="promoApply" class="btn" style="white-space:nowrap;">Apply</button>
+      </div>
+      <div id="promoMsg" style="font-size:.85rem; margin-bottom:14px; min-height:18px;"></div>
+
+      <!-- Order summary -->
+      <div style="background:rgba(255,255,255,0.04); border-radius:10px; padding:14px 16px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span class="muted small">Plan</span>
+          <span id="summaryPlan" style="font-weight:600;">—</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;" id="summaryDiscountRow" style="display:none;">
+          <span class="muted small" id="summaryDiscountLabel">Promo</span>
+          <span id="summaryDiscount" style="color:#4ade80; font-weight:600;">—</span>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; margin-top:4px; display:flex; justify-content:space-between;">
+          <span style="font-weight:700;">Total</span>
+          <span id="summaryTotal" style="font-weight:700; font-size:1.1rem;">—</span>
+        </div>
+      </div>
+
+      <button id="checkoutConfirm" class="btn primary" style="width:100%; padding:13px; font-size:1rem;" disabled>Select a plan to continue</button>
+      <div id="checkoutMsg" style="font-size:.85rem; margin-top:10px; text-align:center; min-height:18px;"></div>
+    </div>
+  </div>
+
+  <style>
+    .checkout-plan:hover { border-color: rgba(255,255,255,0.3) !important; }
+    .checkout-plan.selected { border-color: var(--accent, #7c5cff) !important; background: rgba(124,92,255,0.12); }
+  </style>
+
 </body>
 </html>
