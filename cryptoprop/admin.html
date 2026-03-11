@@ -1,617 +1,281 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <title>CryptoProp — Admin</title>
-  <script>
-    // Block any redirect attempts from cached scripts
-    const _origAssign = window.location.assign.bind(window.location);
-    const _origReplace = window.location.replace.bind(window.location);
-    Object.defineProperty(window.location, 'assign', { value: function(url) { if(url && url.includes('auth')) return; _origAssign(url); } });
-    Object.defineProperty(window.location, 'replace', { value: function(url) { if(url && url.includes('auth')) return; _origReplace(url); } });
-    Object.defineProperty(window.location, 'href', { set: function(url) { if(url && url.includes('auth')) return; _origAssign(url); }, get: function() { return window.location.toString(); } });
-  </script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;background:#05060a;color:#e2e8f8}
-
-    /* ── Gate ── */
-    #gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
-      background:radial-gradient(ellipse 900px 600px at 15% 20%,rgba(124,92,255,.22),transparent 65%),
-                 radial-gradient(ellipse 700px 500px at 85% 75%,rgba(0,209,178,.14),transparent 65%),#05060a}
-    .gc{width:min(420px,92vw);background:rgba(12,15,28,.92);border:1px solid rgba(255,255,255,.1);border-radius:24px;
-      padding:44px 38px 38px;text-align:center;box-shadow:0 60px 120px rgba(0,0,0,.7)}
-    .glogo{width:60px;height:60px;border-radius:20px;margin:0 auto 22px;
-      background:conic-gradient(from 220deg,#7c5cff,#00d1b2,#31c4ff,#7c5cff);
-      box-shadow:0 0 40px rgba(124,92,255,.5)}
-    .gc h2{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:8px}
-    .gc p{color:#7a85a8;font-size:.9rem;margin-bottom:26px}
-    .giw{position:relative;display:flex;align-items:center}
-    .giw input{width:100%;padding:13px 44px 13px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;color:#e2e8f8;font-size:.95rem;outline:none;letter-spacing:.08em;font-family:monospace}
-    .giw input:focus{border-color:rgba(124,92,255,.6);box-shadow:0 0 0 3px rgba(124,92,255,.15)}
-    .giw button{position:absolute;right:12px;background:none;border:none;cursor:pointer;color:#7a85a8;font-size:15px}
-    .gbtn{width:100%;margin-top:13px;padding:13px;background:linear-gradient(135deg,#7c5cff,#9a7bff);
-      border:none;border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;
-      box-shadow:0 8px 28px rgba(124,92,255,.4);transition:transform .15s,box-shadow .15s}
-    .gbtn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(124,92,255,.6)}
-    #gmsg{margin-top:10px;font-size:.82rem;min-height:18px}
-
-    /* ── Dashboard ── */
-    #dash{display:none;min-height:100vh}
-    .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
-    @media(max-width:800px){.layout{grid-template-columns:1fr}.sidebar{display:none!important}}
-
-    /* Sidebar */
-    .sidebar{background:rgba(5,7,15,.97);border-right:1px solid rgba(255,255,255,.06);
-      position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
-    .sbrand{display:flex;align-items:center;gap:11px;padding:26px 20px 22px;border-bottom:1px solid rgba(255,255,255,.055)}
-    .slogo{width:34px;height:34px;border-radius:11px;flex-shrink:0;
-      background:conic-gradient(from 220deg,#7c5cff,#00d1b2,#31c4ff,#7c5cff);box-shadow:0 0 18px rgba(124,92,255,.4)}
-    .sname{font-weight:900;font-size:.9rem;letter-spacing:-.02em}
-    .sbadge{font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      background:rgba(124,92,255,.2);color:#c4b5ff;border:1px solid rgba(124,92,255,.35);
-      padding:2px 7px;border-radius:999px;display:inline-block;margin-top:3px}
-    .snav{padding:12px;flex:1}
-    .sgrp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-      color:rgba(168,176,200,.3);padding:10px 8px 4px}
-    .sitem{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;
-      color:#6a78a0;font-size:.865rem;cursor:pointer;transition:all .15s;
-      border:1px solid transparent;margin-bottom:2px;user-select:none}
-    .sitem:hover{background:rgba(255,255,255,.05);color:#e2e8f8}
-    .sitem.on{background:rgba(124,92,255,.16);color:#c4b5ff;border-color:rgba(124,92,255,.28)}
-    .sico{width:16px;text-align:center;font-size:13px;flex-shrink:0}
-    .sfoot{padding:14px 20px 18px;border-top:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;gap:8px}
-    .sfoot-r{display:flex;justify-content:space-between;align-items:center}
-    .sfoot a{font-size:.8rem;color:#6a78a0;text-decoration:none}
-    .sfoot a:hover{color:#e2e8f8}
-    #refreshBtn{padding:5px 13px;border-radius:9px;font-size:.78rem;background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.08);color:#a0a8c0;cursor:pointer;transition:all .15s}
-    #refreshBtn:hover{background:rgba(255,255,255,.1);color:#e2e8f8}
-    .lockbtn{background:none;border:none;font-size:.78rem;color:rgba(168,176,200,.35);cursor:pointer;text-align:left;transition:color .15s}
-    .lockbtn:hover{color:#ff6b6b}
-
-    /* Main */
-    .main{padding:36px 40px;overflow-y:auto}
-    @media(max-width:800px){.main{padding:22px 16px}}
-
-    /* Page header */
-    .pghd{margin-bottom:26px}
-    .pghd h1{font-size:1.75rem;font-weight:900;letter-spacing:-.04em;margin-bottom:5px;
-      background:linear-gradient(135deg,#e2e8f8,#8090c0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .pghd p{color:#6a78a0;font-size:.88rem}
-
-    /* Sections */
-    .sec{display:none}.sec.on{display:block}
-
-    /* Stat grid */
-    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
-    @media(max-width:900px){.sg{grid-template-columns:repeat(2,1fr)}}
-    .sc{background:rgba(10,13,23,.75);border:1px solid rgba(255,255,255,.075);border-radius:18px;padding:20px 18px;
-      position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s}
-    .sc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 15%,rgba(124,92,255,.07),transparent 55%);pointer-events:none}
-    .sc:hover{border-color:rgba(124,92,255,.28);box-shadow:0 6px 28px rgba(124,92,255,.1)}
-    .slbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#4858a0;margin-bottom:9px}
-    .sval{font-size:2rem;font-weight:900;letter-spacing:-.04em;line-height:1}
-    .ssub{font-size:.75rem;color:#4858a0;margin-top:6px}
-
-    /* Panel */
-    .panel{background:rgba(9,11,21,.75);border:1px solid rgba(255,255,255,.065);border-radius:18px;margin-bottom:16px;overflow:hidden}
-    .ph{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:9px}
-    .ph h3{font-size:.92rem;font-weight:800;flex:1}
-    .pb{padding:18px 20px}
-    .pdesc{font-size:.82rem;color:#5060a0;margin-bottom:13px}
-
-    /* Table */
-    .tw{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4050a0;
-      padding:9px 13px;text-align:left;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.045);white-space:nowrap}
-    td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.03);color:#7080b0;vertical-align:middle}
-    td.hi{color:#e2e8f8;font-weight:600}
-    tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(124,92,255,.04)}
-    .tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:.7rem;font-weight:700}
-    .tg{background:rgba(126,231,135,.1);color:#7ee787;border:1px solid rgba(126,231,135,.2)}
-    .tr{background:rgba(255,107,107,.1);color:#ff6b6b;border:1px solid rgba(255,107,107,.2)}
-
-    /* Forms */
-    .fr{display:flex;gap:11px;flex-wrap:wrap;align-items:flex-end}
-    .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:170px}
-    .fg label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#4858a0}
-    input.fi,select.fi{padding:10px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.085);
-      border-radius:11px;color:#e2e8f8;font-size:.87rem;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
-    input.fi:focus,select.fi:focus{border-color:rgba(124,92,255,.5);box-shadow:0 0 0 3px rgba(124,92,255,.12)}
-
-    /* Buttons */
-    .ab{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:11px;
-      font-size:.83rem;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.1);
-      background:rgba(255,255,255,.05);color:#b0b8d8;transition:all .15s;white-space:nowrap}
-    .ab:hover{background:rgba(255,255,255,.1);color:#fff;transform:translateY(-1px)}
-    .ab:active{transform:translateY(0);opacity:.85}
-    .ab.pri{background:linear-gradient(135deg,#7c5cff,#9a7bff);border:none;color:#fff;box-shadow:0 5px 20px rgba(124,92,255,.4)}
-    .ab.pri:hover{box-shadow:0 9px 32px rgba(124,92,255,.6)}
-    .ab.sm{padding:6px 11px;font-size:.76rem;border-radius:8px}
-    .ab.dng{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.2);color:#ff8a8a}
-    .ab.dng:hover{background:rgba(255,107,107,.2)}
-
-    /* Ops */
-    .og{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:13px}
-    @media(max-width:650px){.og{grid-template-columns:1fr}}
-    .oc{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.065);border-radius:14px;padding:16px}
-    .oclbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#4050a0;margin-bottom:7px}
-    .ocval{font-size:1.1rem;font-weight:800;margin-bottom:3px}
-    .ocsub{font-size:.78rem;color:#5060a0;margin-bottom:10px}
-    .bc{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
-
-    /* JSON */
-    pre{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:12px;
-      padding:14px;font-family:monospace;font-size:11px;line-height:1.7;color:#6070a0;overflow-x:auto}
-    details summary{cursor:pointer;font-size:.82rem;color:#5060a0;user-select:none}
-    details summary:hover{color:#a0b0d0}
-    #adstatus{font-size:.8rem;color:#6a78a0;padding:4px 0}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#07080f;color:#c8d0e8;font-family:system-ui,sans-serif;font-size:14px}
+a{color:#9b8aff;text-decoration:none}
+#gate{position:fixed;inset:0;background:#07080f;display:flex;align-items:center;justify-content:center;z-index:100}
+.gbox{width:340px;background:#0f1120;border:1px solid #2a2d4a;border-radius:16px;padding:36px 30px;text-align:center}
+.gbox h2{font-size:1.3rem;margin-bottom:6px}
+.gbox p{color:#7080a0;margin-bottom:22px;font-size:13px}
+.gbox input{width:100%;padding:11px 14px;background:#070810;border:1px solid #2a2d4a;border-radius:10px;color:#c8d0e8;font-size:14px;outline:none;margin-bottom:12px;font-family:monospace;letter-spacing:.1em}
+.gbox input:focus{border-color:#7c5cff}
+.gbox button{width:100%;padding:12px;background:#7c5cff;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+.gbox button:hover{background:#9170ff}
+#gerr{color:#ff6b6b;font-size:12px;margin-top:10px;min-height:16px}
+#app{display:none;min-height:100vh}
+.wrap{display:flex;min-height:100vh}
+.side{width:200px;flex-shrink:0;background:#0a0b15;border-right:1px solid #1a1d2e;padding:16px 0;display:flex;flex-direction:column}
+.side-logo{display:flex;align-items:center;gap:9px;padding:0 16px 16px;border-bottom:1px solid #1a1d2e;margin-bottom:8px}
+.side-logo .dot{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 220deg,#7c5cff,#00d1b2,#7c5cff);flex-shrink:0}
+.side-logo span{font-weight:800;font-size:.9rem}
+.side-logo small{display:block;font-size:9px;color:#7c5cff;font-weight:700;letter-spacing:.1em}
+.nav-btn{display:block;padding:8px 16px;color:#7080a0;cursor:pointer;border-radius:8px;margin:1px 8px;transition:all .1s;border:none;background:none;font-size:13px;text-align:left;width:calc(100% - 16px)}
+.nav-btn:hover{background:#13152a;color:#c8d0e8}
+.nav-btn.active{background:#1e1545;color:#b09fff}
+.side-foot{margin-top:auto;padding:12px 16px;border-top:1px solid #1a1d2e;display:flex;flex-direction:column;gap:8px}
+.side-foot a,.side-foot button{font-size:12px;color:#506080;background:none;border:none;cursor:pointer;text-align:left;padding:0}
+.side-foot a:hover,.side-foot button:hover{color:#c8d0e8}
+.content{flex:1;padding:28px 32px;overflow-y:auto}
+@media(max-width:700px){.content{padding:16px}}
+.pg-title{font-size:1.5rem;font-weight:800;margin-bottom:4px;letter-spacing:-.03em}
+.pg-sub{color:#506080;font-size:13px;margin-bottom:24px}
+.sec{display:none}.sec.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#0f1120;border:1px solid #1a1d2e;border-radius:12px;padding:16px}
+.stat-l{font-size:11px;color:#506080;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.stat-v{font-size:1.8rem;font-weight:900;letter-spacing:-.04em}
+.card{background:#0f1120;border:1px solid #1a1d2e;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.card-hd{padding:14px 18px;border-bottom:1px solid #1a1d2e;font-weight:700;font-size:13px}
+.card-bd{padding:18px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:8px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#404870;background:#090a14;border-bottom:1px solid #1a1d2e;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #12142000;color:#8090b8;vertical-align:middle}
+tr:hover td{background:#0d0f1e}
+tr:last-child td{border-bottom:none}
+.hi{color:#c8d0e8!important;font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px}
+.fg label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#506080}
+input.f,select.f{padding:9px 12px;background:#070810;border:1px solid #2a2d4a;border-radius:9px;color:#c8d0e8;font-size:13px;outline:none;width:100%}
+input.f:focus,select.f:focus{border-color:#7c5cff}
+.btn{display:inline-flex;align-items:center;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #2a2d4a;background:#13152a;color:#9098c0;transition:all .1s;white-space:nowrap}
+.btn:hover{background:#1e2040;color:#c8d0e8}
+.btn.p{background:#7c5cff;border-color:#7c5cff;color:#fff}
+.btn.p:hover{background:#9170ff}
+.btn.s{padding:6px 10px;font-size:12px}
+.btn.d{background:#2a1020;border-color:#4a2030;color:#ff8a8a}
+.btn.d:hover{background:#3a1828}
+.tag{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.tag.g{background:rgba(126,231,135,.1);color:#7ee787;border:1px solid rgba(126,231,135,.2)}
+.tag.r{background:rgba(255,107,107,.1);color:#ff6b6b;border:1px solid rgba(255,107,107,.2)}
+.ops-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:600px){.ops-grid{grid-template-columns:1fr}}
+.ops-card{background:#090a14;border:1px solid #1a1d2e;border-radius:10px;padding:14px}
+.ops-lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#404870;margin-bottom:6px}
+.ops-val{font-size:1rem;font-weight:800;margin-bottom:3px}
+.ops-sub{font-size:12px;color:#506080;margin-bottom:10px}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+pre{background:#050608;border:1px solid #1a1d2e;border-radius:9px;padding:13px;font-size:11px;line-height:1.7;color:#6070a0;overflow-x:auto;font-family:monospace}
+details summary{cursor:pointer;font-size:12px;color:#506080}
+details summary:hover{color:#9098c0}
+.msg{font-size:12px;margin-top:8px;min-height:16px}
+.err{color:#ff6b6b}.ok{color:#7ee787}
+</style>
 </head>
 <body>
 
 <div id="gate">
-  <div class="gc">
-    <div class="glogo"></div>
+  <div class="gbox">
     <h2>Admin Access</h2>
-    <p>Enter your admin key to unlock the dashboard.</p>
-    <div class="giw">
-      <input id="gkey" type="password" placeholder="••••••••••••••••" autocomplete="off"/>
-      <button type="button" onclick="toggleVis()">👁</button>
-    </div>
-    <button class="gbtn" onclick="tryEnter()">Unlock Dashboard →</button>
-    <div id="gmsg"></div>
+    <p>Enter your admin key to continue</p>
+    <input id="gk" type="password" placeholder="Admin key" autocomplete="off">
+    <button onclick="tryLogin()">Unlock →</button>
+    <div id="gerr"></div>
   </div>
 </div>
 
-<div id="dash">
-  <div class="layout">
-    <nav class="sidebar">
-      <div class="sbrand">
-        <div class="slogo"></div>
-        <div><div class="sname">CryptoProp</div><div class="sbadge">ADMIN</div></div>
+<div id="app">
+<div class="wrap">
+  <nav class="side">
+    <div class="side-logo">
+      <div class="dot"></div>
+      <div><span>CryptoProp</span><small>ADMIN</small></div>
+    </div>
+    <button class="nav-btn active" onclick="show('overview',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="show('accounts',this)">👥 Accounts</button>
+    <button class="nav-btn" onclick="show('payouts',this)">💸 Payouts</button>
+    <button class="nav-btn" onclick="show('kyc',this)">🪪 KYC</button>
+    <button class="nav-btn" onclick="show('ops',this)">⚙️ Ops Console</button>
+    <button class="nav-btn" onclick="show('referrals',this)">🔗 Referrals</button>
+    <button class="nav-btn" onclick="show('risk',this)">🚨 Risk</button>
+    <button class="nav-btn" onclick="show('audit',this)">📋 Audit Log</button>
+    <div class="side-foot">
+      <a href="dashboard.html">← User view</a>
+      <button onclick="loadAll()">↻ Refresh</button>
+      <button onclick="doLock()" style="color:#ff6b6b66">🔒 Lock</button>
+    </div>
+  </nav>
+  <main class="content">
+    <div id="sec-overview" class="sec on">
+      <div class="pg-title">Dashboard</div>
+      <div class="pg-sub">Platform overview</div>
+      <div class="stats">
+        <div class="stat"><div class="stat-l">Accounts</div><div class="stat-v" id="s-total">—</div></div>
+        <div class="stat"><div class="stat-l">In Challenge</div><div class="stat-v" id="s-chal">—</div></div>
+        <div class="stat"><div class="stat-l">Pending Payouts</div><div class="stat-v" id="s-pay">—</div></div>
+        <div class="stat"><div class="stat-l">Flagged</div><div class="stat-v" id="s-flag">—</div></div>
       </div>
-      <div class="snav">
-        <div class="sgrp">Overview</div>
-        <div class="sitem on" onclick="nav('overview',this)"><span class="sico">📊</span>Dashboard</div>
-        <div class="sgrp" style="margin-top:6px">Management</div>
-        <div class="sitem" onclick="nav('accounts',this)"><span class="sico">👥</span>Accounts</div>
-        <div class="sitem" onclick="nav('payouts',this)"><span class="sico">💸</span>Payouts</div>
-        <div class="sitem" onclick="nav('kyc',this)"><span class="sico">🪪</span>KYC Queue</div>
-        <div class="sitem" onclick="nav('ops',this)"><span class="sico">⚙️</span>Ops Console</div>
-        <div class="sgrp" style="margin-top:6px">Tools</div>
-        <div class="sitem" onclick="nav('referrals',this)"><span class="sico">🔗</span>Referral Codes</div>
-        <div class="sitem" onclick="nav('risk',this)"><span class="sico">🚨</span>Risk &amp; Flags</div>
-        <div class="sitem" onclick="nav('audit',this)"><span class="sico">📋</span>Audit Log</div>
+      <div class="card">
+        <div class="card-hd">All Accounts</div>
+        <div class="tbl-wrap"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th></th></tr></thead><tbody id="t-accts"></tbody></table></div>
       </div>
-      <div class="sfoot">
-        <div class="sfoot-r">
-          <a href="dashboard.html">← User view</a>
-          <button id="refreshBtn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+    <div id="sec-accounts" class="sec">
+      <div class="pg-title">Accounts</div><div class="pg-sub">All trader accounts</div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th></th></tr></thead><tbody id="t-accts2"></tbody></table></div></div>
+    </div>
+    <div id="sec-payouts" class="sec">
+      <div class="pg-title">Payouts</div><div class="pg-sub">Review and approve payout requests</div>
+      <div class="card"><div class="card-hd">Pending Queue</div><div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Email</th><th>Amount</th><th>Period</th><th>Request ID</th><th></th></tr></thead><tbody id="t-queue"></tbody></table></div></div>
+      <div class="card"><div class="card-hd">Manual Approve</div><div class="card-bd">
+        <div class="row">
+          <div class="fg"><label>Email</label><input id="pay-email" class="f" placeholder="user@email.com"></div>
+          <div class="fg"><label>Request ID</label><input id="pay-id" class="f" placeholder="req_xxx"></div>
+          <button class="btn p" onclick="doApprove()">Approve</button>
         </div>
-        <button class="lockbtn" onclick="lockAdmin()">🔒 Lock session</button>
-      </div>
-    </nav>
-
-    <main class="main">
-      <div id="adstatus"></div>
-
-      <!-- Overview -->
-      <div id="sec-overview" class="sec on">
-        <div class="pghd"><h1>Dashboard</h1><p>Platform-wide overview and live metrics.</p></div>
-        <div class="sg">
-          <div class="sc"><div class="slbl">Total accounts</div><div class="sval" id="ovTotal">—</div><div class="ssub">All registered traders</div></div>
-          <div class="sc"><div class="slbl">In challenge</div><div class="sval" id="ovChallenge">—</div><div class="ssub">Active challenges</div></div>
-          <div class="sc"><div class="slbl">Pending payouts</div><div class="sval" id="ovPending">—</div><div class="ssub">Awaiting approval</div></div>
-          <div class="sc"><div class="slbl">Flagged accounts</div><div class="sval" id="ovFlagged">—</div><div class="ssub">Multi-account flags</div></div>
+        <div id="pay-msg" class="msg"></div>
+      </div></div>
+    </div>
+    <div id="sec-kyc" class="sec">
+      <div class="pg-title">KYC Queue</div><div class="pg-sub">Identity verification submissions</div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th></tr></thead><tbody id="t-kyc"></tbody></table></div></div>
+    </div>
+    <div id="sec-ops" class="sec">
+      <div class="pg-title">Ops Console</div><div class="pg-sub">Search an account and take actions — all actions are audited</div>
+      <div class="card"><div class="card-bd">
+        <div class="row">
+          <div class="fg"><label>Trader Email</label><input id="ops-email" class="f" placeholder="user@email.com"></div>
+          <button class="btn p" onclick="opsLoad()">Load</button>
+          <button class="btn" onclick="opsRefresh()">↻</button>
         </div>
-        <div class="panel">
-          <div class="ph"><span>👥</span><h3>All Accounts</h3></div>
-          <div class="tw"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th>Actions</th></tr></thead><tbody id="acctBody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- Accounts -->
-      <div id="sec-accounts" class="sec">
-        <div class="pghd"><h1>Accounts</h1><p>All registered trader accounts.</p></div>
-        <div class="panel">
-          <div class="ph"><span>👥</span><h3>Trader Accounts</h3></div>
-          <div class="tw"><table><thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th>Actions</th></tr></thead><tbody id="acctBody2"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- Payouts -->
-      <div id="sec-payouts" class="sec">
-        <div class="pghd"><h1>Payouts</h1><p>Review and approve payout requests.</p></div>
-        <div class="panel">
-          <div class="ph"><span>⏳</span><h3>Pending Queue</h3></div>
-          <div class="pb"><p class="pdesc">One-click approval. All caps enforced server-side.</p></div>
-          <div class="tw"><table><thead><tr><th>Time</th><th>Email</th><th>Amount</th><th>Period</th><th>Request ID</th><th></th></tr></thead><tbody id="queueBody"></tbody></table></div>
-        </div>
-        <div class="panel">
-          <div class="ph"><span>✅</span><h3>Manual Approve</h3></div>
-          <div class="pb">
-            <div class="fr">
-              <div class="fg"><label>Trader email</label><input id="payEmail" class="fi" placeholder="user@email.com"/></div>
-              <div class="fg"><label>Request ID</label><input id="payId" class="fi" placeholder="req_xxx"/></div>
-              <button class="ab pri" onclick="doApprove()" style="align-self:flex-end">Approve</button>
+      </div></div>
+      <div id="ops-cards" style="display:none">
+        <div class="ops-grid">
+          <div class="ops-card">
+            <div class="ops-lbl">Status</div>
+            <div class="ops-val" id="ops-status">—</div>
+            <div class="ops-sub" id="ops-detail"></div>
+            <div class="btn-row">
+              <button class="btn s" onclick="opsAction('freeze',true)">🔒 Freeze</button>
+              <button class="btn s" onclick="opsAction('freeze',false)">🔓 Unfreeze</button>
+              <button class="btn s" onclick="opsAction('unlock-daily')">↻ Unlock daily</button>
             </div>
-            <div id="approveMsg" style="font-size:.8rem;color:#ff6b6b;margin-top:8px"></div>
           </div>
-        </div>
-      </div>
-
-      <!-- KYC -->
-      <div id="sec-kyc" class="sec">
-        <div class="pghd"><h1>KYC Queue</h1><p>Identity verification submissions.</p></div>
-        <div class="panel">
-          <div class="ph"><span>🪪</span><h3>Submissions</h3></div>
-          <div class="tw"><table><thead><tr><th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th></tr></thead><tbody id="kycBody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- Ops -->
-      <div id="sec-ops" class="sec">
-        <div class="pghd"><h1>Ops Console</h1><p>Search any account and take direct actions. All actions are audited.</p></div>
-        <div class="panel">
-          <div class="ph"><span>🔍</span><h3>Account Lookup</h3></div>
-          <div class="pb">
-            <div class="fr">
-              <div class="fg"><label>Trader email</label><input id="opsEmail" class="fi" placeholder="user@email.com"/></div>
-              <button class="ab pri" id="opsLoad" style="align-self:flex-end">Load Account</button>
-              <button class="ab" id="opsRefresh" style="align-self:flex-end">↻</button>
+          <div class="ops-card">
+            <div class="ops-lbl">Emergency</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input id="ops-reason" class="f" style="flex:1" placeholder="Flatten reason">
+              <button class="btn s d" onclick="opsAction('flatten')">Flatten</button>
+            </div>
+            <div style="display:flex;gap:7px;align-items:center">
+              <button class="btn s d" onclick="opsAction('reset')">Reset</button>
+              <select id="ops-phase" class="f" style="flex:1"><option value="challenge">challenge</option><option value="funded">funded</option></select>
+              <button class="btn s" onclick="opsAction('set-phase')">Set phase</button>
             </div>
           </div>
         </div>
-        <div id="opsCards" style="display:none">
-          <div class="og">
-            <div class="oc">
-              <div class="oclbl">Status</div>
-              <div class="ocval" id="opsStatus">—</div>
-              <div class="ocsub" id="opsDetail"></div>
-              <div class="bc">
-                <button class="ab sm" id="opsFreeze">🔒 Freeze</button>
-                <button class="ab sm" id="opsUnfreeze">🔓 Unfreeze</button>
-                <button class="ab sm" id="opsUnlockDaily">↻ Unlock daily</button>
-              </div>
-            </div>
-            <div class="oc">
-              <div class="oclbl">Emergency</div>
-              <div style="display:flex;gap:8px;margin-bottom:9px">
-                <input id="opsFlattenReason" class="fi" style="flex:1" placeholder="Flatten reason…"/>
-                <button class="ab sm dng" id="opsFlatten">Flatten</button>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <button class="ab sm dng" id="opsReset">Reset</button>
-                <select id="opsPhase" class="fi" style="flex:1"><option value="challenge">challenge</option><option value="funded">funded</option></select>
-                <button class="ab sm" id="opsSetPhase">Set phase</button>
-              </div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top:13px">
-            <div class="pb"><details><summary>Raw account JSON</summary><pre id="opsJson" style="margin-top:11px"></pre></details></div>
-          </div>
-        </div>
+        <div class="card" style="margin-top:12px"><div class="card-bd"><details><summary>Raw JSON</summary><pre id="ops-json" style="margin-top:10px"></pre></details></div></div>
       </div>
-
-      <!-- Referrals -->
-      <div id="sec-referrals" class="sec">
-        <div class="pghd"><h1>Referral Codes</h1><p>Create and manage referral codes.</p></div>
-        <div class="panel">
-          <div class="ph"><span>➕</span><h3>Create Code</h3></div>
-          <div class="pb">
-            <div class="fr">
-              <div class="fg" style="max-width:170px"><label>Code</label><input id="refNewCode" class="fi" placeholder="AUTO"/></div>
-              <div class="fg" style="max-width:140px"><label>Max uses</label><input id="refMaxUses" class="fi" placeholder="∞"/></div>
-              <div class="fg" style="max-width:150px"><label>Commission</label><input id="refCommission" class="fi" placeholder="0.20"/></div>
-              <div class="fg"><label>Note</label><input id="refNote" class="fi" placeholder="Optional"/></div>
-              <button class="ab pri" onclick="doCreateRef()" style="align-self:flex-end">Create</button>
-            </div>
-            <div id="refCreateMsg" style="font-size:.8rem;color:#7ee787;margin-top:8px"></div>
-          </div>
+    </div>
+    <div id="sec-referrals" class="sec">
+      <div class="pg-title">Referral Codes</div><div class="pg-sub">Create and manage referral codes</div>
+      <div class="card"><div class="card-hd">Create Code</div><div class="card-bd">
+        <div class="row">
+          <div class="fg" style="max-width:160px"><label>Code</label><input id="ref-code" class="f" placeholder="AUTO"></div>
+          <div class="fg" style="max-width:130px"><label>Max uses</label><input id="ref-max" class="f" placeholder="∞"></div>
+          <div class="fg" style="max-width:140px"><label>Commission</label><input id="ref-comm" class="f" placeholder="0.20"></div>
+          <div class="fg"><label>Note</label><input id="ref-note" class="f" placeholder="Optional"></div>
+          <button class="btn p" onclick="doCreateRef()">Create</button>
         </div>
-        <div class="panel">
-          <div class="ph"><span>📋</span><h3>All Codes</h3></div>
-          <div class="tw"><table><thead><tr><th>Code</th><th>Uses</th><th>Max</th><th>Commission</th><th>Active</th><th>Created</th><th>Note</th><th></th></tr></thead><tbody id="refBody"></tbody></table></div>
-          <div class="pb" style="padding-top:13px"><details><summary>Recent uses</summary><pre id="refUses" style="margin-top:11px"></pre></details></div>
-        </div>
-      </div>
-
-      <!-- Risk -->
-      <div id="sec-risk" class="sec">
-        <div class="pghd"><h1>Risk &amp; Flags</h1><p>Multi-account detection and strategy similarity.</p></div>
-        <div class="panel">
-          <div class="ph"><span>🚨</span><h3>Multi-Account Flags</h3></div>
-          <div class="pb"><p class="pdesc">Heuristics only — shared devices/IPs can be false positives.</p><div id="flagsBox" style="color:#7080b0;font-size:.88rem">Loading…</div></div>
-        </div>
-        <div class="panel">
-          <div class="ph"><span>🔍</span><h3>Strategy Similarity</h3></div>
-          <div class="tw"><table><thead><tr><th>Score</th><th>Account A</th><th>Account B</th><th>A trades</th><th>B trades</th></tr></thead><tbody id="simBody"></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- Audit -->
-      <div id="sec-audit" class="sec">
-        <div class="pghd"><h1>Audit Log</h1><p>Complete immutable history of all admin actions.</p></div>
-        <div class="panel">
-          <div class="ph"><span>📋</span><h3>Recent Actions</h3></div>
-          <div class="tw"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Meta</th><th>IP</th></tr></thead><tbody id="auditBody"></tbody></table></div>
-        </div>
-      </div>
-
-    </main>
-  </div>
+        <div id="ref-msg" class="msg"></div>
+      </div></div>
+      <div class="card"><div class="card-hd">All Codes</div><div class="tbl-wrap"><table><thead><tr><th>Code</th><th>Uses</th><th>Max</th><th>Commission</th><th>Active</th><th>Created</th><th>Note</th><th></th></tr></thead><tbody id="t-refs"></tbody></table></div></div>
+    </div>
+    <div id="sec-risk" class="sec">
+      <div class="pg-title">Risk &amp; Flags</div><div class="pg-sub">Multi-account detection — heuristics only</div>
+      <div class="card"><div class="card-hd">Multi-Account Flags</div><div class="card-bd"><div id="flags-box" style="color:#506080">Loading…</div></div></div>
+      <div class="card"><div class="card-hd">Strategy Similarity</div><div class="tbl-wrap"><table><thead><tr><th>Score</th><th>Account A</th><th>Account B</th><th>A trades</th><th>B trades</th></tr></thead><tbody id="t-sim"></tbody></table></div></div>
+    </div>
+    <div id="sec-audit" class="sec">
+      <div class="pg-title">Audit Log</div><div class="pg-sub">All admin actions</div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Meta</th><th>IP</th></tr></thead><tbody id="t-audit"></tbody></table></div></div>
+    </div>
+  </main>
+</div>
 </div>
 
 <script>
-// ── Helpers ──
-function $(id){return document.getElementById(id)}
-function money(n){try{return new Intl.NumberFormat(undefined,{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n)}catch{return"$"+Math.round(n)}}
-function pct(x){return(Number(x||0)*100).toFixed(2)+"%"}
-function getKey(){return localStorage.getItem("cp_admin_key")||""}
-
-async function api(url,opts={}){
-  const h=opts.headers||{};
-  h["x-admin-key"]=getKey();
-  const res=await fetch(url,{...opts,headers:h});
-  const d=await res.json().catch(()=>({}));
-  if(!res.ok)throw new Error(d.error||"Request failed");
+var AKEY='';
+function g(id){return document.getElementById(id);}
+function money(n){try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);}catch(e){return '$'+Math.round(n);}}
+function pct(x){return(Number(x||0)*100).toFixed(2)+'%';}
+async function api(url,opts){
+  opts=opts||{};var h=opts.headers||{};h['x-admin-key']=AKEY;
+  var res=await fetch(url,Object.assign({},opts,{headers:h}));
+  var d=await res.json().catch(function(){return{};});
+  if(!res.ok)throw new Error(d.error||'Request failed');
   return d;
 }
-
-// ── Gate ──
-function toggleVis(){
-  const i=$("gkey");
-  i.type=i.type==="password"?"text":"password";
-}
-
-async function tryEnter(){
-  const key=$("gkey").value.trim();
-  const msg=$("gmsg");
-  if(!key){msg.style.color="#ff6b6b";msg.textContent="Enter your admin key.";return}
-  msg.style.color="#7a85a8";msg.textContent="Verifying…";
+g('gk').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+async function tryLogin(){
+  var key=g('gk').value.trim();
+  if(!key){g('gerr').textContent='Enter your admin key';return;}
+  g('gerr').textContent='Checking…';
   try{
-    const res=await fetch("/api/admin/overview",{headers:{"x-admin-key":key}});
+    var res=await fetch('/api/admin/overview',{headers:{'x-admin-key':key}});
     if(!res.ok)throw new Error();
-    localStorage.setItem("cp_admin_key",key);
-    unlock(res);
-  }catch{
-    msg.style.color="#ff6b6b";msg.textContent="Invalid admin key.";
-    $("gkey").value="";
-  }
+    AKEY=key;localStorage.setItem('cp_admin_key',key);
+    g('gate').style.display='none';g('app').style.display='';
+    parseStats(await res.json());loadAll();
+  }catch(e){g('gerr').textContent='Invalid key';g('gk').value='';}
 }
-
-function unlock(res){
-  $("gate").style.display="none";
-  $("dash").style.display="";
-  parseOverview(res);
-  loadAll();
-  bindEvents();
-}
-
-function lockAdmin(){
-  localStorage.removeItem("cp_admin_key");
-  $("gate").style.display="flex";
-  $("dash").style.display="none";
-  $("gkey").value="";$("gmsg").textContent="";
-}
-
-// Auto-unlock
-(async()=>{
-  const saved=localStorage.getItem("cp_admin_key");
-  if(!saved)return;
-  try{
-    const res=await fetch("/api/admin/overview",{headers:{"x-admin-key":saved}});
-    if(res.ok){unlock(res)}else{localStorage.removeItem("cp_admin_key")}
-  }catch{}
+function doLock(){AKEY='';localStorage.removeItem('cp_admin_key');g('gate').style.display='flex';g('app').style.display='none';g('gk').value='';g('gerr').textContent='';}
+(function(){
+  var saved=localStorage.getItem('cp_admin_key');if(!saved)return;
+  fetch('/api/admin/overview',{headers:{'x-admin-key':saved}}).then(function(res){
+    if(!res.ok){localStorage.removeItem('cp_admin_key');return;}
+    AKEY=saved;res.json().then(function(d){g('gate').style.display='none';g('app').style.display='';parseStats(d);loadAll();});
+  }).catch(function(){});
 })();
-
-$("gkey").addEventListener("keydown",e=>{if(e.key==="Enter")tryEnter()});
-
-// ── Nav ──
-function nav(name,el){
-  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));
-  document.querySelectorAll(".sitem").forEach(n=>n.classList.remove("on"));
-  $("sec-"+name)?.classList.add("on");
-  el?.classList.add("on");
+function show(name,btn){
+  document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('on');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  g('sec-'+name).classList.add('on');if(btn)btn.classList.add('active');
 }
-
-// ── Data loading ──
-async function parseOverview(res){
-  try{
-    const d=await res.clone().json();
-    if(d.totalAccounts!=null)$("ovTotal").textContent=d.totalAccounts;
-    if(d.inChallenge!=null)$("ovChallenge").textContent=d.inChallenge;
-    if(d.pendingPayouts!=null)$("ovPending").textContent=d.pendingPayouts;
-    if(d.flaggedAccounts!=null)$("ovFlagged").textContent=d.flaggedAccounts;
-  }catch{}
+function parseStats(d){
+  if(d.totalAccounts!=null)g('s-total').textContent=d.totalAccounts;
+  if(d.inChallenge!=null)g('s-chal').textContent=d.inChallenge;
+  if(d.pendingPayouts!=null)g('s-pay').textContent=d.pendingPayouts;
+  if(d.flaggedAccounts!=null)g('s-flag').textContent=d.flaggedAccounts;
 }
-
-async function loadAccounts(){
-  try{
-    const d=await api("/api/admin/overview");
-    if(d.totalAccounts!=null)$("ovTotal").textContent=d.totalAccounts;
-    if(d.inChallenge!=null)$("ovChallenge").textContent=d.inChallenge;
-    if(d.pendingPayouts!=null)$("ovPending").textContent=d.pendingPayouts;
-    if(d.flaggedAccounts!=null)$("ovFlagged").textContent=d.flaggedAccounts;
-    const rows=d.accounts||[];
-    const html=rows.length===0
-      ?`<tr><td colspan="8" style="text-align:center;padding:20px;color:#4050a0">No accounts yet.</td></tr>`
-      :rows.map(a=>`<tr>
-        <td class="hi">${a.email}</td>
-        <td>${a.phase}${a.failed?" <span style='color:#ff6b6b;font-size:.75rem'>(FAILED)</span>":""}</td>
-        <td>${money(a.equity)}</td><td>${pct(a.dayDD)}</td><td>${pct(a.totalDD)}</td>
-        <td>${money(a.withdrawable)}</td>
-        <td>${a.frozen?'<span class="tag tr">Yes</span>':'<span class="tag tg">No</span>'}</td>
-        <td><button class="ab sm" data-freeze="${a.email}" data-state="${a.frozen?"0":"1"}">${a.frozen?"Unfreeze":"Freeze"}</button></td>
-      </tr>`).join("");
-    if($("acctBody"))$("acctBody").innerHTML=html;
-    if($("acctBody2"))$("acctBody2").innerHTML=html;
-  }catch(e){console.error(e)}
-}
-
-async function loadQueue(){
-  const b=$("queueBody");if(!b)return;
-  try{
-    const d=await api("/api/admin/payout/pending");
-    const rows=d.pending||[];
-    b.innerHTML=rows.length===0
-      ?`<tr><td colspan="6" style="text-align:center;padding:20px;color:#4050a0">No pending payouts.</td></tr>`
-      :rows.map(r=>`<tr>
-        <td>${r.time?new Date(r.time).toLocaleString():"—"}</td>
-        <td class="hi">${r.email}</td><td>${money(r.amount)}</td><td>${r.period||"—"}</td>
-        <td style="font-family:monospace;font-size:.78rem">${r.id}</td>
-        <td><button class="ab sm pri" data-approve-email="${r.email}" data-approve-id="${r.id}">Approve</button></td>
-      </tr>`).join("");
-  }catch{}
-}
-
-async function loadFlags(){
-  const b=$("flagsBox");if(!b)return;
-  try{
-    const d=await api("/api/admin/risk/flags");
-    const dev=d.deviceFlags||[],ips=d.ipFlags||[];
-    b.innerHTML=(dev.length?`<div style="margin-bottom:10px"><strong>Shared devices</strong><ul style="margin:6px 0 0 18px">${dev.slice(0,20).map(x=>`<li><code>${x.device}</code> → ${x.emails.join(", ")}</li>`).join("")}</ul></div>`:`<div style="color:#4050a0">No shared-device flags.</div>`)
-      +(ips.length?`<div style="margin-top:10px"><strong>Shared IPs</strong><ul style="margin:6px 0 0 18px">${ips.slice(0,20).map(x=>`<li><code>${x.ip}</code> → ${x.emails.join(", ")}</li>`).join("")}</ul></div>`:`<div style="color:#4050a0;margin-top:10px">No shared-IP flags.</div>`);
-  }catch{}
-}
-
-async function loadKyc(){
-  const b=$("kycBody");if(!b)return;
-  try{
-    const d=await api("/api/admin/kyc/pending");
-    const rows=d.pending||[];
-    b.innerHTML=rows.length===0
-      ?`<tr><td colspan="7" style="text-align:center;padding:20px;color:#4050a0">No pending KYC.</td></tr>`
-      :rows.map(r=>`<tr>
-        <td>${r.submittedAt?new Date(r.submittedAt).toLocaleString():"—"}</td>
-        <td class="hi">${r.email}</td><td>${r.profile?.name||"—"}</td><td>${r.profile?.dob||"—"}</td>
-        <td>${r.profile?.address||"—"}</td><td>${r.profile?.docType||"—"}</td>
-        <td style="white-space:nowrap">
-          <button class="ab sm pri" data-kyc="${r.email}" data-status="approved">Approve</button>
-          <button class="ab sm" data-kyc="${r.email}" data-status="rejected">Reject</button>
-        </td></tr>`).join("");
-  }catch{}
-}
-
-async function loadSimilarity(){
-  const b=$("simBody");if(!b)return;
-  try{
-    const d=await api("/api/admin/risk/similarity");
-    const rows=d.pairs||[];
-    b.innerHTML=rows.length===0
-      ?`<tr><td colspan="5" style="text-align:center;padding:20px;color:#4050a0">No high-similarity pairs.</td></tr>`
-      :rows.slice(0,30).map(r=>`<tr><td>${(r.score*100).toFixed(1)}%</td><td>${r.a}</td><td>${r.b}</td><td>${r.aTrades}</td><td>${r.bTrades}</td></tr>`).join("");
-  }catch{}
-}
-
-async function loadAudit(){
-  const b=$("auditBody");if(!b)return;
-  try{
-    const d=await api("/api/admin/audit?limit=200");
-    const rows=d.audit||[];
-    b.innerHTML=rows.length===0
-      ?`<tr><td colspan="6" style="text-align:center;padding:20px;color:#4050a0">No audit entries.</td></tr>`
-      :rows.map(r=>`<tr>
-        <td style="white-space:nowrap;font-size:.78rem">${r.time?new Date(r.time).toLocaleString():"—"}</td>
-        <td>${r.actor||"admin"}</td><td class="hi">${r.action||"—"}</td><td>${r.targetEmail||"—"}</td>
-        <td style="font-size:.75rem">${r.meta?JSON.stringify(r.meta):""}</td>
-        <td style="font-size:.75rem">${r.ip||""}</td></tr>`).join("");
-  }catch{}
-}
-
-async function loadOps(email){
-  const box=$("opsCards"),st=$("opsStatus"),det=$("opsDetail"),pre=$("opsJson");
-  if(!box||!st)return;
-  try{
-    const d=await api(`/api/admin/account?email=${encodeURIComponent(email)}`);
-    const a=d.account;
-    box.style.display="";
-    const locked=a.lockedUntil&&new Date(a.lockedUntil).getTime()>Date.now();
-    st.textContent=`${(a.challengePhase||"challenge").toUpperCase()} • ${money(a.equity)}${a.challengeFailed?" • FAILED":""}${a.frozen?" • FROZEN":""}${locked?" • LOCKED":""}`;
-    if(det)det.textContent=`DD day ${pct(a.dayDD)} • trailing ${pct(a.totalDD)} • withdrawable ${money(a.withdrawable||0)}`;
-    if(pre)pre.textContent=JSON.stringify(a,null,2);
-  }catch(e){alert(e.message)}
-}
-
-async function loadReferrals(){
-  const b=$("refBody"),u=$("refUses");if(!b)return;
-  try{
-    const d=await api("/api/admin/referral/list");
-    const refs=d.referrals||[],uses=d.uses||[];
-    b.innerHTML=refs.length===0
-      ?`<tr><td colspan="8" style="text-align:center;padding:20px;color:#4050a0">No codes yet.</td></tr>`
-      :refs.map(r=>`<tr>
-        <td style="font-family:monospace">${r.code}</td><td>${r.uses||0}</td><td>${r.maxUses??"—"}</td>
-        <td>${Number(r.commissionPct||0).toFixed(2)}</td>
-        <td>${r.active!==false?'<span class="tag tg">Yes</span>':'<span class="tag tr">No</span>'}</td>
-        <td style="white-space:nowrap;font-size:.78rem">${r.createdAt?new Date(r.createdAt).toLocaleString():"—"}</td>
-        <td style="font-size:.78rem">${r.note||""}</td>
-        <td><button class="ab sm" data-ref-toggle="${r.code}" data-active="${r.active!==false?"0":"1"}">${r.active!==false?"Disable":"Enable"}</button></td>
-      </tr>`).join("");
-    if(u)u.textContent=uses.slice(0,50).map(x=>`${x.time} • ${x.code} • ${x.refereeEmail} • $${x.amount}`).join("\n")||"No uses yet.";
-  }catch{}
-}
-
-async function loadAll(){
-  await Promise.allSettled([loadAccounts(),loadQueue(),loadFlags(),loadKyc(),loadSimilarity(),loadAudit(),loadReferrals()]);
-}
-
-// ── Actions ──
-async function doApprove(){
-  const msg=$("approveMsg"),email=$("payEmail")?.value.trim(),id=$("payId")?.value.trim();
-  if(msg)msg.textContent="Approving…";
-  try{await api("/api/admin/payout/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,id})});if(msg)msg.textContent="Approved ✅";await loadAll();}
-  catch(e){if(msg)msg.textContent=e.message;}
-}
-
-async function doCreateRef(){
-  const msg=$("refCreateMsg");
-  if(msg)msg.textContent="Creating…";
-  try{
-    const r=await api("/api/admin/referral/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      code:$("refNewCode")?.value.trim()||null,
-      maxUses:$("refMaxUses")?.value?Number($("refMaxUses").value):null,
-      commissionPct:$("refCommission")?.value?Number($("refCommission").value):null,
-      note:$("refNote")?.value.trim()||""
-    })});
-    if(msg)msg.textContent=`Created ✅ ${r.referral?.code||""}`;
-    await loadReferrals();
-  }catch(e){if(msg)msg.textContent=e.message;}
-}
-
-// ── Event bindings (called once after unlock) ──
-function bindEvents(){
-  $("opsLoad")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;localStorage.setItem("cp_ops_email",e);await loadOps(e);});
-  $("opsRefresh")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim()||localStorage.getItem("cp_ops_email")||"";if(!e)return;if($("opsEmail"))$("opsEmail").value=e;await loadOps(e);});
-  $("opsFreeze")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,frozen:true})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-  $("opsUnfreeze")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,frozen:false})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-  $("opsUnlockDaily")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;try{await api("/api/admin/account/unlock-daily",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-  $("opsFlatten")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;const reason=$("opsFlattenReason")?.value.trim()||"";try{await api("/api/admin/account/flatten",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,reason})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-  $("opsReset")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;if(!confirm("Reset this account?"))return;try{await api("/api/admin/account/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-  $("opsSetPhase")?.addEventListener("click",async()=>{const e=$("opsEmail")?.value.trim();if(!e)return;const phase=$("opsPhase")?.value||"challenge";try{await api("/api/admin/account/set-phase",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,phase})});await loadOps(e);await loadAll();}catch(err){alert(err.message);}});
-
-  const savedOps=localStorage.getItem("cp_ops_email");
-  if(savedOps&&$("opsEmail"))$("opsEmail").value=savedOps;
-
-  document.addEventListener("click",async e=>{
-    const ab=e.target.closest("[data-approve-email]");
-    if(ab){try{await api("/api/admin/payout/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ab.dataset.approveEmail,id:ab.dataset.approveId})});await loadAll();}catch(err){alert(err.message);}return;}
-    const fb=e.target.closest("[data-freeze]");
-    if(fb){try{await api("/api/admin/account/freeze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:fb.dataset.freeze,frozen:fb.dataset.state==="1"})});await loadAll();}catch(err){alert(err.message);}return;}
-    const kb=e.target.closest("[data-kyc]");
-    if(kb){try{await api("/api/admin/kyc/set-status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.status})});await loadKyc();}catch(err){alert(err.message);}return;}
-    const rb=e.target.closest("[data-ref-toggle]");
-    if(rb){try{await api("/api/admin/referral/set-active",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:rb.dataset.refToggle,active:rb.dataset.active==="1"})});await loadReferrals();}catch(err){alert(err.message);}return;}
-  });
-}
+async function loadAccounts(){try{var d=await api('/api/admin/overview');parseStats(d);var rows=d.accounts||[];var html=rows.length?rows.map(function(a){return'<tr><td class="hi">'+a.email+'</td><td>'+a.phase+(a.failed?' <span style="color:#ff6b6b">(FAILED)</span>':'')+'</td><td>'+money(a.equity)+'</td><td>'+pct(a.dayDD)+'</td><td>'+pct(a.totalDD)+'</td><td>'+money(a.withdrawable)+'</td><td>'+(a.frozen?'<span class="tag r">Yes</span>':'<span class="tag g">No</span>')+'</td><td><button class="btn s" data-frz="'+a.email+'" data-st="'+(a.frozen?'0':'1')+'">'+(a.frozen?'Unfreeze':'Freeze')+'</button></td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#404870">No accounts yet</td></tr>';if(g('t-accts'))g('t-accts').innerHTML=html;if(g('t-accts2'))g('t-accts2').innerHTML=html;}catch(e){}}
+async function loadQueue(){try{var d=await api('/api/admin/payout/pending');var rows=d.pending||[];if(!g('t-queue'))return;g('t-queue').innerHTML=rows.length?rows.map(function(r){return'<tr><td>'+(r.time?new Date(r.time).toLocaleString():'—')+'</td><td class="hi">'+r.email+'</td><td>'+money(r.amount)+'</td><td>'+(r.period||'—')+'</td><td style="font-family:monospace;font-size:11px">'+r.id+'</td><td><button class="btn s p" data-apr-e="'+r.email+'" data-apr-i="'+r.id+'">Approve</button></td></tr>';}).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px;color:#404870">No pending payouts</td></tr>';}catch(e){}}
+async function loadFlags(){try{var d=await api('/api/admin/risk/flags');var dev=d.deviceFlags||[],ips=d.ipFlags||[];if(!g('flags-box'))return;g('flags-box').innerHTML=(dev.length?'<div style="margin-bottom:10px"><strong>Shared devices</strong><ul style="margin:6px 0 0 18px">'+dev.slice(0,20).map(function(x){return'<li><code>'+x.device+'</code> → '+x.emails.join(', ')+'</li>';}).join('')+'</ul></div>':'<div>No shared-device flags.</div>')+(ips.length?'<div style="margin-top:10px"><strong>Shared IPs</strong><ul style="margin:6px 0 0 18px">'+ips.slice(0,20).map(function(x){return'<li><code>'+x.ip+'</code> → '+x.emails.join(', ')+'</li>';}).join('')+'</ul></div>':'<div style="margin-top:10px">No shared-IP flags.</div>');}catch(e){}}
+async function loadKyc(){try{var d=await api('/api/admin/kyc/pending');var rows=d.pending||[];if(!g('t-kyc'))return;g('t-kyc').innerHTML=rows.length?rows.map(function(r){var p=r.profile||{};return'<tr><td>'+(r.submittedAt?new Date(r.submittedAt).toLocaleString():'—')+'</td><td class="hi">'+r.email+'</td><td>'+(p.name||'—')+'</td><td>'+(p.dob||'—')+'</td><td>'+(p.address||'—')+'</td><td>'+(p.docType||'—')+'</td><td style="white-space:nowrap"><button class="btn s p" data-kyc="'+r.email+'" data-ks="approved">Approve</button> <button class="btn s" data-kyc="'+r.email+'" data-ks="rejected">Reject</button></td></tr>';}).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:#404870">No pending KYC</td></tr>';}catch(e){}}
+async function loadSim(){try{var d=await api('/api/admin/risk/similarity');var rows=d.pairs||[];if(!g('t-sim'))return;g('t-sim').innerHTML=rows.length?rows.slice(0,30).map(function(r){return'<tr><td>'+(r.score*100).toFixed(1)+'%</td><td>'+r.a+'</td><td>'+r.b+'</td><td>'+r.aTrades+'</td><td>'+r.bTrades+'</td></tr>';}).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#404870">No high-similarity pairs</td></tr>';}catch(e){}}
+async function loadAudit(){try{var d=await api('/api/admin/audit?limit=200');var rows=d.audit||[];if(!g('t-audit'))return;g('t-audit').innerHTML=rows.length?rows.map(function(r){return'<tr><td style="white-space:nowrap;font-size:12px">'+(r.time?new Date(r.time).toLocaleString():'—')+'</td><td>'+(r.actor||'admin')+'</td><td class="hi">'+(r.action||'—')+'</td><td>'+(r.targetEmail||'—')+'</td><td style="font-size:11px">'+(r.meta?JSON.stringify(r.meta):'')+'</td><td style="font-size:11px">'+(r.ip||'')+'</td></tr>';}).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px;color:#404870">No audit entries</td></tr>';}catch(e){}}
+async function loadRefs(){try{var d=await api('/api/admin/referral/list');var refs=d.referrals||[];if(!g('t-refs'))return;g('t-refs').innerHTML=refs.length?refs.map(function(r){return'<tr><td style="font-family:monospace">'+r.code+'</td><td>'+(r.uses||0)+'</td><td>'+(r.maxUses!=null?r.maxUses:'—')+'</td><td>'+Number(r.commissionPct||0).toFixed(2)+'</td><td>'+(r.active!==false?'<span class="tag g">Yes</span>':'<span class="tag r">No</span>')+'</td><td style="font-size:12px">'+(r.createdAt?new Date(r.createdAt).toLocaleString():'—')+'</td><td style="font-size:12px">'+(r.note||'')+'</td><td><button class="btn s" data-rft="'+r.code+'" data-rfa="'+(r.active!==false?'0':'1')+'">'+(r.active!==false?'Disable':'Enable')+'</button></td></tr>';}).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#404870">No codes yet</td></tr>';}catch(e){}}
+function loadAll(){loadAccounts();loadQueue();loadFlags();loadKyc();loadSim();loadAudit();loadRefs();}
+async function doApprove(){var msg=g('pay-msg'),email=g('pay-email').value.trim(),id=g('pay-id').value.trim();msg.className='msg';msg.textContent='Approving…';try{await api('/api/admin/payout/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,id:id})});msg.className='msg ok';msg.textContent='Approved ✅';loadAll();}catch(e){msg.className='msg err';msg.textContent=e.message;}}
+async function doCreateRef(){var msg=g('ref-msg');msg.className='msg';msg.textContent='Creating…';try{var r=await api('/api/admin/referral/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:g('ref-code').value.trim()||null,maxUses:g('ref-max').value?Number(g('ref-max').value):null,commissionPct:g('ref-comm').value?Number(g('ref-comm').value):null,note:g('ref-note').value.trim()||''})});msg.className='msg ok';msg.textContent='Created ✅ '+(r.referral&&r.referral.code?r.referral.code:'');loadRefs();}catch(e){msg.className='msg err';msg.textContent=e.message;}}
+function opsEmail(){return(g('ops-email')&&g('ops-email').value.trim())||localStorage.getItem('cp_ops_email')||'';}
+async function opsLoad(){var email=g('ops-email').value.trim();if(!email)return;localStorage.setItem('cp_ops_email',email);try{var d=await api('/api/admin/account?email='+encodeURIComponent(email));var a=d.account;g('ops-cards').style.display='';g('ops-status').textContent=(a.challengePhase||'challenge').toUpperCase()+' • '+money(a.equity)+(a.challengeFailed?' • FAILED':'')+(a.frozen?' • FROZEN':'');g('ops-detail').textContent='DD day '+pct(a.dayDD)+' • trailing '+pct(a.totalDD)+' • withdrawable '+money(a.withdrawable||0);g('ops-json').textContent=JSON.stringify(a,null,2);}catch(e){alert(e.message);}}
+function opsRefresh(){var e=opsEmail();if(e&&g('ops-email'))g('ops-email').value=e;opsLoad();}
+async function opsAction(action,param){var email=opsEmail();if(!email)return;var body={email:email};if(action==='freeze')body.frozen=param;if(action==='flatten')body.reason=g('ops-reason').value.trim();if(action==='set-phase')body.phase=g('ops-phase').value;if(action==='reset'&&!confirm('Reset this account?'))return;var urlMap={freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase'};try{await api(urlMap[action],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});await opsLoad();loadAll();}catch(e){alert(e.message);}}
+document.addEventListener('click',async function(e){
+  var fb=e.target.closest('[data-frz]');if(fb){try{await api('/api/admin/account/freeze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fb.dataset.frz,frozen:fb.dataset.st==='1'})});loadAll();}catch(err){alert(err.message);}return;}
+  var ab=e.target.closest('[data-apr-e]');if(ab){try{await api('/api/admin/payout/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:ab.dataset.aprE,id:ab.dataset.aprI})});loadAll();}catch(err){alert(err.message);}return;}
+  var kb=e.target.closest('[data-kyc]');if(kb){try{await api('/api/admin/kyc/set-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.ks})});loadKyc();}catch(err){alert(err.message);}return;}
+  var rb=e.target.closest('[data-rft]');if(rb){try{await api('/api/admin/referral/set-active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:rb.dataset.rft,active:rb.dataset.rfa==='1'})});loadRefs();}catch(err){alert(err.message);}return;}
+});
+var _se=localStorage.getItem('cp_ops_email');if(_se&&g('ops-email'))g('ops-email').value=_se;
 </script>
 </body>
 </html>
