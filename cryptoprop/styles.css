@@ -1,4 +1,3 @@
-
 :root{
   --bg:#05060a;
   --panel:rgba(14,18,30,.72);
@@ -68,8 +67,10 @@ header{
   padding:10px 12px;
   color:var(--muted);
   border-radius:12px;
+  transition: background .15s ease, color .15s ease;
 }
-.links a:hover{background: rgba(255,255,255,.06); color:var(--text)}
+.links a:hover{background: rgba(124,92,255,.14); color:var(--text)}
+.links a:active{background: rgba(124,92,255,.22);}
 .right-tools{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 
 .btn{
@@ -83,27 +84,39 @@ header{
   cursor:pointer;
   user-select:none;
   box-shadow: 0 12px 30px rgba(0,0,0,.30);
-  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease, opacity .15s ease;
 }
-.btn:hover{transform: translateY(-1px); border-color: rgba(255,255,255,.16)}
+.btn:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.22); box-shadow: 0 16px 40px rgba(0,0,0,.40);}
+.btn:active{transform: translateY(0px); opacity: .85;}
 .btn.primary{
   border:none;
   background: linear-gradient(135deg, var(--accent), #9a7bff);
+  box-shadow: 0 8px 28px rgba(124,92,255,.35);
 }
+.btn.primary:hover{box-shadow: 0 12px 36px rgba(124,92,255,.55);}
 .btn.teal{
   border:none;
   background: linear-gradient(135deg, var(--accent2), #19a0ff);
+  box-shadow: 0 8px 28px rgba(0,209,178,.25);
 }
+.btn.teal:hover{box-shadow: 0 12px 36px rgba(0,209,178,.45);}
 .btn.ghost{
   background: transparent;
   border: 1px solid rgba(124,92,255,.40);
 }
+.btn.ghost:hover{background: rgba(124,92,255,.12); border-color: rgba(124,92,255,.65);}
 
 .card{
   background: linear-gradient(180deg, rgba(14,18,30,.78), rgba(11,16,34,.70));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.card.plan:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 32px 100px rgba(0,0,0,.65);
+  border-color: rgba(124,92,255,.35);
 }
 
 .glass{
@@ -235,8 +248,11 @@ details{
   padding: 12px 14px;
   background: rgba(255,255,255,.02);
   margin-bottom: 10px;
+  transition: background .15s ease, border-color .15s ease;
 }
-summary{cursor:pointer; font-weight: 800}
+details:hover{background: rgba(124,92,255,.06); border-color: rgba(124,92,255,.25);}
+summary{cursor:pointer; font-weight: 800; transition: color .15s ease;}
+summary:hover{color: #c4b5ff;}
 details p{margin: 10px 0 0; color: var(--muted)}
 
 form{display:grid; gap: 10px; padding: 18px}
@@ -249,6 +265,12 @@ input, textarea, select{
   background: rgba(255,255,255,.03);
   color: var(--text);
   outline:none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+input:focus, textarea:focus, select:focus{
+  border-color: rgba(124,92,255,.6);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.15);
+  background: rgba(124,92,255,.06);
 }
 textarea{min-height: 110px; resize: vertical}
 .row2{display:grid; grid-template-columns: 1fr 1fr; gap: 10px}
