@@ -1095,12 +1095,6 @@ async function computeEquity(acct){
 }
 
 
-function daysSince(iso){
-  if(!iso) return 0;
-  const t = new Date(iso).getTime();
-  if(!Number.isFinite(t)) return 0;
-  return Math.floor((Date.now() - t) / (24*3600*1000));
-}
 
 function uniqPush(arr, v){
   if(!Array.isArray(arr)) return [v];
