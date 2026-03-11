@@ -282,7 +282,7 @@ details summary:hover{color:#9098c0}
 
     <!-- Risk -->
     <div id="sec-risk" class="sec">
-      <div class="pg-title">Risk &amp; Flags</div>
+      <div class="pg-title">Risk & Flags</div>
       <div class="pg-sub">Multi-account detection — heuristics only</div>
       <div class="card">
         <div class="card-hd">Multi-Account Flags</div>
@@ -330,17 +330,27 @@ async function api(url, opts){
   return d;
 }
 
-// Gate
+// ── Gate ──
+var lastAttempt = 0;
+var cooldown = 5000;
 g('gk').addEventListener('keydown', function(e){ if(e.key==='Enter') tryLogin(); });
 
 async function tryLogin(){
+  var now = Date.now();
+  var wait = Math.ceil((cooldown - (now - lastAttempt)) / 1000);
+  if(lastAttempt && (now - lastAttempt) < cooldown){
+    g('gerr').textContent = 'Too many attempts. Wait ' + wait + 's.';
+    return;
+  }
   var key = g('gk').value.trim();
   if(!key){ g('gerr').textContent='Enter your admin key'; return; }
+  lastAttempt = now;
   g('gerr').textContent='Checking…';
   try{
     var res = await fetch('/api/admin/overview', {headers:{'x-admin-key':key}});
     var d = await res.json().catch(function(){ return {}; });
     if(!res.ok) throw new Error(d.error || 'Invalid key');
+    lastAttempt = 0;
     AKEY = key;
     localStorage.setItem('cp_admin_key', key);
     g('gate').style.display = 'none';
@@ -350,6 +360,11 @@ async function tryLogin(){
   } catch(e){
     g('gerr').textContent = e.message || 'Invalid key';
     g('gk').value = '';
+    var t = setInterval(function(){
+      var rem = Math.ceil((cooldown - (Date.now() - lastAttempt)) / 1000);
+      if(rem <= 0){ clearInterval(t); g('gerr').textContent = ''; return; }
+      g('gerr').textContent = 'Wait ' + rem + 's before trying again.';
+    }, 250);
   }
 }
 
@@ -378,7 +393,7 @@ function doLock(){
   }).catch(function(){});
 })();
 
-// Nav
+// ── Nav ──
 function show(name, btn){
   document.querySelectorAll('.sec').forEach(function(s){ s.classList.remove('on'); });
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -386,7 +401,7 @@ function show(name, btn){
   if(btn) btn.classList.add('active');
 }
 
-// Stats
+// ── Stats ──
 function parseStats(d){
   if(d.totalAccounts!=null) g('s-total').textContent = d.totalAccounts;
   if(d.inChallenge!=null)   g('s-chal').textContent  = d.inChallenge;
@@ -394,7 +409,7 @@ function parseStats(d){
   if(d.flaggedAccounts!=null) g('s-flag').textContent= d.flaggedAccounts;
 }
 
-// Load functions
+// ── Load functions ──
 async function loadAccounts(){
   try{
     var d = await api('/api/admin/overview');
@@ -467,7 +482,7 @@ async function loadAudit(){
 async function loadRefs(){
   try{
     var d = await api('/api/admin/referral/list');
-    var refs = d.referrals||[];
+    var refs = d.referrals||[], uses = d.uses||[];
     if(!g('t-refs')) return;
     g('t-refs').innerHTML = refs.length ? refs.map(function(r){
       return '<tr><td style="font-family:monospace">'+r.code+'</td><td>'+(r.uses||0)+'</td><td>'+(r.maxUses!=null?r.maxUses:'—')+'</td><td>'+Number(r.commissionPct||0).toFixed(2)+'</td><td>'+(r.active!==false?'<span class="tag g">Yes</span>':'<span class="tag r">No</span>')+'</td><td style="font-size:12px">'+(r.createdAt?new Date(r.createdAt).toLocaleString():'—')+'</td><td style="font-size:12px">'+(r.note||'')+'</td><td><button class="btn s" data-rft="'+r.code+'" data-rfa="'+(r.active!==false?'0':'1')+'">'+(r.active!==false?'Disable':'Enable')+'</button></td></tr>';
@@ -485,7 +500,7 @@ function loadAll(){
   loadRefs();
 }
 
-// Actions
+// ── Actions ──
 async function doApprove(){
   var msg = g('pay-msg'), email = g('pay-email').value.trim(), id = g('pay-id').value.trim();
   msg.className='msg'; msg.textContent='Approving…';
@@ -520,7 +535,7 @@ async function opsLoad(){
   try{
     var d = await api('/api/admin/account?email='+encodeURIComponent(email));
     var a = d.account;
-    g('ops-cards').style.display = 'block';
+    g('ops-cards').style.display = '';
     g('ops-status').textContent = (a.challengePhase||'challenge').toUpperCase()+' • '+money(a.equity)+(a.challengeFailed?' • FAILED':'')+(a.frozen?' • FROZEN':'');
     g('ops-detail').textContent = 'DD day '+pct(a.dayDD)+' • trailing '+pct(a.totalDD)+' • withdrawable '+money(a.withdrawable||0);
     g('ops-json').textContent = JSON.stringify(a, null, 2);
@@ -548,7 +563,7 @@ async function opsAction(action, param){
   }catch(e){ alert(e.message); }
 }
 
-// Global click delegation
+// ── Global click delegation ──
 document.addEventListener('click', async function(e){
   var fb = e.target.closest('[data-frz]');
   if(fb){ try{ await api('/api/admin/account/freeze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fb.dataset.frz,frozen:fb.dataset.st==='1'})}); loadAll(); }catch(err){ alert(err.message); } return; }
@@ -560,6 +575,7 @@ document.addEventListener('click', async function(e){
   if(rb){ try{ await api('/api/admin/referral/set-active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:rb.dataset.rft,active:rb.dataset.rfa==='1'})}); loadRefs(); }catch(err){ alert(err.message); } return; }
 });
 
+// restore ops email
 var _se = localStorage.getItem('cp_ops_email');
 if(_se && g('ops-email')) g('ops-email').value = _se;
 </script>
