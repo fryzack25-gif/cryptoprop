@@ -7,40 +7,44 @@
   <meta name="description" content="CryptoProp evaluates disciplined spot crypto traders through a transparent simulated challenge with clear risk rules and payouts." />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body><div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;"><a class="btn" href="/auth.html">Login</a><a class="btn primary" href="/auth.html#signup">Sign Up</a></div>
+<body>
+
+  <div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;">
+    <a class="btn" href="/auth.html">Login</a>
+    <a class="btn primary" href="/auth.html#signup">Sign Up</a>
+  </div>
+
   <header>
     <div class="wrap nav">
       <a class="brand" href="#top">
         <span class="logo" aria-hidden="true"></span>
         <span>CryptoProp</span>
       </a>
-
       <nav class="links" aria-label="Primary">
         <a href="#how">How it works</a>
         <a href="#plans">Plans</a>
         <a href="#faq">FAQ</a>
         <a href="support.html">Support</a>
       </nav>
-
-      <div class="right-tools">
-      </div>
+      <div class="right-tools"></div>
     </div>
   </header>
 
   <main id="top" class="wrap">
+
+    <!-- Hero -->
     <div class="hero">
       <section class="card hero-left glass" aria-label="Hero">
-        <span class="badge">Crypto spot only • Risk rules • Performance payouts</span>
+        <span class="badge">Crypto spot only &bull; Risk rules &bull; Performance payouts</span>
         <h1>Trade spot. Earn payouts. Scale responsibly.</h1>
         <p class="sub">
-          CryptoProp runs traders through a transparent simulated challenge — pass the rules, earn real payouts based on your simulated performance.
+          CryptoProp runs traders through a transparent simulated challenge &mdash; pass the rules, earn real payouts based on your simulated performance.
           Clear risk limits, simple targets, and a dashboard built for consistency.
         </p>
         <div class="cta">
           <a class="btn primary" href="auth.html">Create Account</a>
           <a class="btn ghost" href="#plans">View evaluation tiers</a>
         </div>
-
       </section>
 
       <aside class="card hero-right glass" aria-label="Credibility and stats">
@@ -59,7 +63,7 @@
           </div>
           <div class="stat">
             <b>Fast dashboards</b>
-            <span>Track performance & rules</span>
+            <span>Track performance &amp; rules</span>
           </div>
         </div>
         <div class="callout">
@@ -73,10 +77,11 @@
       </aside>
     </div>
 
+    <!-- How it works -->
     <section id="how">
       <div class="section-title">
         <h2>How it works</h2>
-        <p>From challenge to earning payouts — three steps.</p>
+        <p>From challenge to earning payouts &mdash; three steps.</p>
       </div>
       <div class="grid3">
         <div class="card tile glass">
@@ -97,13 +102,14 @@
       </div>
     </section>
 
+    <!-- Plans -->
     <section id="plans">
       <div class="section-title">
         <h2>Evaluation tiers</h2>
         <p>Choose the account size that fits your strategy.</p>
       </div>
-
       <div class="pricing" style="padding-top:16px;">
+
         <div class="card plan glass">
           <h3>Starter</h3>
           <div class="price">$149<span class="muted">/attempt</span></div>
@@ -156,45 +162,36 @@
             <a class="btn primary" href="auth.html">Get Started</a>
           </div>
         </div>
+
       </div>
-
-
     </section>
 
-
+    <!-- FAQ -->
     <section id="faq">
       <div class="section-title">
         <h2>FAQ</h2>
-
       </div>
       <div class="card glass" style="padding:18px">
         <details>
           <summary>Is this real trading or a simulated evaluation?</summary>
-          <p>
-            All trading on CryptoProp is conducted in a simulated environment. No real assets are traded. Payouts are discretionary performance-based payments, not investment returns.
-          </p>
+          <p>All trading on CryptoProp is conducted in a simulated environment. No real assets are traded. Payouts are discretionary performance-based payments, not investment returns.</p>
         </details>
         <details>
           <summary>How do payouts work?</summary>
-          <p>
-            Define payout frequency, minimum thresholds, profit split, and any restrictions. Be clear about requirements (e.g., consistency rules).
-          </p>
+          <p>Once you pass both challenge steps and meet the profit buffer requirement, you become eligible for payouts. Profits are split 80% to the trader, 20% to CryptoProp. See the <a href="/payout.html">Payout Policy</a> for full details.</p>
         </details>
         <details>
           <summary>What markets can I trade?</summary>
-          <p>
-            CryptoProp is <b>spot-only</b>. List supported spot pairs, supported exchanges, and any platform requirements.
-          </p>
+          <p>CryptoProp is <b>spot-only</b>. You can trade BTC, ETH, and major altcoin spot pairs. No perpetuals, no leverage products.</p>
         </details>
         <details>
           <summary>What happens if I breach a loss limit?</summary>
-          <p>
-            Typically the account fails or is paused. State your reset policy and how traders can restart.
-          </p>
+          <p>If you hit the trailing drawdown limit, your challenge fails. You can purchase a new attempt to start over from Step 1.</p>
         </details>
       </div>
     </section>
 
+    <!-- CTA -->
     <section id="apply">
       <div class="section-title">
         <h2>Ready to start?</h2>
@@ -205,7 +202,7 @@
         <a class="btn primary" href="auth.html" style="font-size:1rem; padding:12px 32px;">Create Account</a>
         <p class="tiny muted" style="margin-top:16px;">
           By creating an account you agree to our
-          <a href="/terms.html" target="_blank">Terms & Conditions</a>,
+          <a href="/terms.html" target="_blank">Terms &amp; Conditions</a>,
           <a href="/risk.html" target="_blank">Risk Disclosure</a>,
           <a href="/privacy.html" target="_blank">Privacy Policy</a>,
           <a href="/kyc.html" target="_blank">KYC/AML Policy</a>,
@@ -214,24 +211,14 @@
       </div>
     </section>
 
-    <footer>
-      <div class="wrap" style="padding:0">
-        <div class="small">© <span id="year"></span> CryptoProp. All trading involves risk.</div>
-      </div>
-    <div class="tiny muted" style="margin-top:10px"><a href="admin.html" class="muted">Admin</a></div>
-</footer>
-  
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <h2 style="margin-top:0; font-size:1.15rem">Have a referral code?</h2>
-      <p class="muted small" style="margin-top:6px">Enter a code to link your account to a referrer (codes are created by CryptoProp admins).</p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
-        <input id="refCode" class="input" placeholder="Referral code" style="max-width:260px" />
-        <button class="btn primary" id="applyRef">Apply</button>
-        <div class="tiny muted" id="refMsg"></div>
-      </div>
-    </section>
+  </main>
 
-</main>
+  <footer>
+    <div class="wrap" style="padding:0">
+      <div class="small">&copy; <span id="year"></span> CryptoProp. All trading involves risk.</div>
+      <div class="tiny muted" style="margin-top:10px"><a href="admin.html" class="muted">Admin</a></div>
+    </div>
+  </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
