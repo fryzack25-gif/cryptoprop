@@ -31,7 +31,7 @@ const STEP1_MAX_DAYS = 30;
 const STEP1_TOTAL_DD = 0.05;
 
 const STEP2_TARGET_PCT = 0.05;
-const STEP2_MAX_DAYS = 60;
+const STEP2_MAX_DAYS = 45;
 const STEP2_TOTAL_DD = 0.04;
 
 function utcDateKey(d=new Date()){
@@ -2111,8 +2111,8 @@ app.post("/api/terms/accept", requireAuth, (req, res) => {
 // In production, this should be driven by Stripe webhooks.
 const PLANS = {
   "25k": { startEquity: 25000, price: 149 },
-  "50k": { startEquity: 50000, price: 199 },
-  "100k": { startEquity: 100000, price: 279 }
+  "50k": { startEquity: 50000, price: 279 },
+  "100k": { startEquity: 100000, price: 499 }
 };
 
 app.post("/api/plan/choose", requireAuth, requireTermsAccepted, (req, res) => {
