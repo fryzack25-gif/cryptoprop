@@ -38,6 +38,24 @@ document.getElementById("verifyBtn")?.addEventListener("click", async () => {
   try{ await post("/api/auth/verify-email", { email, code }); if(msg) msg.textContent = "Verified ✅ You can log in now."; }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
+document.getElementById("forgotLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  show("loginBox", false); show("signupBox", false); show("forgotBox", true);
+});
+document.getElementById("backToLogin")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  show("forgotBox", false); show("loginBox", true);
+});
+document.getElementById("forgotBtn")?.addEventListener("click", async () => {
+  const email = document.getElementById("forgotEmail")?.value || "";
+  const msg = document.getElementById("forgotMsg");
+  if(!email){ if(msg) msg.textContent = "Please enter your email."; return; }
+  if(msg) msg.textContent = "Sending…";
+  try{
+    await post("/api/auth/forgot-password", { email });
+    if(msg) msg.textContent = "If an account exists, a reset link has been sent to your email.";
+  }catch(e){ if(msg) msg.textContent = e.message; }
+});
 document.getElementById("loginBtn")?.addEventListener("click", async () => {
   const email = document.getElementById("loginEmail")?.value || "";
   const password = document.getElementById("loginPass")?.value || "";
