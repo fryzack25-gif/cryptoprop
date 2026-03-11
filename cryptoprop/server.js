@@ -320,7 +320,7 @@ app.get("/api/applications", requireAuth, async (req, res) => {
 
 
 // ---- Accounts (server-side liquidity for demo) ----
-function getOrCreateAccount(email){
+async function await getOrCreateAccount(email){
   const data = await readData();
   if(!data.accounts) data.accounts = {};
   if(!data.accounts[email]){
@@ -374,7 +374,7 @@ function getOrCreateAccount(email){
   return data.accounts[email];
 }
 
-function saveAccount(email, account){
+async function await saveAccount(email, account){
   const data = await readData();
   if(!data.accounts) data.accounts = {};
   data.accounts[email] = account;
@@ -451,7 +451,7 @@ async function fetchCoinbaseTicker(product){
 // Get account (auth required)
 
 
-function recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
+async function await recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
   const db = ensureReferrals(await readData());
   const ref = findReferral(db, refCode);
   if(!ref) return;
@@ -479,19 +479,19 @@ app.post("/api/referral/apply", requireAuth, requireTermsAccepted, async (req, r
   if(!ref) return res.status(404).json({ error:"Invalid code" });
 
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   if(acct.referredBy) return res.status(400).json({ error:"Referral already applied" });
   if(ref.maxUses && Number(ref.uses||0) >= Number(ref.maxUses)) return res.status(400).json({ error:"Code maxed out" });
 
   acct.referredBy = ref.code;
   acct.referralAppliedAt = new Date().toISOString();
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok:true, referredBy: acct.referredBy });
 });
 
 app.get("/api/account", requireAuth, async (req, res) => {
   const email = currentEmail(req); // demo token maps to single demo user
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   if(!rateLimitOrders(email)) return res.status(429).json({ error: "Too many orders per minute" });
   acct.pendingOrders = acct.pendingOrders || [];
@@ -508,7 +508,7 @@ app.get("/api/account", requireAuth, async (req, res) => {
   acct.tradingDays = [];
   acct.dailyProfitHistory = {};
   acct.lastEquityAtCheck = null;
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -528,16 +528,16 @@ app.get("/api/account", requireAuth, async (req, res) => {
 
 app.get("/api/challenge/history", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.challengeHistory = Array.isArray(acct.challengeHistory) ? acct.challengeHistory : [];
   return res.json({ ok: true, history: acct.challengeHistory });
 });
 
 app.get("/api/equity/history", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   await refreshChallengeState(acct, email);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const hist = Array.isArray(acct.equityHistory) ? acct.equityHistory : [];
   return res.json({ ok: true, points: hist.slice().reverse() });
 });
@@ -546,7 +546,7 @@ app.get("/api/equity/history", requireAuth, async (req, res) => {
 // Request a payout (simulated). This does NOT move money externally; it records a payout and reduces withdrawable.
 app.post("/api/payout/request", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   await refreshChallengeState(acct, email);
   if(acct.challengeFailed) return res.status(403).json({ error: "Challenge failed", reason: acct.failReason });
 
@@ -586,7 +586,7 @@ app.post("/api/payout/request", requireAuth, async (req, res) => {
   const reqId = cryptoRandomId();
   acct.payoutRequests.unshift({ id: reqId, time: new Date().toISOString(), amount, period: acct.payoutPeriodStart, status: "pending" });
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok: true, request: acct.payoutRequests[0], withdrawableAfter: withdrawableAmount(acct), account: acct });
 });
 
@@ -594,10 +594,10 @@ app.post("/api/payout/request", requireAuth, async (req, res) => {
 // ------------------- Verification & KYC (demo) -------------------
 app.post("/api/verify/request-email", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   acct.emailVerifyCode = genCode(6);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   // In production: send code via email.
   console.log("[CryptoProp] Email verify code for", email, "=>", acct.emailVerifyCode);
   await sendEmail({
@@ -610,12 +610,12 @@ app.post("/api/verify/request-email", requireAuth, async (req, res) => {
 
 app.post("/api/verify/confirm-email", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   const code = (req.body?.code || "").toString();
   if(code && acct.emailVerifyCode && code === acct.emailVerifyCode){
     acct.emailVerified = true;
     acct.emailVerifyCode = null;
-    saveAccount(email, acct);
+    await saveAccount(email, acct);
     return res.json({ ok:true });
   }
   return res.status(400).json({ error:"Invalid code" });
@@ -623,12 +623,12 @@ app.post("/api/verify/confirm-email", requireAuth, async (req, res) => {
 
 app.post("/api/verify/request-phone", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   const phone = (req.body?.phone || "").toString().slice(0, 32);
   acct.phone = phone || acct.phone || null;
   acct.phoneVerifyCode = genCode(6);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   // In production: send code via SMS. Logged to server console only.
   console.log("[CryptoProp] Phone verify code for", email, "=>", acct.phoneVerifyCode);
   return res.json({ ok:true, message: "Verification code sent to your phone." });
@@ -636,12 +636,12 @@ app.post("/api/verify/request-phone", requireAuth, async (req, res) => {
 
 app.post("/api/verify/confirm-phone", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   const code = (req.body?.code || "").toString();
   if(code && acct.phoneVerifyCode && code === acct.phoneVerifyCode){
     acct.phoneVerified = true;
     acct.phoneVerifyCode = null;
-    saveAccount(email, acct);
+    await saveAccount(email, acct);
     return res.json({ ok:true });
   }
   return res.status(400).json({ error:"Invalid code" });
@@ -649,7 +649,7 @@ app.post("/api/verify/confirm-phone", requireAuth, async (req, res) => {
 
 app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   const profile = req.body?.profile || {};
   acct.kycProfile = {
@@ -661,7 +661,7 @@ app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   };
   acct.kycStatus = "pending";
   acct.kycSubmittedAt = new Date().toISOString();
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok:true, status: acct.kycStatus });
 });
 
@@ -669,7 +669,7 @@ app.post("/api/kyc/submit", requireAuth, async (req, res) => {
 // Seed liquidity (auth required)
 app.post("/api/account/seed", requireAuth, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.cash = Math.max(acct.cash || 0, 50000);
   acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash);
   acct.startEquity = acct.startEquity || acct.baseEquity;
@@ -689,7 +689,7 @@ app.post("/api/account/seed", requireAuth, async (req, res) => {
   acct.firmProfit = acct.firmProfit || 0;
   acct.challengeFailed = acct.challengeFailed || false;
 
-saveAccount(email, acct);
+await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -711,7 +711,7 @@ saveAccount(email, acct);
 app.post("/api/account/reset", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = { cash: 0, baseEquity: 0, firmProfit: 0, positions: {}, orders: [], openOrders: [], pendingOrders: [], startEquity: 0, dayDate: null, dayStartEquity: 0, dayLowEquity: 0, challengeFailed: false, failReason: null, failedAt: null, equity: 0, dayDD: 0, totalDD: 0, peakEquity: 0, trailingFloor: 0 };
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -749,7 +749,7 @@ app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async 
     return res.status(400).json({ error: "Unsupported product. Use a Coinbase USD pair from /api/market/top50." });
   }
 
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.positions = acct.positions || {};
   acct.orders = acct.orders || [];
   acct.openOrders = acct.openOrders || [];
@@ -802,7 +802,7 @@ app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async 
       type: "market"
     });
 
-    saveAccount(email, acct);
+    await saveAccount(email, acct);
     return res.json({ ok: true, queued: true, id, executeAt, etaMs, account: acct });
   }
 
@@ -838,7 +838,7 @@ app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async 
     type: "market"
   });
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok: true, queued: true, id, executeAt, etaMs, account: acct });
 });
 
@@ -861,7 +861,7 @@ app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
     return res.status(400).json({ error: "Unsupported product. Use a Coinbase USD pair from /api/market/top50." });
   }
 
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.openOrders = acct.openOrders || [];
   acct.positions = acct.positions || {};
   acct.orders = acct.orders || [];
@@ -908,7 +908,7 @@ app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
     feeRate: MAKER_FEE
   };
   acct.openOrders.unshift(order);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -932,7 +932,7 @@ app.post("/api/orders/cancel", requireAuth, async (req, res) => {
   const oid = String(id || "").trim();
   if(!oid) return res.status(400).json({ error: "Missing id." });
 
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.openOrders = acct.openOrders || [];
   acct.positions = acct.positions || {};
 
@@ -953,7 +953,7 @@ app.post("/api/orders/cancel", requireAuth, async (req, res) => {
     acct.positions[o.product] = pos;
   }
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -973,7 +973,7 @@ app.post("/api/orders/cancel", requireAuth, async (req, res) => {
 
 app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   acct.openOrders = acct.openOrders || [];
   acct.positions = acct.positions || {};
   acct.orders = acct.orders || [];
@@ -1055,7 +1055,7 @@ app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) =>
   }
 
   acct.openOrders = remaining;
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   const _cfg = getStepConfig(acct);
   const _elapsed = daysSince(acct.stepStartDate);
   const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
@@ -1348,7 +1348,7 @@ async function autoFlattenAllPositions(email, acct, reason){
 
   acct.positions = Object.fromEntries(Object.entries(pos).filter(([k,v]) => Number(v||0) > 0));
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
 }
 
 async function refreshChallengeState(acct, email){
@@ -1528,10 +1528,10 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
 async function guardChallenge(req, res, next){
   try{
     const email = currentEmail(req);
-    const acct = getOrCreateAccount(email);
+    const acct = await getOrCreateAccount(email);
     acct.pendingOrders = acct.pendingOrders || [];
     await refreshChallengeState(acct, email);
-    saveAccount(email, acct);
+    await saveAccount(email, acct);
     if(acct.frozen){ return res.status(403).json({ error: "Account frozen" }); }
     if(acct.lockedUntil){
       const t = new Date(acct.lockedUntil).getTime();
@@ -1911,7 +1911,7 @@ app.post("/api/admin/account/freeze", requireAdmin, async (req, res) => {
   if(!db.accounts[email]) return res.status(404).json({ error:"Not found" });
   db.accounts[email].frozen = !!frozen;
   await writeData(db);
-  auditLog(req, frozen ? "freeze" : "unfreeze", email, {});
+  await auditLog(req, frozen ? "freeze" : "unfreeze", email, {});
   return res.json({ ok:true });
 });
 
@@ -1926,7 +1926,7 @@ app.post("/api/admin/account/fail", requireAdmin, async (req, res) => {
   a.failReason = reason || "Failed by admin";
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "fail", email, { reason: a.failReason });
+  await auditLog(req, "fail", email, { reason: a.failReason });
   return res.json({ ok:true });
 });
 
@@ -1952,7 +1952,7 @@ app.post("/api/admin/payout/approve", requireAdmin, async (req, res) => {
   pr.approvedAt = new Date().toISOString();
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "approve_payout", email, { id });
+  await auditLog(req, "approve_payout", email, { id });
   return res.json({ ok:true });
 });
 
@@ -1980,7 +1980,7 @@ app.post("/api/admin/kyc/set-status", requireAdmin, async (req, res) => {
   a.kycStatus = status;
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "kyc_set_status", email, { status });
+  await auditLog(req, "kyc_set_status", email, { status });
   return res.json({ ok:true });
 });
 
@@ -2044,8 +2044,8 @@ const TERMS_VERSION = "2026-02-25-e24c9e37f4c48042";
 function clientIp(req){
   return (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").toString().split(",")[0].trim();
 }
-function requireTermsAccepted(req, res, next){
-  const acct = getOrCreateAccount(currentEmail(req));
+async function requireTermsAccepted(req, res, next){
+  const acct = await getOrCreateAccount(currentEmail(req));
   if(acct.termsAccepted && acct.termsVersion === TERMS_VERSION) return next();
   return res.status(403).json({ error:"Terms not accepted", termsVersion: TERMS_VERSION });
 }
@@ -2171,19 +2171,19 @@ app.post("/api/auth/admin-elevate", async (req, res) => {
 
 // ------------------- Clickwrap Terms Acceptance -------------------
 app.get("/api/terms/status", requireAuth, async (req, res) => {
-  const acct = getOrCreateAccount(currentEmail(req));
+  const acct = await getOrCreateAccount(currentEmail(req));
   return res.json({ ok:true, accepted: !!acct.termsAccepted && acct.termsVersion === TERMS_VERSION, termsVersion: TERMS_VERSION, acceptedAt: acct.termsAcceptedAt || null });
 });
 
 app.post("/api/terms/accept", requireAuth, async (req, res) => {
   if(!req.body?.accept) return res.status(400).json({ error:"Must accept" });
-  const acct = getOrCreateAccount(currentEmail(req));
+  const acct = await getOrCreateAccount(currentEmail(req));
   acct.termsAccepted = true;
   acct.termsAcceptedAt = new Date().toISOString();
   acct.termsVersion = TERMS_VERSION;
   acct.termsIp = clientIp(req);
   acct.termsUserAgent = (req.headers["user-agent"] || "").toString().slice(0, 240);
-  saveAccount(currentEmail(req), acct);
+  await saveAccount(currentEmail(req), acct);
   return res.json({ ok:true, termsVersion: TERMS_VERSION });
 });
 
@@ -2201,7 +2201,7 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
 
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
 
   acct.attemptsByPlan = acct.attemptsByPlan || {};
   acct.retryOfferUsed = acct.retryOfferUsed || {};
@@ -2218,12 +2218,12 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
 
   // one-time referral credit on first successful "purchase"
   if(acct.referredBy && !acct.firstPurchaseCredited){
-    recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
+    await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
     acct.firstPurchaseCredited = true;
   }
 
   resetChallengeAttempt(acct);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok:true, account: acct });
 });
 
@@ -2263,7 +2263,7 @@ app.post("/api/admin/account/unlock-daily", requireAdmin, async (req, res) => {
   if(!a.challengeFailed) a.frozen = false;
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "unlock_daily", email, {});
+  await auditLog(req, "unlock_daily", email, {});
   return res.json({ ok:true });
 });
 
@@ -2276,7 +2276,7 @@ app.post("/api/admin/account/flatten", requireAdmin, async (req, res) => {
   await autoFlattenAllPositions(email, a, reason || "Admin flatten");
   // reload to ensure saved snapshot
   const db2 = await readData();
-  auditLog(req, "flatten", email, { reason: reason || "Admin flatten" });
+  await auditLog(req, "flatten", email, { reason: reason || "Admin flatten" });
   return res.json({ ok:true, account: (db2.accounts||{})[email] });
 });
 
@@ -2320,7 +2320,7 @@ app.post("/api/admin/account/reset", requireAdmin, async (req, res) => {
   resetAccountToStart(a);
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "reset_account", email, {});
+  await auditLog(req, "reset_account", email, {});
   return res.json({ ok:true });
 });
 
@@ -2340,7 +2340,7 @@ app.post("/api/admin/account/set-phase", requireAdmin, async (req, res) => {
   }
   db.accounts[email] = a;
   await writeData(db);
-  auditLog(req, "set_phase", email, { phase });
+  await auditLog(req, "set_phase", email, { phase });
   return res.json({ ok:true });
 });
 
@@ -2356,7 +2356,7 @@ function retryDiscount(planId, attempts){
 }
 app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
   const planId = acct.planId;
   if(!planId || !PLANS[planId]) return res.status(400).json({ error:"No active plan" });
   if(!acct.challengeFailed) return res.status(400).json({ error:"Retry offer available only after failing a challenge" });
@@ -2379,7 +2379,7 @@ app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req,
   acct.startEquity = PLANS[planId].startEquity;
   resetChallengeAttempt(acct);
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
   return res.json({ ok:true, account: acct, offer: { original, discounted, oneTime:true } });
 });
 
@@ -2410,7 +2410,7 @@ app.post("/api/admin/referral/create", requireAdmin, async (req, res) => {
   };
   db.referrals.unshift(rec);
   await writeData(db);
-  auditLog(req, "referral_create", null, { code: rec.code, maxUses: rec.maxUses, commissionPct: rec.commissionPct });
+  await auditLog(req, "referral_create", null, { code: rec.code, maxUses: rec.maxUses, commissionPct: rec.commissionPct });
   return res.json({ ok:true, referral: rec });
 });
 
@@ -2422,7 +2422,7 @@ app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
   if(!r) return res.status(404).json({ error:"Not found" });
   r.active = active;
   await writeData(db);
-  auditLog(req, "referral_set_active", null, { code, active });
+  await auditLog(req, "referral_set_active", null, { code, active });
   return res.json({ ok:true });
 });
 
@@ -2430,7 +2430,7 @@ app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
 // Purchase challenge extension (+14 days)
 app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
 
   if(acct.challengePhase !== "challenge" || acct.challengeFailed){
     return res.status(400).json({ error:"Extension only available during active challenge" });
@@ -2461,7 +2461,7 @@ app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, async (req,
     amount: dynamicPrice
   };
 
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
 
   return res.json({
     ok:true,
@@ -2473,7 +2473,7 @@ app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, async (req,
 // Allows reset mid-challenge for $79
 app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
-  const acct = getOrCreateAccount(email);
+  const acct = await getOrCreateAccount(email);
 
   if(acct.challengePhase !== "challenge" || acct.challengeFailed){
     return res.status(400).json({ error:"Reset only during active challenge" });
@@ -2486,7 +2486,7 @@ app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, async (r
   };
 
   resetChallengeAttempt(acct);
-  saveAccount(email, acct);
+  await saveAccount(email, acct);
 
   return res.json({ ok:true });
 });
@@ -2517,7 +2517,7 @@ function genCode(len){
 }
 
 // ---- AUDIT LOG ----
-function auditLog(req, action, targetEmail, meta){
+async function await auditLog(req, action, targetEmail, meta){
   try{
     const db = await readData();
     db.audit = Array.isArray(db.audit) ? db.audit : [];
