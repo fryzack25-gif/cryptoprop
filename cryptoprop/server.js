@@ -7,6 +7,33 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 
+// ---- EMAIL via Resend ----
+const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
+const FROM_EMAIL = "CryptoProp <noreply@thecryptoprop.com>";
+
+async function sendEmail({ to, subject, html }) {
+  if (!RESEND_API_KEY) {
+    console.log(`[CryptoProp] EMAIL (no API key) to=${to} subject="${subject}" body=${html}`);
+    return;
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("[CryptoProp] Resend error:", err);
+    }
+  } catch (e) {
+    console.error("[CryptoProp] Resend send failed:", e.message);
+  }
+}
+
 // ---- CHALLENGE_EXTENSION_FEE_V1 ----
 // Users can purchase +14 days once per step for $39
 
@@ -150,7 +177,7 @@ app.use(rateLimitByIp);
 const MAX_REQS_PER_MIN_PER_IP = 180;
 const MAX_ORDERS_PER_MIN_PER_ACCOUNT = 15;
 const MIN_HOLD_SECONDS = 12; // prevent instant flip/scalp in simulated env
-const ADMIN_KEY = process.env.ADMIN_KEY || null; // Must be set via env var â€” no fallback
+const ADMIN_KEY = process.env.ADMIN_KEY || null; // Must be set via env var — no fallback
 
 const ipBuckets = new Map(); // ip -> {ts,count}
 const acctOrderBuckets = new Map(); // email -> {ts,count}
@@ -257,7 +284,7 @@ app.get("/api/market/top50", async (req, res) => {
 
 
 // ---- API ----
-// Legacy /api/login removed â€” use /api/auth/login instead
+// Legacy /api/login removed — use /api/auth/login instead
 
 app.post("/api/applications", (req, res) => {
   const payload = req.body || {};
@@ -564,14 +591,19 @@ app.post("/api/payout/request", requireAuth, async (req, res) => {
 
 
 // ------------------- Verification & KYC (demo) -------------------
-app.post("/api/verify/request-email", requireAuth, (req, res) => {
+app.post("/api/verify/request-email", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   acct.emailVerifyCode = genCode(6);
   saveAccount(email, acct);
-  // In production: send code via email. Code is logged to server console only.
+  // In production: send code via email.
   console.log("[CryptoProp] Email verify code for", email, "=>", acct.emailVerifyCode);
+  await sendEmail({
+    to: email,
+    subject: "Your CryptoProp email verification code",
+    html: `<p>Hi,</p><p>Your CryptoProp email verification code is:</p><h2 style="letter-spacing:4px">${acct.emailVerifyCode}</h2><p>Enter this code in your dashboard to verify your email address.</p><p>If you didn't request this, you can ignore this email.</p>`
+  });
   return res.json({ ok:true, message: "Verification code sent to your email." });
 });
 
@@ -1428,7 +1460,7 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
     acct.dailyLocked = true;
     acct.lockedUntil = nextUtcMidnightIso();
     acct.lockReason = "Daily drawdown breached";
-    await autoFlattenAllPositions(email, acct, "Daily DD breach â€” auto-flatten");
+    await autoFlattenAllPositions(email, acct, "Daily DD breach — auto-flatten");
   }
 
   if(!acct.challengeFailed && totalDD >= getStepConfig(acct).totalDdLimit){
@@ -1436,7 +1468,7 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
     acct.failedAt = new Date().toISOString();
     acct.failReason = "Trailing drawdown breached";
     acct.frozen = true;
-    await autoFlattenAllPositions(email, acct, "Trailing DD breach â€” liquidation");
+    await autoFlattenAllPositions(email, acct, "Trailing DD breach — liquidation");
   }
 
   // Step pass evaluation
@@ -1455,7 +1487,7 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
       acct.failReason = `${cfg.label} time limit exceeded`;
       acct.frozen = true;
       archiveChallengeStep(acct, { step: cfg.step, status:"failed", returnPct: ret, reason: acct.failReason });
-      await autoFlattenAllPositions(email, acct, `${cfg.label} expired â€” liquidation`);
+      await autoFlattenAllPositions(email, acct, `${cfg.label} expired — liquidation`);
     }
 
     // pass step
@@ -1554,7 +1586,7 @@ function applyProfitSplitOnSell(acct, product, qty, sellPrice){
 }
 
 
-// ---- Simulated fill delay (random 10â€“15 seconds) ----
+// ---- Simulated fill delay (random 10–15 seconds) ----
 function randomFillDelayMs(){
   return 10000 + Math.floor(Math.random() * 5000);
 }
@@ -2034,8 +2066,13 @@ app.post("/api/auth/signup", async (req, res) => {
   const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
   db.users[email] = { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false };
   writeData(db);
-  // In production: send verifyCode via email. For now, log to server console only.
+  // In production: send verifyCode via email.
   console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
+  await sendEmail({
+    to: email,
+    subject: "Your CryptoProp verification code",
+    html: `<p>Hi,</p><p>Your CryptoProp email verification code is:</p><h2 style="letter-spacing:4px">${verifyCode}</h2><p>Enter this code on the verification page to activate your account.</p><p>If you didn't create an account, you can ignore this email.</p>`
+  });
   return res.json({ ok:true, message: "Account created. Check your email for a verification code." });
 });
 
