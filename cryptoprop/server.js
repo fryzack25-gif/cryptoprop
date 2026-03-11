@@ -320,7 +320,7 @@ app.get("/api/applications", requireAuth, async (req, res) => {
 
 
 // ---- Accounts (server-side liquidity for demo) ----
-async function await getOrCreateAccount(email){
+async function getOrCreateAccount(email){
   const data = await readData();
   if(!data.accounts) data.accounts = {};
   if(!data.accounts[email]){
@@ -374,7 +374,7 @@ async function await getOrCreateAccount(email){
   return data.accounts[email];
 }
 
-async function await saveAccount(email, account){
+async function saveAccount(email, account){
   const data = await readData();
   if(!data.accounts) data.accounts = {};
   data.accounts[email] = account;
@@ -451,7 +451,7 @@ async function fetchCoinbaseTicker(product){
 // Get account (auth required)
 
 
-async function await recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
+async function recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
   const db = ensureReferrals(await readData());
   const ref = findReferral(db, refCode);
   if(!ref) return;
@@ -2517,7 +2517,7 @@ function genCode(len){
 }
 
 // ---- AUDIT LOG ----
-async function await auditLog(req, action, targetEmail, meta){
+async function auditLog(req, action, targetEmail, meta){
   try{
     const db = await readData();
     db.audit = Array.isArray(db.audit) ? db.audit : [];
