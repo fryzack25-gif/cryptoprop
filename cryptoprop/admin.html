@@ -457,6 +457,7 @@
       document.getElementById("adminGate").style.display = "none";
       document.getElementById("adminDash").style.display = "";
       loadStats(res);
+      if(window.adminInit) window.adminInit();
     } catch(e) {
       msg.style.color = "#ff6b6b"; msg.textContent = "Invalid admin key.";
       document.getElementById("gateKey").value = "";
@@ -486,11 +487,11 @@
         document.getElementById("adminGate").style.display = "none";
         document.getElementById("adminDash").style.display = "";
         loadStats(res);
+        if(window.adminInit) window.adminInit();
       } else { localStorage.removeItem("cp_admin_key"); }
     } catch(e) {}
   })();
 </script>
-<script type="module" src="admin.js"></script>
-<script type="module" src="/app.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>
