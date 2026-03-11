@@ -17,7 +17,10 @@ document.getElementById("tabSignup")?.addEventListener("click", () => { show("lo
 document.getElementById("signupBtn")?.addEventListener("click", async () => {
   const email = document.getElementById("signupEmail")?.value || "";
   const password = document.getElementById("signupPass")?.value || "";
+  const confirm = document.getElementById("signupConfirm")?.value || "";
   const msg = document.getElementById("signupMsg");
+  if(password !== confirm){ if(msg) msg.textContent = "Passwords do not match."; return; }
+  if(password.length < 8){ if(msg) msg.textContent = "Password must be at least 8 characters."; return; }
   if(msg) msg.textContent = "Creating…";
   try{
     const data = await post("/api/auth/signup", { email, password });
