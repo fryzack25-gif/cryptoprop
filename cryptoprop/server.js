@@ -6,6 +6,7 @@ import fs from "fs";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
+import { initDb, readData, writeData } from "./db.js";
 
 // ---- EMAIL via Resend ----
 const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
@@ -286,7 +287,7 @@ app.get("/api/market/top50", async (req, res) => {
 // ---- API ----
 // Legacy /api/login removed — use /api/auth/login instead
 
-app.post("/api/applications", (req, res) => {
+app.post("/api/applications", async (req, res) => {
   const payload = req.body || {};
   const required = ["name", "email", "tier", "experience", "message"];
   for(const k of required){
@@ -295,7 +296,7 @@ app.post("/api/applications", (req, res) => {
     }
   }
 
-  const data = readData();
+  const data = await readData();
   const record = {
     id: cryptoRandomId(),
     createdAt: new Date().toISOString(),
@@ -306,13 +307,13 @@ app.post("/api/applications", (req, res) => {
     message: String(payload.message).trim(),
   };
   data.applications.unshift(record);
-  writeData(data);
+  await writeData(data);
 
   return res.json({ ok: true, id: record.id });
 });
 
-app.get("/api/applications", requireAuth, (req, res) => {
-  const data = readData();
+app.get("/api/applications", requireAuth, async (req, res) => {
+  const data = await readData();
   return res.json(data.applications || []);
 });
 
@@ -320,7 +321,7 @@ app.get("/api/applications", requireAuth, (req, res) => {
 
 // ---- Accounts (server-side liquidity for demo) ----
 function getOrCreateAccount(email){
-  const data = readData();
+  const data = await readData();
   if(!data.accounts) data.accounts = {};
   if(!data.accounts[email]){
     data.accounts[email] = {
@@ -368,16 +369,16 @@ function getOrCreateAccount(email){
       referralAppliedAt: null,
       firstPurchaseCredited: false
     };
-    writeData(data);
+    await writeData(data);
   }
   return data.accounts[email];
 }
 
 function saveAccount(email, account){
-  const data = readData();
+  const data = await readData();
   if(!data.accounts) data.accounts = {};
   data.accounts[email] = account;
-  writeData(data);
+  await writeData(data);
 }
 
 function allowlistProduct(product){
@@ -451,7 +452,7 @@ async function fetchCoinbaseTicker(product){
 
 
 function recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
-  const db = ensureReferrals(readData());
+  const db = ensureReferrals(await readData());
   const ref = findReferral(db, refCode);
   if(!ref) return;
   if(ref.maxUses && Number(ref.uses||0) >= Number(ref.maxUses)) return;
@@ -465,15 +466,15 @@ function recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
     amount: Number(amount||0),
     commission
   });
-  writeData(db);
+  await writeData(db);
 }
 
 // ------------------- Referral (admin-created codes) -------------------
-app.post("/api/referral/apply", requireAuth, requireTermsAccepted, (req, res) => {
+app.post("/api/referral/apply", requireAuth, requireTermsAccepted, async (req, res) => {
   const code = normalizeCode(req.body?.code || req.query?.code || "");
   if(!code) return res.status(400).json({ error:"Missing code" });
 
-  const db = ensureReferrals(readData());
+  const db = ensureReferrals(await readData());
   const ref = findReferral(db, code);
   if(!ref) return res.status(404).json({ error:"Invalid code" });
 
@@ -607,7 +608,7 @@ app.post("/api/verify/request-email", requireAuth, async (req, res) => {
   return res.json({ ok:true, message: "Verification code sent to your email." });
 });
 
-app.post("/api/verify/confirm-email", requireAuth, (req, res) => {
+app.post("/api/verify/confirm-email", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   const code = (req.body?.code || "").toString();
@@ -620,7 +621,7 @@ app.post("/api/verify/confirm-email", requireAuth, (req, res) => {
   return res.status(400).json({ error:"Invalid code" });
 });
 
-app.post("/api/verify/request-phone", requireAuth, (req, res) => {
+app.post("/api/verify/request-phone", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
@@ -633,7 +634,7 @@ app.post("/api/verify/request-phone", requireAuth, (req, res) => {
   return res.json({ ok:true, message: "Verification code sent to your phone." });
 });
 
-app.post("/api/verify/confirm-phone", requireAuth, (req, res) => {
+app.post("/api/verify/confirm-phone", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   const code = (req.body?.code || "").toString();
@@ -646,7 +647,7 @@ app.post("/api/verify/confirm-phone", requireAuth, (req, res) => {
   return res.status(400).json({ error:"Invalid code" });
 });
 
-app.post("/api/kyc/submit", requireAuth, (req, res) => {
+app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
@@ -666,7 +667,7 @@ app.post("/api/kyc/submit", requireAuth, (req, res) => {
 
 
 // Seed liquidity (auth required)
-app.post("/api/account/seed", requireAuth, (req, res) => {
+app.post("/api/account/seed", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   acct.cash = Math.max(acct.cash || 0, 50000);
@@ -707,7 +708,7 @@ saveAccount(email, acct);
 });
 
 // Reset account (auth required)
-app.post("/api/account/reset", requireAuth, (req, res) => {
+app.post("/api/account/reset", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = { cash: 0, baseEquity: 0, firmProfit: 0, positions: {}, orders: [], openOrders: [], pendingOrders: [], startEquity: 0, dayDate: null, dayStartEquity: 0, dayLowEquity: 0, challengeFailed: false, failReason: null, failedAt: null, equity: 0, dayDD: 0, totalDD: 0, peakEquity: 0, trailingFloor: 0 };
   saveAccount(email, acct);
@@ -925,7 +926,7 @@ app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
   return res.json(acct);
 });
 
-app.post("/api/orders/cancel", requireAuth, (req, res) => {
+app.post("/api/orders/cancel", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const { id } = req.body || {};
   const oid = String(id || "").trim();
@@ -1597,7 +1598,7 @@ function isDue(o){
 
 async function processPendingOrders(){
   try{
-    const db = readData();
+    const db = await readData();
     const accounts = db.accounts || {};
     for(const email of Object.keys(accounts)){
       const acct = accounts[email];
@@ -1632,7 +1633,7 @@ async function processPendingOrders(){
       accounts[email] = acct;
     }
     db.accounts = accounts;
-    writeData(db);
+    await writeData(db);
   }catch{
     // ignore
   }
@@ -1825,14 +1826,14 @@ app.get("/api/market/tickers", async (req, res) => {
 // ---- Static site ----
 app.use(express.static(__dirname));
 
-app.get("*", (req, res) => {
+app.get("*", async (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
 
 // ------------------- Admin API (demo) -------------------
-app.get("/api/admin/overview", requireAdmin, (req, res) => {
-  const db = readData();
+app.get("/api/admin/overview", requireAdmin, async (req, res) => {
+  const db = await readData();
   const accounts = db.accounts || {};
   const list = Object.keys(accounts).map(email => {
     const a = accounts[email];
@@ -1854,8 +1855,8 @@ app.get("/api/admin/overview", requireAdmin, (req, res) => {
   return res.json({ ok:true, accounts:list });
 }); // close /api/admin/overview
 
-app.get("/api/admin/payout/pending", requireAdmin, (req, res) => {
-  const db = readData();
+app.get("/api/admin/payout/pending", requireAdmin, async (req, res) => {
+  const db = await readData();
   const accounts = db.accounts || {};
   const pending = [];
   for(const email of Object.keys(accounts)){
@@ -1872,8 +1873,8 @@ app.get("/api/admin/payout/pending", requireAdmin, (req, res) => {
   return res.json({ ok:true, pending });
 });
 
-app.get("/api/admin/risk/flags", requireAdmin, (req, res) => {
-  const db = readData();
+app.get("/api/admin/risk/flags", requireAdmin, async (req, res) => {
+  const db = await readData();
   const accounts = db.accounts || {};
   const deviceMap = new Map(); // device -> [emails]
   const ipMap = new Map();     // ip -> [emails]
@@ -1903,20 +1904,20 @@ app.get("/api/admin/risk/flags", requireAdmin, (req, res) => {
   return res.json({ ok:true, deviceFlags, ipFlags });
 });
 
-app.post("/api/admin/account/freeze", requireAdmin, (req, res) => {
+app.post("/api/admin/account/freeze", requireAdmin, async (req, res) => {
   const { email, frozen } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   if(!db.accounts[email]) return res.status(404).json({ error:"Not found" });
   db.accounts[email].frozen = !!frozen;
-  writeData(db);
+  await writeData(db);
   auditLog(req, frozen ? "freeze" : "unfreeze", email, {});
   return res.json({ ok:true });
 });
 
-app.post("/api/admin/account/fail", requireAdmin, (req, res) => {
+app.post("/api/admin/account/fail", requireAdmin, async (req, res) => {
   const { email, reason } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
@@ -1924,14 +1925,14 @@ app.post("/api/admin/account/fail", requireAdmin, (req, res) => {
   a.failedAt = new Date().toISOString();
   a.failReason = reason || "Failed by admin";
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "fail", email, { reason: a.failReason });
   return res.json({ ok:true });
 });
 
-app.post("/api/admin/payout/approve", requireAdmin, (req, res) => {
+app.post("/api/admin/payout/approve", requireAdmin, async (req, res) => {
   const { email, id } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
@@ -1950,13 +1951,13 @@ app.post("/api/admin/payout/approve", requireAdmin, (req, res) => {
   a.payouts.unshift({ id: pr.id, time: new Date().toISOString(), amount, period: pr.period, status:"paid" });
   pr.approvedAt = new Date().toISOString();
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "approve_payout", email, { id });
   return res.json({ ok:true });
 });
 
-app.get("/api/admin/kyc/pending", requireAdmin, (req, res) => {
-  const db = readData();
+app.get("/api/admin/kyc/pending", requireAdmin, async (req, res) => {
+  const db = await readData();
   const accounts = db.accounts || {};
   const pending = [];
   for(const email of Object.keys(accounts)){
@@ -1969,22 +1970,22 @@ app.get("/api/admin/kyc/pending", requireAdmin, (req, res) => {
   return res.json({ ok:true, pending });
 });
 
-app.post("/api/admin/kyc/set-status", requireAdmin, (req, res) => {
+app.post("/api/admin/kyc/set-status", requireAdmin, async (req, res) => {
   const { email, status } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
   if(!["approved","rejected","pending"].includes(status)) return res.status(400).json({ error:"Invalid status" });
   a.kycStatus = status;
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "kyc_set_status", email, { status });
   return res.json({ ok:true });
 });
 
-app.get("/api/admin/risk/similarity", requireAdmin, (req, res) => {
-  const db = readData();
+app.get("/api/admin/risk/similarity", requireAdmin, async (req, res) => {
+  const db = await readData();
   const accounts = db.accounts || {};
   const emails = Object.keys(accounts);
   const sigs = {};
@@ -2050,7 +2051,7 @@ function requireTermsAccepted(req, res, next){
 }
 
 // ------------------- Authentication -------------------
-app.get("/api/auth/me", (req, res) => {
+app.get("/api/auth/me", async (req, res) => {
   const u = getSessionUser(req);
   if(!u) return res.json({ ok:true, user:null });
   return res.json({ ok:true, user:{ email:u.email, isAdmin:!!u.isAdmin } });
@@ -2060,12 +2061,12 @@ app.post("/api/auth/signup", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const password = (req.body?.password || "").toString();
   if(!email || !password || password.length < 8) return res.status(400).json({ error:"Email and password (min 8 chars) required" });
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   if(db.users[email]) return res.status(400).json({ error:"Account already exists" });
   const hash = await bcrypt.hash(password, 12);
   const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
   db.users[email] = { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false };
-  writeData(db);
+  await writeData(db);
   // In production: send verifyCode via email.
   console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
   await sendEmail({
@@ -2076,10 +2077,10 @@ app.post("/api/auth/signup", async (req, res) => {
   return res.json({ ok:true, message: "Account created. Check your email for a verification code." });
 });
 
-app.post("/api/auth/verify-email", (req, res) => {
+app.post("/api/auth/verify-email", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const code = (req.body?.code || "").toString().trim().toUpperCase();
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   const u = db.users[email];
   if(!u) return res.status(404).json({ error:"Not found" });
   if(u.emailVerified) return res.json({ ok:true, verified:true });
@@ -2087,14 +2088,14 @@ app.post("/api/auth/verify-email", (req, res) => {
   u.emailVerified = true;
   u.verifyCode = null;
   db.users[email] = u;
-  writeData(db);
+  await writeData(db);
   return res.json({ ok:true, verified:true });
 });
 
 app.post("/api/auth/login", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   const password = (req.body?.password || "").toString();
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   const u = db.users[email];
   if(!u) return res.status(400).json({ error:"Invalid credentials" });
   const ok = await bcrypt.compare(password, u.passwordHash);
@@ -2104,7 +2105,7 @@ app.post("/api/auth/login", async (req, res) => {
   return res.json({ ok:true });
 });
 
-app.post("/api/auth/logout", (req, res) => {
+app.post("/api/auth/logout", async (req, res) => {
   req.session.destroy(() => {
     res.clearCookie("cp.sid");
     return res.json({ ok:true });
@@ -2115,7 +2116,7 @@ app.post("/api/auth/logout", (req, res) => {
 app.post("/api/auth/forgot-password", async (req, res) => {
   const email = sanitizeEmail(req.body?.email);
   if(!email) return res.status(400).json({ error:"Email required" });
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   const u = db.users[email];
   // Always return ok to avoid user enumeration
   if(!u) return res.json({ ok:true });
@@ -2123,7 +2124,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   u.resetToken = token;
   u.resetTokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
   db.users[email] = u;
-  writeData(db);
+  await writeData(db);
   const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
   const resetLink = `${baseUrl}/reset-password.html?token=${token}&email=${encodeURIComponent(email)}`;
   console.log("[CryptoProp] Password reset link for", email, "=>", resetLink);
@@ -2141,7 +2142,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   const password = (req.body?.password || "").toString();
   if(!email || !token || !password || password.length < 8)
     return res.status(400).json({ error:"Email, token, and new password (min 8 chars) required" });
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   const u = db.users[email];
   if(!u || u.resetToken !== token) return res.status(400).json({ error:"Invalid or expired reset link" });
   if(!u.resetTokenExpiry || Date.now() > u.resetTokenExpiry) return res.status(400).json({ error:"Reset link has expired" });
@@ -2149,32 +2150,32 @@ app.post("/api/auth/reset-password", async (req, res) => {
   u.resetToken = null;
   u.resetTokenExpiry = null;
   db.users[email] = u;
-  writeData(db);
+  await writeData(db);
   return res.json({ ok:true });
 });
 
-app.post("/api/auth/admin-elevate", (req, res) => {
+app.post("/api/auth/admin-elevate", async (req, res) => {
   const key = (req.body?.adminKey || "").toString();
   if(!ADMIN_KEY || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid admin key" });
   const u = getSessionUser(req);
   if(!u) return res.status(401).json({ error:"Not authenticated" });
   req.session.user.isAdmin = true;
-  const db = ensureUsers(readData());
+  const db = ensureUsers(await readData());
   if(db.users[u.email]){
     db.users[u.email].isAdmin = true;
-    writeData(db);
+    await writeData(db);
   }
   return res.json({ ok:true, isAdmin:true });
 });
 
 
 // ------------------- Clickwrap Terms Acceptance -------------------
-app.get("/api/terms/status", requireAuth, (req, res) => {
+app.get("/api/terms/status", requireAuth, async (req, res) => {
   const acct = getOrCreateAccount(currentEmail(req));
   return res.json({ ok:true, accepted: !!acct.termsAccepted && acct.termsVersion === TERMS_VERSION, termsVersion: TERMS_VERSION, acceptedAt: acct.termsAcceptedAt || null });
 });
 
-app.post("/api/terms/accept", requireAuth, (req, res) => {
+app.post("/api/terms/accept", requireAuth, async (req, res) => {
   if(!req.body?.accept) return res.status(400).json({ error:"Must accept" });
   const acct = getOrCreateAccount(currentEmail(req));
   acct.termsAccepted = true;
@@ -2194,7 +2195,7 @@ const PLANS = {
   "100k": { startEquity: 100000, price: 499 }
 };
 
-app.post("/api/plan/choose", requireAuth, requireTermsAccepted, (req, res) => {
+app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
   const planId = (req.body?.planId || "").toString();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
@@ -2228,9 +2229,9 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, (req, res) => {
 
 // ------------------- Admin Ops Console -------------------
 
-app.get("/api/admin/account", requireAdmin, (req, res) => {
+app.get("/api/admin/account", requireAdmin, async (req, res) => {
   const email = (req.query.email || "").toString();
-  const db = readData();
+  const db = await readData();
   const a = (db.accounts||{})[email];
   if(!a) return res.status(404).json({ error:"Not found" });
   // attach derived payout fields
@@ -2242,16 +2243,16 @@ app.get("/api/admin/account", requireAdmin, (req, res) => {
   a.payoutCapRemaining = payoutCapRemaining(a);
   return res.json({ ok:true, account: a });
 });
-app.get("/api/admin/audit", requireAdmin, (req, res) => {
+app.get("/api/admin/audit", requireAdmin, async (req, res) => {
   const limit = Math.max(1, Math.min(500, Number(req.query.limit || 200)));
-  const db = readData();
+  const db = await readData();
   const audit = Array.isArray(db.audit) ? db.audit : [];
   return res.json({ ok:true, audit: audit.slice(0, limit) });
 });
 
-app.post("/api/admin/account/unlock-daily", requireAdmin, (req, res) => {
+app.post("/api/admin/account/unlock-daily", requireAdmin, async (req, res) => {
   const { email } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
@@ -2261,20 +2262,20 @@ app.post("/api/admin/account/unlock-daily", requireAdmin, (req, res) => {
   // do not un-fail, only unlock daily lock; keep frozen if failed
   if(!a.challengeFailed) a.frozen = false;
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "unlock_daily", email, {});
   return res.json({ ok:true });
 });
 
 app.post("/api/admin/account/flatten", requireAdmin, async (req, res) => {
   const { email, reason } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
   await autoFlattenAllPositions(email, a, reason || "Admin flatten");
   // reload to ensure saved snapshot
-  const db2 = readData();
+  const db2 = await readData();
   auditLog(req, "flatten", email, { reason: reason || "Admin flatten" });
   return res.json({ ok:true, account: (db2.accounts||{})[email] });
 });
@@ -2310,22 +2311,22 @@ function resetAccountToStart(a){
   return a;
 }
 
-app.post("/api/admin/account/reset", requireAdmin, (req, res) => {
+app.post("/api/admin/account/reset", requireAdmin, async (req, res) => {
   const { email } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
   resetAccountToStart(a);
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "reset_account", email, {});
   return res.json({ ok:true });
 });
 
-app.post("/api/admin/account/set-phase", requireAdmin, (req, res) => {
+app.post("/api/admin/account/set-phase", requireAdmin, async (req, res) => {
   const { email, phase } = req.body || {};
-  const db = readData();
+  const db = await readData();
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
@@ -2338,7 +2339,7 @@ app.post("/api/admin/account/set-phase", requireAdmin, (req, res) => {
     resetPayoutPeriodIfNeeded(a);
   }
   db.accounts[email] = a;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "set_phase", email, { phase });
   return res.json({ ok:true });
 });
@@ -2353,7 +2354,7 @@ function retryDiscount(planId, attempts){
   if(attempts === 1) return 10;
   return 0;
 }
-app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, (req, res) => {
+app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
   const planId = acct.planId;
@@ -2383,13 +2384,13 @@ app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, (req, res) 
 });
 
 // ------------------- Admin Referral Codes -------------------
-app.get("/api/admin/referral/list", requireAdmin, (req, res) => {
-  const db = ensureReferrals(readData());
+app.get("/api/admin/referral/list", requireAdmin, async (req, res) => {
+  const db = ensureReferrals(await readData());
   return res.json({ ok:true, referrals: db.referrals, uses: db.referralUses });
 });
 
-app.post("/api/admin/referral/create", requireAdmin, (req, res) => {
-  const db = ensureReferrals(readData());
+app.post("/api/admin/referral/create", requireAdmin, async (req, res) => {
+  const db = ensureReferrals(await readData());
   let code = normalizeCode(req.body?.code || "");
   const maxUses = req.body?.maxUses != null ? Number(req.body.maxUses) : null;
   const commissionPct = req.body?.commissionPct != null ? Number(req.body.commissionPct) : DEFAULT_REFERRAL_COMMISSION_PCT;
@@ -2408,26 +2409,26 @@ app.post("/api/admin/referral/create", requireAdmin, (req, res) => {
     note: (req.body?.note || "").toString().slice(0, 140)
   };
   db.referrals.unshift(rec);
-  writeData(db);
+  await writeData(db);
   auditLog(req, "referral_create", null, { code: rec.code, maxUses: rec.maxUses, commissionPct: rec.commissionPct });
   return res.json({ ok:true, referral: rec });
 });
 
-app.post("/api/admin/referral/set-active", requireAdmin, (req, res) => {
+app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
   const code = normalizeCode(req.body?.code || "");
   const active = !!req.body?.active;
-  const db = ensureReferrals(readData());
+  const db = ensureReferrals(await readData());
   const r = db.referrals.find(x => x.code === code);
   if(!r) return res.status(404).json({ error:"Not found" });
   r.active = active;
-  writeData(db);
+  await writeData(db);
   auditLog(req, "referral_set_active", null, { code, active });
   return res.json({ ok:true });
 });
 
 
 // Purchase challenge extension (+14 days)
-app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, (req, res) => {
+app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
 
@@ -2470,7 +2471,7 @@ app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, (req, res) 
 
 // ---- INSTANT_RESET_V1 ----
 // Allows reset mid-challenge for $79
-app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, (req, res) => {
+app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
   const acct = getOrCreateAccount(email);
 
@@ -2490,38 +2491,9 @@ app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, (req, re
   return res.json({ ok:true });
 });
 // ---- DATA PERSISTENCE ----
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, "data.json");
-
-function readData(){
-  try{
-    const raw = fs.readFileSync(DB_FILE, "utf8");
-    return JSON.parse(raw);
-  }catch{
-    return { applications: [], accounts: {}, users: {}, referrals: [], referralUses: [], audit: [] };
-  }
-}
-
-let _writeTimer = null;
-let _pendingWrite = null;
-
-function writeData(data){
-  // Debounce writes: accumulate rapid changes and write once every 200ms
-  _pendingWrite = data;
-  if(_writeTimer) return;
-  _writeTimer = setTimeout(() => {
-    _writeTimer = null;
-    const snapshot = _pendingWrite;
-    _pendingWrite = null;
-    if(!snapshot) return;
-    try{
-      const tmp = DB_FILE + ".tmp";
-      fs.writeFileSync(tmp, JSON.stringify(snapshot, null, 2), "utf8");
-      fs.renameSync(tmp, DB_FILE);
-    }catch(err){
-      console.error("[CryptoProp] writeData error:", err.message);
-    }
-  }, 200);
-}
+// readData() and await writeData() are now imported from db.js (PostgreSQL).
+// Kept as async wrappers — callers that were synchronous now need await.
+// See db.js for the implementation.
 
 // ---- DEVICE / IP TRACKING ----
 function noteDeviceAndIp(acct, req){
@@ -2547,7 +2519,7 @@ function genCode(len){
 // ---- AUDIT LOG ----
 function auditLog(req, action, targetEmail, meta){
   try{
-    const db = readData();
+    const db = await readData();
     db.audit = Array.isArray(db.audit) ? db.audit : [];
     db.audit.unshift({
       time: new Date().toISOString(),
@@ -2558,7 +2530,7 @@ function auditLog(req, action, targetEmail, meta){
       meta: meta || {}
     });
     db.audit = db.audit.slice(0, 2000);
-    writeData(db);
+    await writeData(db);
   }catch(err){
     console.error("[CryptoProp] auditLog error:", err.message);
   }
@@ -2623,10 +2595,18 @@ function jaccard(a, b){
   return union === 0 ? 0 : inter / union;
 }
 
-app.listen(PORT, () => {
-  console.log(`CryptoProp demo running on http://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-});
+// ---- Startup: init DB then start server ----
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`CryptoProp demo running on http://localhost:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  })
+  .catch((err) => {
+    console.error("[DB] Failed to initialise database:", err.message);
+    process.exit(1);
+  });
 
 function cryptoRandomId(){
   // No extra deps: small random id
