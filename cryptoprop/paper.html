@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Trading</title>
+  <meta name="description" content="CryptoProp spot paper trading module using live market data from Coinbase." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="index.html">
+        <span class="logo" aria-hidden="true"></span>
+        <span>CryptoProp</span>
+      </a>
+
+      <nav class="links" aria-label="Paper nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="paper.html">Trading</a>
+        <a href="index.html#rules">Rules</a>
+      </nav>
+
+      <div class="right-tools">
+        <span id="who" class="small muted"></span>
+        <button class="btn ghost" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-top:22px; padding-bottom:40px">
+    <div class="section-title">
+      <h2>Trading (spot)</h2>
+      <p class="muted">Live prices via Coinbase market data proxy. No real trades.</p>
+    </div>
+
+    <div class="split">
+      <section class="card glass" style="padding:18px">
+        <div class="section-title" style="margin-bottom:10px">
+          <h2 style="font-size:1.15rem">Order ticket</h2>
+          <p class="muted small">Market &amp; limit orders • simulated fills • spot only</p>
+          <p class="tiny muted" style="margin-top:6px">Prop rules: 80/20 profit split • max position size 1% of account (e.g., $250 on $25k)</p>
+        </div>
+
+        <form id="orderForm" style="padding:0">
+          <div class="row2">
+            <div>
+              <label for="product">Pair</label>
+              <select id="product" name="product" required>
+                <option value="BTC-USD">BTC-USD</option>
+              </select>
+            </div>
+            <div>
+              <label for="side">Side</label>
+              <select id="side" name="side" required>
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row2" style="margin-top:10px">
+            <div>
+              <label for="type">Order type</label>
+              <select id="type" name="type" required>
+                <option value="market" selected>Market</option>
+                <option value="limit">Limit</option>
+              </select>
+            </div>
+            <div>
+              <label for="limitPrice">Limit price (USD)</label>
+              <input id="limitPrice" name="limitPrice" type="number" step="0.01" min="0" placeholder="Only for limit orders" disabled />
+            </div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label for="qty">Quantity (base)</label>
+              <input id="qty" name="qty" type="number" step="0.00000001" min="0" placeholder="0.01" required />
+            </div>
+            <div>
+              <label for="price">Last price (USD)</label>
+              <div class="tiny muted" id="wsStatus" style="margin-top:6px">Live feed: connecting…</div>
+              <input id="price" name="price" type="text" readonly />
+            </div>
+          </div>
+
+          <button class="btn primary" type="submit">Place paper order</button>
+          <p id="msg" class="small muted" style="margin:0"></p>
+
+          <div class="notice tiny" style="margin-top:12px">
+            Prices are fetched from Coinbase Exchange market data (proxied through your server). Market orders include demo slippage + taker fees; limit fills use maker fees.
+          </div>
+        </form>
+      </section>
+
+      <aside class="card glass" style="padding:18px">
+        <div class="section-title" style="margin-bottom:10px">
+          <h2 style="font-size:1.15rem">Portfolio</h2>
+          <p class="muted small">Linked to your account liquidity</p>
+        </div>
+
+        <div class="grid3" style="grid-template-columns: 1fr; gap: 10px">
+          <div class="stat">
+            <b id="cash">$—</b>
+            <span>Cash (USD)</span>
+          </div>
+          <div class="stat">
+            <b id="equity">$—</b>
+            <span>Equity (USD)</span>
+          </div>
+          <div class="stat">
+            <b id="upl">$—</b>
+            <span>Unrealized P/L (USD)</span>
+          </div>
+        </div>
+
+        <div class="pillrow" style="margin-top:12px">
+          <button class="btn" id="resetBtn" type="button">Reset account</button>
+          <button class="btn teal" id="seedBtn" type="button">Seed liquidity ($50,000)</button>
+        </div>
+
+        <div class="disclaimer tiny" style="margin-top:12px">
+          This is a demo. Execution is simulated at last price; balances and positions are stored on the server per account.
+        </div>
+      </aside>
+    </div>
+
+    
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Chart</h2>
+        <p class="muted small">Coinbase candles (demo)</p>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="gran">Granularity</label>
+          <select id="gran" name="gran">
+            <option value="60">1m</option>
+            <option value="300">5m</option>
+            <option value="900">15m</option>
+            <option value="3600" selected>1h</option>
+            <option value="21600">6h</option>
+            <option value="86400">1d</option>
+          </select>
+        </div>
+        <div>
+          <label for="candlesCount">Candles</label>
+          <select id="candlesCount" name="candlesCount">
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <canvas id="candleCanvas" width="1100" height="360" style="width:100%; height:auto; border-radius:16px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.02)"></canvas>
+      </div>
+      <div class="tiny muted" style="margin-top:10px">
+        Candles are for visualization only. Not investment advice.
+      </div>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Positions</h2>
+        <p class="muted small">Average cost tracking</p>
+      </div>
+      <table class="table" aria-label="Positions">
+        <thead>
+          <tr>
+            <th>Pair</th>
+            <th>Qty</th>
+            <th>Avg cost</th>
+            <th>Last</th>
+            <th>Unrealized P/L</th>
+          </tr>
+        </thead>
+        <tbody id="posBody"></tbody>
+      </table>
+    </section>
+
+    
+    
+    
+    
+    
+    <div class="card glass" id="lockBanner" style="display:none; padding:14px; margin-top:14px; border:1px solid rgba(255,77,77,0.35)">
+      <div style="font-weight:800">Trading locked</div>
+      <div class="muted small" id="lockText">—</div>
+    </div>
+
+    <section class="card glass" id="challengeProgress" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Challenge progress</h2>
+        <p class="muted small">Target: +8% • Time limit: 30 days • Min trading days: 5 • Consistency: max 40% best-day share • On pass: reset to initial balance</p>
+      </div>
+
+      <div class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Phase</div>
+          <div id="phase" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="timeLeft">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Profit progress</div>
+          <div id="profitLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+            <div id="profitBar" style="height:10px; width:0%; background: var(--good); border-radius:999px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Trading days</div>
+          <div id="daysLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="consistencyLine">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Payouts (funded)</div>
+          <div id="payoutLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="payoutSub">—</div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="card glass" id="payoutMini" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Payout status</h2>
+        <p class="muted small">Quick view while trading.</p>
+      </div>
+      <div class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Withdrawable</div>
+          <div id="miniWithdrawable" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="miniEligible">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Cap remaining</div>
+          <div id="miniCap" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="miniCapLine">—</div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="card glass" id="riskMeter" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Risk meter</h2>
+        <p class="muted small">Max daily drawdown: 2% • Max trailing drawdown: 5%</p>
+      </div>
+
+      <div class="card" style="padding:12px; margin-bottom:10px">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+          <div>
+            <div class="tiny muted">Daily drawdown used</div>
+            <div style="font-weight:700"><span id="dailyUsedPct">—</span> / 2.00%</div>
+          </div>
+          <div class="tiny muted" id="dayEqLine">—</div>
+        </div>
+        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+          <div id="dailyBar" style="height:10px; width:0%; background: var(--bad); border-radius:999px"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:12px">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+          <div>
+            <div class="tiny muted">Trailing drawdown used</div>
+            <div style="font-weight:700"><span id="totalUsedPct">—</span> / 5.00%</div>
+          </div>
+          <div class="tiny muted" id="totalEqLine">—</div>
+        </div>
+        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+          <div id="totalBar" style="height:10px; width:0%; background: var(--warn); border-radius:999px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Order queue</h2>
+        <p class="muted small">Orders fill after a random 10–15 second delay</p>
+      </div>
+      <table class="table" aria-label="Pending orders">
+        <thead>
+          <tr>
+            <th>Queued</th>
+            <th>ETA</th>
+            <th>Pair</th>
+            <th>Side</th>
+            <th>Type</th>
+            <th>Qty</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Open orders</h2>
+        <p class="muted small">Limit orders waiting to fill</p>
+      </div>
+      <table class="table" aria-label="Open orders">
+        <thead>
+          <tr>
+            <th>Placed</th>
+            <th>Pair</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Limit</th>
+            <th>Cancel</th>
+          </tr>
+        </thead>
+        <tbody id="openBody"></tbody>
+      </table>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Order history</h2>
+        <p class="muted small">Most recent first</p>
+      </div>
+      <table class="table" aria-label="Orders">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Pair</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Fill price</th>
+            <th>Notional</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+    </section>
+
+    <footer>
+      <div class="wrap" style="padding:0">
+        <div class="small">© <span id="year"></span> CryptoProp. Trading only.</div>
+      </div>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./paper.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

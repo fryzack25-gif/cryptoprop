@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Challenge Failed</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container" style="max-width:920px; padding:24px">
+    <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+      <div>
+        <h1 style="margin:0">Challenge Failed</h1>
+        <p class="muted" style="margin:6px 0 0">Your account breached the risk rules.</p>
+      </div>
+      <a class="btn" href="index.html">Back to home</a>
+    </header>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0">What happened</h2>
+      <p id="reason" class="muted">Loading…</p>
+
+      <div class="row2" style="margin-top:14px">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Starting equity</div>
+          <div id="startEq" style="font-weight:700; font-size:1.2rem">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Current equity</div>
+          <div id="eq" style="font-weight:700; font-size:1.2rem">—</div>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Daily drawdown</div>
+          <div id="dayDD" style="font-weight:700; font-size:1.2rem">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Trailing drawdown</div>
+          <div id="totalDD" style="font-weight:700; font-size:1.2rem">—</div>
+        </div>
+      </div>
+
+      <hr style="margin:16px 0; opacity:.25" />
+
+      <p class="muted small">
+        Rules: max <b>2%</b> drawdown in a day (from the day’s starting equity) and max <b>5%</b> trailing drawdown (from peak equity).
+      </p>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+        <button class="btn primary" id="resetBtn">Reset challenge</button>
+        <a class="btn" href="dashboard.html">Dashboard</a>
+        <a class="btn" href="paper.html">Trading</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="failed.js"></script>
+</body>
+</html>

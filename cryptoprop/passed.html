@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Challenge Passed</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container" style="max-width:920px; padding:24px">
+    <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+      <div>
+        <h1 style="margin:0">Challenge Passed 🎉</h1>
+        <p class="muted" style="margin:6px 0 0">Welcome to the funded phase. Your funded account starts at the initial balance.</p>
+      </div>
+      <a class="btn" href="dashboard.html">Go to dashboard</a>
+    </header>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0">Funded status</h2>
+      <p class="muted" id="meta">Loading…</p>
+
+      <div class="row2" style="margin-top:14px">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Payout eligible at</div>
+          <div id="eligible" style="font-weight:700; font-size:1.1rem">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Weekly payout cap</div>
+          <div id="cap" style="font-weight:700; font-size:1.1rem">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
+        <a class="btn" href="history.html">View challenge certificate</a>
+        <a class="btn primary" href="paper.html">Start trading</a>
+        <a class="btn" href="dashboard.html">Dashboard</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="passed.js"></script>
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Dashboard</title>
+  <meta name="description" content="CryptoProp trader dashboard (demo)." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="index.html">
+        <span class="logo" aria-hidden="true"></span>
+        <span>CryptoProp</span>
+      </a>
+
+      <nav class="links" aria-label="Dashboard nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="paper.html">Trading</a>
+        <a class="btn" href="history.html">History</a>
+        <a href="index.html#rules">Rules</a>
+        <a href="index.html#plans">Plans</a>
+      </nav>
+
+      <div class="right-tools">
+        <span id="who" class="small muted"></span>
+        <button class="btn ghost" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </header>
+  
+    
+    <section class="card glass" id="challengeProgress" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Challenge progress</h2>
+        <p class="muted small">Target: +8% • Time limit: 30 days • Min trading days: 5 • Consistency: max 40% best-day share • On pass: reset to initial balance</p>
+      </div>
+
+      <div class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Phase</div>
+          <div id="phase" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="timeLeft">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Profit progress</div>
+          <div id="profitLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+            <div id="profitBar" style="height:10px; width:0%; background: var(--good); border-radius:999px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Trading days</div>
+          <div id="daysLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="consistencyLine">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Payouts (funded)</div>
+          <div id="payoutLine" style="font-weight:700; font-size:1.1rem">—</div>
+          <div class="tiny muted" id="payoutSub">—</div>
+        </div>
+      </div>
+    </section>
+
+
+    
+    <section class="card glass" id="retryOfferBox" style="padding:18px; margin-top:14px; display:none; border:1px solid rgba(255,215,0,0.25)">
+      <h2 style="margin-top:0; font-size:1.15rem">One-time retry offer</h2>
+      <p class="muted small" id="retryOfferText">—</p>
+      <button class="btn primary" id="buyRetry">Retry now</button>
+      <div class="tiny muted" id="retryMsg"></div>
+    </section>
+
+    
+    
+    
+    <section class="card glass" id="instantResetBox" style="padding:18px; margin-top:14px; display:none; border:1px solid rgba(255,100,100,0.25)">
+      <h2 style="margin-top:0; font-size:1.15rem">Want a fresh start?</h2>
+      <p class="muted small">Reset your challenge now for $79.</p>
+      <button class="btn primary" id="buyReset">Reset Now</button>
+      <div class="tiny muted" id="resetMsg"></div>
+    </section>
+
+    <section class="card glass" id="consistencyBox" style="padding:18px; margin-top:14px; display:none;">
+      <h2 style="margin-top:0; font-size:1.15rem">Consistency Progress</h2>
+      <div id="consistencyText" class="muted small"></div>
+      <div style="margin-top:10px;">
+        <div style="background:#1e293b; border-radius:8px; overflow:hidden;">
+          <div id="consistencyBar" style="height:10px; width:0%; background:linear-gradient(90deg,#00c6ff,#0072ff);"></div>
+        </div>
+      </div>
+      <div id="minDaysBadge" style="margin-top:10px; font-size:12px; font-weight:600;"></div>
+    </section>
+
+    <section class="card glass" id="extendChallengeBox" style="padding:18px; margin-top:14px; display:none; border:1px solid rgba(0,200,255,0.25)">
+      <h2 style="margin-top:0; font-size:1.15rem">Need more time?</h2>
+      <p class="muted small" id="extendText">Extend your current challenge step by 14 days for $39 (one-time per step).</p>
+      <button class="btn primary" id="buyExtension">Extend +14 Days</button>
+      <div class="tiny muted" id="extendMsg"></div>
+    </section>
+
+    <section class="card glass" id="payoutPanel" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Payouts</h2>
+        <p class="muted small">Withdrawable balance, eligibility, weekly cap, and payout history.</p>
+      </div>
+
+      <div class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Withdrawable</div>
+          <div id="withdrawable" style="font-weight:700; font-size:1.2rem">—</div>
+          <div class="tiny muted" id="eligibleLine">—</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Weekly cap remaining</div>
+          <div id="capRemaining" style="font-weight:700; font-size:1.2rem">—</div>
+          <div class="tiny muted" id="capLine">—</div>
+        </div>
+      </div>
+
+      <form id="payoutForm" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <div style="flex:1; min-width:220px">
+          <label class="tiny muted" for="payoutAmount">Request amount</label>
+          <input id="payoutAmount" class="input" type="number" step="0.01" min="0" placeholder="100.00" />
+        </div>
+        <button class="btn primary" type="submit">Request payout</button>
+        <div class="tiny muted" id="payoutMsg" style="align-self:center"></div>
+      </form>
+
+      <div style="margin-top:12px; overflow:auto">
+        <table class="table" aria-label="Payout history">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Amount</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody id="payoutBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <section class="card glass" id="riskMeter" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Risk meter</h2>
+        <p class="muted small">Max daily drawdown: 2% • Max trailing drawdown: 5%</p>
+      </div>
+
+      <div class="card" style="padding:12px; margin-bottom:10px">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+          <div>
+            <div class="tiny muted">Daily drawdown used</div>
+            <div style="font-weight:700"><span id="dailyUsedPct">—</span> / 2.00%</div>
+          </div>
+          <div class="tiny muted" id="dayEqLine">—</div>
+        </div>
+        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+          <div id="dailyBar" style="height:10px; width:0%; background: var(--bad); border-radius:999px"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:12px">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
+          <div>
+            <div class="tiny muted">Trailing drawdown used</div>
+            <div style="font-weight:700"><span id="totalUsedPct">—</span> / 5.00%</div>
+          </div>
+          <div class="tiny muted" id="totalEqLine">—</div>
+        </div>
+        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
+          <div id="totalBar" style="height:10px; width:0%; background: var(--warn); border-radius:999px"></div>
+        </div>
+      </div>
+    </section>
+
+
+    
+    <section class="card glass" id="verifyPanel" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Verification &amp; KYC</h2>
+        <p class="muted small">Required for payouts: email + phone verification and KYC approval.</p>
+      </div>
+
+      <div class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Email</div>
+          <div id="emailStatus" style="font-weight:700; font-size:1.05rem">—</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+            <button class="btn" id="reqEmail">Send code</button>
+            <input class="input" id="emailCode" placeholder="6-digit code" style="max-width:170px" />
+            <button class="btn primary" id="confEmail">Verify</button>
+          </div>
+          <div class="tiny muted" id="emailHint"></div>
+        </div>
+
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Phone</div>
+          <div id="phoneStatus" style="font-weight:700; font-size:1.05rem">—</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+            <input class="input" id="phone" placeholder="+1..." style="max-width:170px" />
+            <button class="btn" id="reqPhone">Send code</button>
+            <input class="input" id="phoneCode" placeholder="6-digit code" style="max-width:170px" />
+            <button class="btn primary" id="confPhone">Verify</button>
+          </div>
+          <div class="tiny muted" id="phoneHint"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:14px; margin-top:12px">
+        <div class="tiny muted">KYC status</div>
+        <div id="kycStatus" style="font-weight:700; font-size:1.05rem">—</div>
+        <form id="kycForm" style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+          <input class="input" id="kycName" placeholder="Full name" style="flex:1; min-width:200px" />
+          <input class="input" id="kycDob" placeholder="DOB (YYYY-MM-DD)" style="max-width:190px" />
+          <input class="input" id="kycAddr" placeholder="Address" style="flex:1; min-width:220px" />
+          <input class="input" id="kycDoc" placeholder="Doc type (DL/Passport)" style="max-width:190px" />
+          <button class="btn primary" type="submit">Submit KYC</button>
+          <div class="tiny muted" id="kycMsg"></div>
+        </form>
+        <div class="tiny muted" style="margin-top:8px">Demo only: no files uploaded. Hook this to a KYC provider later.</div>
+      </div>
+    </section>
+
+
+    <section class="card glass" id="equityPanel" style="padding:18px; margin-top:14px">
+      <div class="section-title" style="margin-bottom:10px">
+        <h2 style="font-size:1.15rem">Performance</h2>
+        <p class="muted small">Equity curve and daily PnL calendar (last 30 days).</p>
+      </div>
+
+      <div class="card" style="padding:12px; margin-bottom:12px">
+        <div class="tiny muted">Equity curve</div>
+        <div id="equityChart" style="width:100%; height:160px; margin-top:8px"></div>
+      </div>
+
+      <div class="card" style="padding:12px">
+        <div class="tiny muted">Daily PnL calendar</div>
+        <div id="pnlCalendar" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+    <div class="section-title" style="margin-bottom:10px">
+      <h2 style="font-size:1.15rem">Live market</h2>
+      <p class="muted small">Top 50 (by market cap) available on Coinbase USD pairs</p>
+    </div>
+    <div class="row2" style="margin-bottom:12px">
+      <div>
+        <label for="marketFilter">Search</label>
+        <input id="marketFilter" placeholder="e.g., BTC, ETH, SOL…" />
+      </div>
+      <div>
+        <label>Status</label>
+        <div class="tiny muted" id="dashWsStatus">Connecting…</div>
+      </div>
+    </div>
+    <div id="tickerGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px"></div>
+  </section>
+
+
+  <main class="wrap">
+    <section style="padding-top:22px">
+      <div class="section-title">
+        <h2>Trader dashboard (demo)</h2>
+        <p class="muted">Spot-only metrics and rules status.</p>
+      </div>
+
+      <div class="dash">
+        <div class="card dcard glass">
+          <div class="metric">
+            <div>
+              <div class="small muted">Account equity</div>
+              <b id="equity">$—</b>
+            </div>
+            <span class="tag good">Spot</span>
+          </div>
+          <div class="spark" aria-hidden="true"></div>
+          <div class="small muted" style="margin-top:10px">Mock data for UI preview.</div>
+        </div>
+
+        <div class="card dcard glass">
+          <div class="metric">
+            <div>
+              <div class="small muted">Today P/L</div>
+              <b id="plToday">$—</b>
+            </div>
+            <span id="plTag" class="tag">—</span>
+          </div>
+          <div class="spark" aria-hidden="true"></div>
+          <div class="small muted" style="margin-top:10px">Updates on page load.</div>
+        </div>
+
+        <div class="card dcard glass">
+          <div class="metric">
+            <div>
+              <div class="small muted">Rules status</div>
+              <b id="rules">$—</b>
+            </div>
+            <span id="ruleTag" class="tag">—</span>
+          </div>
+          <div class="spark" aria-hidden="true"></div>
+          <div class="small muted" style="margin-top:10px">Daily + total drawdown checks.</div>
+        </div>
+      </div>
+
+      <div class="split">
+        <section class="card glass" style="padding:18px">
+          <div class="section-title" style="margin-bottom:8px">
+            <h2 style="font-size:1.15rem">Recent trades (mock)</h2>
+            <p class="muted small">Example table</p>
+          </div>
+
+          <table class="table" aria-label="Recent trades">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Pair</th>
+                <th>Side</th>
+                <th>P/L</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody"></tbody>
+          </table>
+        </section>
+
+        <aside class="card glass" style="padding:18px">
+          <div class="section-title" style="margin-bottom:8px">
+            <h2 style="font-size:1.15rem">Applications (admin demo)</h2>
+            <p class="muted small">Pulled from backend</p>
+          </div>
+
+          <div class="notice tiny" style="margin-bottom:10px">
+            This list loads from <code>/api/applications</code>. If the server isn’t running, it will show an error.
+          </div>
+
+          <table class="table" aria-label="Applications">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Tier</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody id="appsBody"></tbody>
+          </table>
+        </aside>
+      </div>
+
+      <footer>
+        <div class="wrap" style="padding:0">
+          <div class="small">© <span id="year"></span> CryptoProp. All trading involves risk.</div>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { setYear, toast, qs, money, fmtDate } from "./app.js";
+    import { requireAuth, logout, getSession, apiFetch } from "./auth.js";
+
+    requireAuth();
+    setYear();
+
+    const session = getSession();
+    qs("who").textContent = session?.email ? `Signed in as ${session.email}` : "";
+
+    qs("logoutBtn").addEventListener("click", () => logout());
+
+    // Mock metrics
+    const baseEquity = 50000;
+    const todayPL = Math.round((Math.random() - 0.45) * 900); // slightly negative bias
+    const equity = baseEquity + todayPL;
+
+    qs("equity").textContent = money(equity);
+    qs("plToday").textContent = (todayPL >= 0 ? "+" : "") + money(todayPL);
+
+    const plTag = qs("plTag");
+    plTag.textContent = todayPL >= 0 ? "Green" : "Red";
+    plTag.className = "tag " + (todayPL >= 0 ? "good" : "bad");
+
+    // Rules check (mock)
+    const maxDailyLoss = -1000;
+    const maxDrawdown = -2500;
+    const ruleOk = todayPL >= maxDailyLoss;
+    qs("rules").textContent = ruleOk ? "Within limits" : "Breach";
+    const ruleTag = qs("ruleTag");
+    ruleTag.textContent = ruleOk ? "OK" : "Limit hit";
+    ruleTag.className = "tag " + (ruleOk ? "good" : "bad");
+
+    // Mock trades
+    const pairs = ["BTC/USD", "ETH/USD", "SOL/USD", "BNB/USD", "AVAX/USD"];
+    const sides = ["Buy", "Sell"];
+    const rows = Array.from({length: 6}).map(() => {
+      const p = pairs[Math.floor(Math.random()*pairs.length)];
+      const s = sides[Math.floor(Math.random()*sides.length)];
+      const pl = Math.round((Math.random()-0.45)*420);
+      const ok = pl >= 0;
+      return {
+        time: new Date(Date.now() - Math.floor(Math.random()*6_000_000)).toISOString(),
+        pair: p,
+        side: s,
+        pl,
+        status: ok ? "Closed" : "Closed",
+        tag: ok ? "good" : "warn"
+      };
+    }).sort((a,b)=> (a.time<b.time?1:-1));
+
+    const tb = qs("tradesBody");
+    tb.innerHTML = rows.map(r => `
+      <tr>
+        <td>${fmtDate(r.time)}</td>
+        <td>${r.pair}</td>
+        <td>${r.side}</td>
+        <td style="color:${r.pl>=0?'var(--good)':'var(--warn)'}">${r.pl>=0?'+':''}${money(r.pl)}</td>
+        <td><span class="tag ${r.tag}">${r.status}</span></td>
+      </tr>
+    `).join("");
+
+    // Load applications (admin demo)
+    async function loadApps(){
+      const body = qs("appsBody");
+      body.innerHTML = `<tr><td colspan="3">Loading…</td></tr>`;
+      try{
+        const res = await apiFetch("/api/applications", { method:"GET" });
+        const data = await res.json();
+        if(!Array.isArray(data) || data.length === 0){
+          body.innerHTML = `<tr><td colspan="3">No applications yet.</td></tr>`;
+          return;
+        }
+        body.innerHTML = data.slice(0, 8).map(a => `
+          <tr>
+            <td>${escapeHtml(a.name || "—")}</td>
+            <td>${escapeHtml(a.tier || "—")}</td>
+            <td>${fmtDate(a.createdAt || "")}</td>
+          </tr>
+        `).join("");
+      }catch(err){
+        body.innerHTML = `<tr><td colspan="3">${escapeHtml(err.message)}</td></tr>`;
+        toast(err.message);
+      }
+    }
+    loadApps();
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, (m) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+  </script>
+  <script type="module" src="dashboard.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

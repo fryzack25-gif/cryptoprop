@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Admin</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body><div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;"><a class="btn" href="/auth.html">Login</a><button class="btn" id="logoutBtn" type="button">Logout</button></div>
+  <div class="container" style="max-width:1100px; padding:24px">
+    <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+      <div>
+        <h1 style="margin:0">Admin dashboard</h1>
+        <p class="muted" style="margin:6px 0 0">Approve payouts, freeze accounts, monitor drawdowns.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <a class="btn" href="dashboard.html">User dashboard</a>
+      </div>
+    </header>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <div style="flex:1; min-width:260px">
+          <label class="tiny muted" for="adminKey">Admin key</label>
+          <input id="adminKey" class="input" type="password" placeholder="Set ADMIN_KEY env var" />
+        </div>
+        <button class="btn primary" id="saveKey">Save</button>
+        <button class="btn" id="refresh">Refresh</button>
+        <div class="tiny muted" id="status"></div>
+      </div>
+    </section>
+
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Ops Console</h2>
+      <div class="muted small" style="margin-bottom:10px">Search an account and take actions (all actions are audited).</div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <div style="flex:1; min-width:260px">
+          <label class="tiny muted" for="opsEmail">User email</label>
+          <input id="opsEmail" class="input" placeholder="user@email.com" />
+        </div>
+        <button class="btn primary" id="opsLoad">Load</button>
+        <button class="btn" id="opsRefresh">Refresh</button>
+      </div>
+
+      <div id="opsCards" style="display:none; margin-top:12px" class="row2">
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Status</div>
+          <div id="opsStatus" style="font-weight:800">—</div>
+          <div class="muted small" id="opsDetail"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+            <button class="btn" id="opsFreeze">Freeze</button>
+            <button class="btn" id="opsUnfreeze">Unfreeze</button>
+            <button class="btn" id="opsUnlockDaily">Unlock daily lock</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px">
+          <div class="tiny muted">Emergency</div>
+          <div class="muted small">Force actions immediately.</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+            <input id="opsFlattenReason" class="input" placeholder="Flatten reason" style="flex:1; min-width:220px" />
+            <button class="btn primary" id="opsFlatten">Flatten positions</button>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+            <button class="btn" id="opsReset">Reset account</button>
+            <select id="opsPhase" class="input" style="max-width:200px">
+              <option value="challenge">challenge</option>
+              <option value="funded">funded</option>
+            </select>
+            <button class="btn" id="opsSetPhase">Set phase</button>
+          </div>
+        </div>
+      </div>
+
+      <details style="margin-top:12px">
+        <summary class="muted small">Raw account JSON</summary>
+        <pre id="opsJson" style="white-space:pre-wrap; margin-top:10px; font-size:12px"></pre>
+      </details>
+    </section>
+
+    
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Referral codes</h2>
+      <div class="muted small" style="margin-bottom:10px">Only admins can create codes. Traders can apply one code once.</div>
+
+      <form id="refCreate" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <input id="refNewCode" class="input" placeholder="Code (optional)" style="max-width:220px" />
+        <input id="refMaxUses" class="input" placeholder="Max uses (optional)" style="max-width:200px" />
+        <input id="refCommission" class="input" placeholder="Commission (e.g. 0.2)" style="max-width:220px" />
+        <input id="refNote" class="input" placeholder="Note (optional)" style="flex:1; min-width:220px" />
+        <button class="btn primary" type="submit">Create</button>
+        <div class="tiny muted" id="refCreateMsg"></div>
+      </form>
+
+      <div style="overflow:auto; margin-top:12px">
+        <table class="table" aria-label="Referral codes">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Uses</th>
+              <th>Max</th>
+              <th>Commission</th>
+              <th>Active</th>
+              <th>Created</th>
+              <th>Note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="refBody"></tbody>
+        </table>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary class="muted small">Recent referral uses</summary>
+        <pre id="refUses" style="white-space:pre-wrap; margin-top:10px; font-size:12px"></pre>
+      </details>
+    </section>
+
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Audit log</h2>
+      <div class="muted small" style="margin-bottom:10px">Most recent admin actions.</div>
+      <div style="overflow:auto">
+        <table class="table" aria-label="Audit log">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Meta</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Accounts</h2>
+      <div style="overflow:auto">
+        <table class="table" aria-label="Accounts">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Phase</th>
+              <th>Equity</th>
+              <th>Daily DD</th>
+              <th>Trailing DD</th>
+              <th>Withdrawable</th>
+              <th>Pending payouts</th>
+              <th>Frozen</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="acctBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Approve payout</h2>
+      <form id="approveForm" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <div style="flex:1; min-width:260px">
+          <label class="tiny muted" for="payEmail">Email</label>
+          <input id="payEmail" class="input" placeholder="user email" />
+        </div>
+        <div style="flex:1; min-width:260px">
+          <label class="tiny muted" for="payId">Request ID</label>
+          <input id="payId" class="input" placeholder="request id" />
+        </div>
+        <button class="btn primary" type="submit">Approve</button>
+        <div class="tiny muted" id="approveMsg"></div>
+      </form>
+      <p class="muted small" style="margin-top:10px">Tip: pending payout request IDs are visible in the user dashboard payout table with “(PENDING)”.</p>
+    
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Pending payout queue</h2>
+      <div class="muted small" style="margin-bottom:10px">One-click approval. Uses the weekly cap and withdrawable checks server-side.</div>
+      <div style="overflow:auto">
+        <table class="table" aria-label="Pending payouts">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Email</th>
+              <th>Amount</th>
+              <th>Period</th>
+              <th>Request ID</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="queueBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Multi-account flags</h2>
+      <div class="muted small" style="margin-bottom:10px">Flags are heuristics only (devices can be shared; IPs can be NAT/VPN).</div>
+      <div id="flagsBox" class="muted small">Loading…</div>
+    </section>
+
+</section>
+  
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">KYC queue</h2>
+      <div class="muted small" style="margin-bottom:10px">Approve/reject KYC (demo). Payouts require KYC approved.</div>
+      <div style="overflow:auto">
+        <table class="table" aria-label="KYC queue">
+          <thead>
+            <tr>
+              <th>Submitted</th>
+              <th>Email</th>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>Address</th>
+              <th>Doc</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="kycBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Strategy similarity</h2>
+      <div class="muted small" style="margin-bottom:10px">High similarity can indicate multi-accounting or copied trading. Heuristic only.</div>
+      <div style="overflow:auto">
+        <table class="table" aria-label="Similarity">
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Account A</th>
+              <th>Account B</th>
+              <th>A sig size</th>
+              <th>B sig size</th>
+            </tr>
+          </thead>
+          <tbody id="simBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+</div>
+
+  <script type="module" src="admin.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

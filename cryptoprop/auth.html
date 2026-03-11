@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp • Sign in</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container" style="max-width:520px; margin:40px auto;">
+    <div class="card glass" style="padding:18px;">
+      <h1 style="margin:0 0 8px 0;">CryptoProp</h1>
+      <p class="muted small" style="margin-top:0;">Create an account or sign in to continue.</p>
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button class="btn primary" id="tabLogin" type="button">Login</button>
+        <button class="btn" id="tabSignup" type="button">Sign up</button>
+      </div>
+      <div id="loginBox" style="margin-top:14px;">
+        <label class="tiny muted">Email</label>
+        <input class="input" id="loginEmail" placeholder="you@email.com" />
+        <label class="tiny muted" style="margin-top:10px;">Password</label>
+        <input class="input" id="loginPass" type="password" placeholder="••••••••" />
+        <button class="btn primary" id="loginBtn" style="margin-top:12px; width:100%;">Login</button>
+        <div class="tiny muted" id="loginMsg" style="margin-top:10px;"></div>
+      </div>
+      <div id="signupBox" style="margin-top:14px; display:none;">
+        <label class="tiny muted">Email</label>
+        <input class="input" id="signupEmail" placeholder="you@email.com" />
+        <label class="tiny muted" style="margin-top:10px;">Password (min 8 chars)</label>
+        <input class="input" id="signupPass" type="password" placeholder="••••••••" />
+        <button class="btn primary" id="signupBtn" style="margin-top:12px; width:100%;">Create account</button>
+        <div class="tiny muted" id="signupMsg" style="margin-top:10px;"></div>
+        <div id="verifyBox" style="display:none; margin-top:14px;">
+          <div class="muted small">Enter the verification code sent to your email.</div>
+          <input class="input" id="verifyCode" placeholder="ABC123" style="margin-top:8px; max-width:180px;" />
+          <button class="btn" id="verifyBtn" style="margin-top:8px;">Verify email</button>
+          <div class="tiny muted" id="verifyMsg" style="margin-top:8px;"></div>
+        </div>
+      </div>
+      <details style="margin-top:14px;">
+        <summary class="muted small">Admin access</summary>
+        <div class="muted small" style="margin-top:8px;">If you have an admin key, log in first, then elevate.</div>
+        <input class="input" id="adminKey" placeholder="ADMIN_KEY" style="margin-top:8px;" />
+        <button class="btn" id="adminBtn" style="margin-top:8px;">Elevate to admin</button>
+        <div class="tiny muted" id="adminMsg" style="margin-top:8px;"></div>
+      </details>
+    </div>
+  </div>
+  <script type="module" src="/auth.js"></script>
+</body>
+</html>

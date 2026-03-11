@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Crypto Spot Prop Trading</title>
+  <meta name="description" content="CryptoProp funds disciplined spot crypto traders through a transparent evaluation with clear risk rules and payouts." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body><div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;"><a class="btn" href="/auth.html">Login</a><button class="btn" id="logoutBtn" type="button">Logout</button></div>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#top">
+        <span class="logo" aria-hidden="true"></span>
+        <span>CryptoProp</span>
+      </a>
+
+      <nav class="links" aria-label="Primary">
+        <a href="#how">How it works</a>
+        <a href="#rules">Rules</a>
+        <a href="#plans">Plans</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="right-tools">
+        <a class="btn ghost" href="login.html">Trader login</a>
+        <a class="btn primary" href="#apply">Apply</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="wrap">
+    <div class="hero">
+      <section class="card hero-left glass" aria-label="Hero">
+        <span class="badge">Crypto spot only • Risk rules • Performance payouts</span>
+        <h1>Trade spot. Earn payouts. Scale responsibly.</h1>
+        <p class="sub">
+          CryptoProp funds disciplined <b>spot</b> crypto traders through a transparent evaluation.
+          Clear risk limits, simple targets, and a dashboard built for consistency.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="#apply">Start application</a>
+          <a class="btn teal" href="login.html">Login to dashboard</a>
+          <a class="btn ghost" href="#plans">View evaluation tiers</a>
+        </div>
+        <div class="fine">
+          <b>Note:</b> This is a working demo site. Replace rules, payouts, and legal language to match your real program.
+        </div>
+      </section>
+
+      <aside class="card hero-right glass" aria-label="Credibility and stats">
+        <div class="stats">
+          <div class="stat">
+            <b>Spot only</b>
+            <span>No perps or leverage required</span>
+          </div>
+          <div class="stat">
+            <b>Up to 90%</b>
+            <span>Example profit split</span>
+          </div>
+          <div class="stat">
+            <b>Risk-first</b>
+            <span>Daily + total loss limits</span>
+          </div>
+          <div class="stat">
+            <b>Fast dashboards</b>
+            <span>Track performance & rules</span>
+          </div>
+        </div>
+        <div class="callout">
+          <b>CryptoProp is spot-only.</b> Trade BTC/ETH/major alts with defined risk limits.
+        </div>
+        <div class="pillrow" aria-label="Markets">
+          <span class="pill">Crypto spot only</span>
+          <span class="pill">BTC / ETH</span>
+          <span class="pill">Major alts</span>
+        </div>
+      </aside>
+    </div>
+
+    <section id="how">
+      <div class="section-title">
+        <h2>How it works</h2>
+        <p>From evaluation to funded — three steps.</p>
+      </div>
+      <div class="grid3">
+        <div class="card tile glass">
+          <div class="icon">1</div>
+          <h3>Choose a tier</h3>
+          <p>Pick an evaluation size that fits your spot strategy and risk tolerance.</p>
+        </div>
+        <div class="card tile glass">
+          <div class="icon">2</div>
+          <h3>Pass the rules</h3>
+          <p>Hit the profit target while staying within daily and total drawdown limits.</p>
+        </div>
+        <div class="card tile glass">
+          <div class="icon">3</div>
+          <h3>Get funded</h3>
+          <p>Trade a funded spot account with rules monitoring and scheduled payouts.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="rules">
+      <div class="section-title">
+        <h2>Risk rules</h2>
+        <p>Example rules — tailor to your real program.</p>
+      </div>
+      <div class="split">
+        <div class="card rules glass">
+          <h3>Evaluation guardrails (spot)</h3>
+          <ul>
+            <li><b>Max daily loss:</b> e.g., 2% of account size</li>
+            <li><b>Max total drawdown:</b> e.g., 5% trailing or static</li>
+            <li><b>Allowed instruments:</b> spot pairs only (no perps, no options)</li>
+            <li><b>Leverage:</b> optional or disabled (define policy)</li>
+            <li><b>Scaling:</b> allocation increases after consistent performance</li>
+          </ul>
+          <div class="notice small" style="margin-top:12px">
+            Trading involves risk. Nothing here is investment advice.
+          </div>
+        </div>
+        <div class="card rules glass">
+          <h3>Funded expectations</h3>
+          <ul>
+            <li><b>Profit split:</b> e.g., 80/20 or 90/10 after threshold</li>
+            <li><b>Payout schedule:</b> weekly/bi-weeklyone-timely (example)</li>
+            <li><b>Risk limits remain:</b> daily + total loss limits still apply</li>
+            <li><b>Position sizing:</b> limits to protect capital</li>
+            <li><b>Compliance:</b> no prohibited behavior (define clearly)</li>
+          </ul>
+          <div class="pillrow">
+            <span class="pill">Transparent rules</span>
+            <span class="pill">Risk monitoring</span>
+            <span class="pill">Account scaling</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans">
+      <div class="section-title">
+        <h2>Evaluation tiers</h2>
+        <p>Example pricing/targets — swap with your actual numbers.</p>
+      </div>
+
+      <div class="pricing">
+        <div class="card plan glass">
+          <h3>Starter</h3>
+          <div class="price">$149<span class="muted">/mo</span></div>
+          <p class="muted">For new evaluators and smaller size.</p>
+          <ul>
+            <li>Account size: $25,000 (example)</li>
+            <li>Profit target: $1,500</li>
+            <li>Max daily loss: $500</li>
+            <li>Max drawdown: $1,250</li>
+          </ul>
+          <div style="margin-top:12px">
+            <a class="btn primary" href="#apply">Apply</a>
+          </div>
+        </div>
+
+        <div class="card plan glass" style="border-color: rgba(124,92,255,.35);">
+          <h3>Core</h3>
+          <div class="price">$199<span class="muted">/mo</span></div>
+          <p class="muted">Balanced rules for most spot strategies.</p>
+          <ul>
+            <li>Account size: $50,000 (example)</li>
+            <li>Profit target: $3,000</li>
+            <li>Max daily loss: $1,000</li>
+            <li>Max drawdown: $2,500</li>
+          </ul>
+          <div style="margin-top:12px">
+            <a class="btn primary" href="#apply">Apply</a>
+          </div>
+        </div>
+
+        <div class="card plan glass">
+          <h3>Pro</h3>
+          <div class="price">$279<span class="muted">/mo</span></div>
+          <p class="muted">For experienced spot traders seeking scale.</p>
+          <ul>
+            <li>Account size: $100,000 (example)</li>
+            <li>Profit target: $6,000</li>
+            <li>Max daily loss: $2,000</li>
+            <li>Max drawdown: $5,000</li>
+          </ul>
+          <div style="margin-top:12px">
+            <a class="btn primary" href="#apply">Apply</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="disclaimer small muted" style="margin-top:10px">
+        Replace with accurate fees, targets, and risk limits. Avoid implying guaranteed funding or profits.
+      </div>
+    </section>
+
+    <section id="testimonials">
+      <div class="section-title">
+        <h2>Trader feedback</h2>
+        <p>Example quotes — replace with real testimonials.</p>
+      </div>
+      <div class="grid3">
+        <div class="card quote glass">
+          <p>“Clear rules, quick answers, and a dashboard that helps manage risk.”</p>
+          <span>— Spot BTC/ETH trader</span>
+        </div>
+        <div class="card quote glass">
+          <p>“The drawdown rules forced me to tighten my process — payouts became consistent.”</p>
+          <span>— Spot alt trader</span>
+        </div>
+        <div class="card quote glass">
+          <p>“Scaling felt fair. I didn’t need to swing for the fences to grow.”</p>
+          <span>— Spot swing trader</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="section-title">
+        <h2>FAQ</h2>
+        <p>Common questions evaluators ask.</p>
+      </div>
+      <div class="card glass" style="padding:18px">
+        <details>
+          <summary>Is this real funding or a simulated evaluation?</summary>
+          <p>
+            Many prop firms use simulated evaluation accounts and then fund traders under specific terms. Update this text to match your model and disclosures.
+          </p>
+        </details>
+        <details>
+          <summary>How do payouts work?</summary>
+          <p>
+            Define payout frequency, minimum thresholds, profit split, and any restrictions. Be clear about requirements (e.g., consistency rules).
+          </p>
+        </details>
+        <details>
+          <summary>What markets can I trade?</summary>
+          <p>
+            CryptoProp is <b>spot-only</b>. List supported spot pairs, supported exchanges, and any platform requirements.
+          </p>
+        </details>
+        <details>
+          <summary>What happens if I breach a loss limit?</summary>
+          <p>
+            Typically the account fails or is paused. State your reset policy and how traders can restart.
+          </p>
+        </details>
+      </div>
+    </section>
+
+    <section id="apply">
+      <div class="section-title">
+        <h2>Application</h2>
+        <p>Submit your info — this demo stores leads in a local backend.</p>
+      </div>
+
+      <div class="split">
+        <div class="card glass">
+          <form id="applyForm">
+            <div class="row2">
+              <div>
+                <label for="name">Full name</label>
+                <input id="name" name="name" placeholder="Jane Trader" required />
+              </div>
+              <div>
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="jane@example.com" required />
+              </div>
+            </div>
+
+            <div class="row2">
+              <div>
+                <label for="tier">Evaluation tier</label>
+                <select id="tier" name="tier" required>
+                  <option value="" disabled selected>Select a tier</option>
+                  <option>Starter</option>
+                  <option>Core</option>
+                  <option>Pro</option>
+                </select>
+              </div>
+              <div>
+                <label for="experience">Experience level</label>
+                <select id="experience" name="experience" required>
+                  <option value="" disabled selected>Select one</option>
+                  <option>0–6 months</option>
+                  <option>6–24 months</option>
+                  <option>2–5 years</option>
+                  <option>5+ years</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="message">Tell us about your spot strategy (timeframe, risk, pairs)</label>
+              <textarea id="message" name="message" placeholder="Example: 4H trend following, max 0.5% risk, BTC/ETH + top alts..." required></textarea>
+            </div>
+
+            
+<div style="margin-top:12px;">
+  <label style="font-size:13px; display:flex; gap:8px; align-items:flex-start;">
+    <input type="checkbox" id="termsCheckbox" />
+    <span>
+      I agree to the
+      <a href="/terms.html" target="_blank">Terms & Conditions</a>,
+      <a href="/risk.html" target="_blank">Risk Disclosure</a>,
+      <a href="/privacy.html" target="_blank">Privacy Policy</a>,
+      <a href="/kyc.html" target="_blank">KYC/AML Policy</a>,
+      and <a href="/payout.html" target="_blank">Payout Policy</a>.
+    </span>
+  </label>
+</div>
+
+<button class="btn primary" type="submit">Submit application</button>
+            <p id="formMsg" class="small" style="margin:0; color:var(--muted)"></p>
+
+            <div class="disclaimer tiny">
+              Add legal disclosures here (risk disclosure, no guarantee of profits, terms, eligibility, privacy policy).
+            </div>
+          </form>
+        </div>
+
+        <div class="card rules glass">
+          <h3>What happens next?</h3>
+          <ul>
+            <li>We review your application (experience + risk approach).</li>
+            <li>You receive evaluation access and a dashboard invite.</li>
+            <li>Pass the rules → move to funded allocation.</li>
+            <li>Consistent performance → scaling opportunities.</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <b>Pro tip:</b> Spot pros survive by keeping drawdowns small — not by chasing big days.
+          </div>
+          <div class="notice tiny" style="margin-top:12px">
+            Keyboard: press <span class="kbd">Ctrl</span>+<span class="kbd">L</span> then type <code>login.html</code> to try the dashboard.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap" style="padding:0">
+        <div class="small">© <span id="year"></span> CryptoProp. All trading involves risk.</div>
+      </div>
+    <div class="tiny muted" style="margin-top:10px"><a href="admin.html" class="muted">Admin</a></div>
+</footer>
+  
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <h2 style="margin-top:0; font-size:1.15rem">Have a referral code?</h2>
+      <p class="muted small" style="margin-top:6px">Enter a code to link your account to a referrer (codes are created by CryptoProp admins).</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end">
+        <input id="refCode" class="input" placeholder="Referral code" style="max-width:260px" />
+        <button class="btn primary" id="applyRef">Apply</button>
+        <div class="tiny muted" id="refMsg"></div>
+      </div>
+    </section>
+
+</main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { setYear, toast, qs } from "./app.js";
+
+    setYear();
+
+    const form = qs("applyForm");
+    const msg = qs("formMsg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "Submitting…";
+
+      const payload = Object.fromEntries(new FormData(form).entries());
+      try{
+        const res = await fetch("/api/applications", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok){
+          const err = await res.json().catch(()=>({}));
+          throw new Error(err.error || "Submission failed.");
+        }
+        msg.textContent = "Thanks — application received.";
+        toast("Application saved ✅");
+        form.reset();
+      }catch(err){
+        msg.textContent = err.message;
+        toast(err.message);
+      }
+    });
+  </script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

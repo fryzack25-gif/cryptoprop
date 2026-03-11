@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Challenge History</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container" style="max-width:980px; padding:24px">
+    <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+      <div>
+        <h1 style="margin:0">Challenge history</h1>
+        <p class="muted" style="margin:6px 0 0">Archived challenge runs (most recent first).</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <a class="btn" href="dashboard.html">Dashboard</a>
+        <a class="btn" href="paper.html">Trading</a>
+      </div>
+    </header>
+
+    <section class="card glass" style="padding:18px; margin-top:14px">
+      <div style="overflow:auto">
+        <table class="table" aria-label="Challenge history">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Profit</th>
+              <th>Trading days</th>
+              <th>Rules</th>
+            </tr>
+          </thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="history.js"></script>
+</body>
+</html>

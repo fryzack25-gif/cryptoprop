@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Trader Login</title>
+  <meta name="description" content="Login to the CryptoProp trader dashboard." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="index.html">
+        <span class="logo" aria-hidden="true"></span>
+        <span>CryptoProp</span>
+      </a>
+      <div class="right-tools">
+        <a class="btn ghost" href="index.html#apply">Apply</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-top:28px; padding-bottom:40px">
+    <div class="split">
+      <section class="card glass" style="padding:22px">
+        <span class="badge">Trader Portal</span>
+        <h1 style="font-size: clamp(28px, 4vw, 44px); margin-top:12px;">Sign in</h1>
+        <p class="sub">Access your evaluation and funded account dashboards.</p>
+
+        <form id="loginForm" style="padding:0; margin-top: 8px">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="trader@cryptoprop.com" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="••••••••" required />
+          </div>
+          <button class="btn primary" type="submit">Login</button>
+          <p id="msg" class="small muted" style="margin:0"></p>
+        </form>
+
+        <div class="notice tiny" style="margin-top:14px">
+          Demo credentials: <code>trader@cryptoprop.com</code> / <code>cryptoprop</code>
+        </div>
+      </section>
+
+      <aside class="card rules glass">
+        <h3>Spot-only dashboard</h3>
+        <ul>
+          <li>Equity & drawdown tracking (mock)</li>
+          <li>Rules status badges</li>
+          <li>Application list (admin demo)</li>
+          <li>API-backed storage via local server</li>
+        </ul>
+        <div class="callout" style="margin-top:12px">
+          <b>Heads up:</b> To use login + storage, run the included Node server (see README).
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { setYear, toast, qs } from "./app.js";
+    import { login, isLoggedIn } from "./auth.js";
+
+    // If already logged in, go to dashboard
+    if(isLoggedIn()) window.location.href = "dashboard.html";
+
+    const form = qs("loginForm");
+    const msg = qs("msg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "Signing in…";
+      const email = qs("email").value.trim();
+      const password = qs("password").value;
+
+      try{
+        await login(email, password);
+        toast("Logged in ✅");
+        window.location.href = "dashboard.html";
+      }catch(err){
+        msg.textContent = err.message;
+        toast(err.message);
+      }
+    });
+  </script>
+</body>
+</html>
