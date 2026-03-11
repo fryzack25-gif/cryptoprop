@@ -47,7 +47,7 @@ document.getElementById("adminBtn")?.addEventListener("click", async () => {
   const adminKey = document.getElementById("adminKey")?.value || "";
   const msg = document.getElementById("adminMsg");
   if(msg) msg.textContent = "Elevating…";
-  try{ await post("/api/auth/admin-elevate", { adminKey }); if(msg) msg.textContent = "Admin enabled ✅ Open /admin.html"; }
+  try{ await post("/api/auth/admin-elevate", { adminKey }); if(msg) msg.textContent = "Admin enabled ✅ Redirecting…"; window.location.href = "/admin.html"; }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
 (async function(){ try{ const res = await fetch("/api/auth/me"); const data = await res.json(); if(data.user) window.location.href = "/dashboard.html"; }catch(e){} })();
