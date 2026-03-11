@@ -6,7 +6,25 @@
   <title>CryptoProp — Admin</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body><div style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; gap:8px;"><a class="btn" href="/auth.html">Login</a><button class="btn" id="logoutBtn" type="button">Logout</button></div>
+<body>
+
+<!-- Admin key gate -->
+<div id="adminGate" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:var(--bg, #05060a);">
+  <div class="card glass" style="padding:32px; max-width:380px; width:100%; text-align:center;">
+    <div class="logo" style="width:48px; height:48px; border-radius:16px; margin:0 auto 18px;"></div>
+    <h2 style="margin:0 0 6px;">Admin Access</h2>
+    <p class="muted small" style="margin:0 0 20px;">Enter your admin key to continue.</p>
+    <div style="position:relative; display:flex; align-items:center;">
+      <input id="gateKey" class="input" type="password" placeholder="Admin key" style="width:100%; padding-right:40px;" />
+      <button type="button" onclick="toggleGateVis(this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">&#128065;</button>
+    </div>
+    <button class="btn primary" id="gateBtn" style="margin-top:14px; width:100%;">Enter</button>
+    <div class="tiny muted" id="gateMsg" style="margin-top:10px; min-height:18px;"></div>
+  </div>
+</div>
+
+<!-- Admin dashboard (hidden until key verified) -->
+<div id="adminDash" style="display:none;">
   <div class="container" style="max-width:1100px; padding:24px">
     <header style="display:flex; justify-content:space-between; align-items:center; gap:12px">
       <div>
@@ -247,7 +265,57 @@
     </section>
 
 </div>
+</div><!-- /adminDash -->
 
+  <script>
+    function toggleGateVis(btn) {
+      const el = document.getElementById("gateKey");
+      const show = el.type === "password";
+      el.type = show ? "text" : "password";
+      btn.textContent = show ? "\uD83D\uDE48" : "\uD83D\uDC41";
+    }
+
+    async function tryEnter() {
+      const key = document.getElementById("gateKey").value.trim();
+      const msg = document.getElementById("gateMsg");
+      if (!key) { msg.textContent = "Please enter your admin key."; return; }
+      msg.textContent = "Verifying…";
+      try {
+        const res = await fetch("/api/admin/overview", {
+          headers: { "x-admin-key": key }
+        });
+        if (!res.ok) throw new Error("Invalid key");
+        localStorage.setItem("cp_admin_key", key);
+        document.getElementById("adminGate").style.display = "none";
+        document.getElementById("adminDash").style.display = "";
+      } catch(e) {
+        msg.textContent = "Invalid admin key.";
+        document.getElementById("gateKey").value = "";
+      }
+    }
+
+    document.getElementById("gateBtn").addEventListener("click", tryEnter);
+    document.getElementById("gateKey").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") tryEnter();
+    });
+
+    // Auto-unlock if valid key already saved
+    (async function() {
+      const saved = localStorage.getItem("cp_admin_key");
+      if (!saved) return;
+      try {
+        const res = await fetch("/api/admin/overview", {
+          headers: { "x-admin-key": saved }
+        });
+        if (res.ok) {
+          document.getElementById("adminGate").style.display = "none";
+          document.getElementById("adminDash").style.display = "";
+        } else {
+          localStorage.removeItem("cp_admin_key");
+        }
+      } catch(e) {}
+    })();
+  </script>
   <script type="module" src="admin.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
