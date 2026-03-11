@@ -19,7 +19,10 @@
         <label class="tiny muted">Email</label>
         <input class="input" id="loginEmail" placeholder="you@email.com" />
         <label class="tiny muted" style="margin-top:10px;">Password</label>
-        <input class="input" id="loginPass" type="password" placeholder="••••••••" />
+        <div style="position:relative; display:flex; align-items:center;">
+          <input class="input" id="loginPass" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('loginPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+        </div>
         <button class="btn primary" id="loginBtn" style="margin-top:12px; width:100%;">Login</button>
         <div class="tiny muted" id="loginMsg" style="margin-top:10px;"></div>
       </div>
@@ -27,7 +30,15 @@
         <label class="tiny muted">Email</label>
         <input class="input" id="signupEmail" placeholder="you@email.com" />
         <label class="tiny muted" style="margin-top:10px;">Password (min 8 chars)</label>
-        <input class="input" id="signupPass" type="password" placeholder="••••••••" />
+        <div style="position:relative; display:flex; align-items:center;">
+          <input class="input" id="signupPass" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('signupPass', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+        </div>
+        <label class="tiny muted" style="margin-top:10px;">Confirm password</label>
+        <div style="position:relative; display:flex; align-items:center;">
+          <input class="input" id="signupConfirm" type="password" placeholder="••••••••" style="width:100%; padding-right:40px;" />
+          <button type="button" onclick="toggleVis('signupConfirm', this)" style="position:absolute; right:10px; background:none; border:none; cursor:pointer; color:var(--muted,#aaa); font-size:16px;">👁</button>
+        </div>
         <button class="btn primary" id="signupBtn" style="margin-top:12px; width:100%;">Create account</button>
         <div class="tiny muted" id="signupMsg" style="margin-top:10px;"></div>
         <div id="verifyBox" style="display:none; margin-top:14px;">
@@ -46,6 +57,15 @@
       </details>
     </div>
   </div>
+  <script>
+    function toggleVis(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const show = el.type === "password";
+      el.type = show ? "text" : "password";
+      btn.textContent = show ? "🙈" : "👁";
+    }
+  </script>
   <script type="module" src="/auth.js"></script>
 </body>
 </html>
