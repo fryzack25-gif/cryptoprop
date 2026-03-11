@@ -12,8 +12,9 @@ function show(id, on){
   const el = document.getElementById(id);
   if(el) el.style.display = on ? "" : "none";
 }
-document.getElementById("tabLogin")?.addEventListener("click", () => { show("loginBox", true); show("signupBox", false); });
-document.getElementById("tabSignup")?.addEventListener("click", () => { show("loginBox", false); show("signupBox", true); });
+document.getElementById("tabLogin")?.addEventListener("click", () => { show("loginBox", true); show("signupBox", false); show("forgotBox", false); });
+document.getElementById("tabSignup")?.addEventListener("click", () => { show("loginBox", false); show("signupBox", true); show("forgotBox", false); });
+if(window.location.hash === "#signup"){ show("loginBox", false); show("signupBox", true); }
 document.getElementById("signupBtn")?.addEventListener("click", async () => {
   const email = document.getElementById("signupEmail")?.value || "";
   const password = document.getElementById("signupPass")?.value || "";
