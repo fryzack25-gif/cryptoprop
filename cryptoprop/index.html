@@ -216,7 +216,6 @@
   <footer>
     <div class="wrap" style="padding:0">
       <div class="small">&copy; <span id="year"></span> CryptoProp. All trading involves risk.</div>
-      <div class="tiny muted" style="margin-top:10px"><a href="admin.html" class="muted">Admin</a></div>
     </div>
   </footer>
 
@@ -227,5 +226,18 @@
     setYear();
   </script>
   <script type="module" src="/app.js"></script>
+  <script>
+    // Secret admin shortcut: type "admin" anywhere on the page
+    (function() {
+      const secret = "admin";
+      let buffer = "";
+      document.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        buffer += e.key.toLowerCase();
+        if (buffer.length > secret.length) buffer = buffer.slice(-secret.length);
+        if (buffer === secret) { buffer = ""; window.location.href = "/admin.html"; }
+      });
+    })();
+  </script>
 </body>
 </html>
