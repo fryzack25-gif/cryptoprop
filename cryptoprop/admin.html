@@ -668,70 +668,6 @@ document.addEventListener('click', async function(e){
   if(kb){ try{ await api('/api/admin/kyc/set-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.ks})}); loadKyc(); }catch(err){ alert(err.message); } return; }
 
 
-  // ---- Beta Mode ----
-  async function loadBetaStatus() {
-    try {
-      const d = await api('/api/admin/beta/status');
-      const active = d.active;
-      const acct = d.account || {};
-
-      document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
-      document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
-      document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta mode: ACTIVE' : 'Beta mode: OFF';
-      document.getElementById('betaStatusSub').textContent = active
-        ? 'You are currently trading as the beta account. Open the trading page to test.'
-        : 'When active, all trading pages will use the beta account instead of your real account.';
-      document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
-      document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
-
-      // populate snapshot
-      const fmt = n => '$' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2});
-      document.getElementById('bs-phase').textContent = (acct.challengePhase || '—').toUpperCase();
-      document.getElementById('bs-cash').textContent = fmt(acct.cash);
-      document.getElementById('bs-equity').textContent = fmt(acct.equity || acct.cash);
-      document.getElementById('bs-plan').textContent = acct.planId || '—';
-      document.getElementById('bs-kyc').textContent = (acct.kycStatus || '—').toUpperCase();
-      document.getElementById('bs-pnl').textContent = fmt(acct.realizedPnL);
-    } catch(e) {
-      console.error('beta status:', e);
-    }
-  }
-
-  async function enterBeta() {
-    const msg = document.getElementById('betaMsg');
-    try {
-      const d = await api('/api/admin/beta/enter', { method: 'POST' });
-      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
-      loadBetaStatus();
-    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
-  }
-
-  async function exitBeta() {
-    const msg = document.getElementById('betaMsg');
-    try {
-      const d = await api('/api/admin/beta/exit', { method: 'POST' });
-      msg.className = 'msg ok'; msg.textContent = d.message;
-      loadBetaStatus();
-    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
-  }
-
-  async function resetBeta() {
-    if (!confirm('Reset beta account? This clears all positions and trades.')) return;
-    const msg = document.getElementById('betaMsg');
-    try {
-      const d = await api('/api/admin/beta/reset', { method: 'POST' });
-      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
-      loadBetaStatus();
-    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
-  }
-
-  // Hook into show() to auto-load beta status
-  const _prevShow = window.show;
-  window.show = function(id, btn) {
-    _prevShow(id, btn);
-    if (id === 'beta') loadBetaStatus();
-  };
-
   // ---- Promo Codes ----
   async function loadPromos() {
     const tbody = document.getElementById('promoList');
@@ -782,11 +718,14 @@ document.addEventListener('click', async function(e){
     } catch(e) { alert(e.message); }
   }
 
-  // auto-load promos when section shown
-  const origShow = window.show;
+
+
+  // Consolidated show() hook — handles all section auto-loads
+  const _baseShow = window.show;
   window.show = function(id, btn) {
-    origShow(id, btn);
+    _baseShow(id, btn);
     if(id === 'promos') loadPromos();
+    if(id === 'beta') window.loadBetaStatus && window.loadBetaStatus();
   };
 
   // referral toggle
@@ -797,6 +736,59 @@ document.addEventListener('click', async function(e){
 // restore ops email
 var _se = localStorage.getItem('cp_ops_email');
 if(_se && g('ops-email')) g('ops-email').value = _se;
+
+  // ---- Beta Mode (global scope so onclick= works) ----
+  window.loadBetaStatus = async function() {
+    try {
+      const d = await api('/api/admin/beta/status');
+      const active = d.active;
+      const acct = d.account || {};
+      document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
+      document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
+      document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta mode: ACTIVE' : 'Beta mode: OFF';
+      document.getElementById('betaStatusSub').textContent = active
+        ? 'You are currently trading as the beta account. Open the trading page to test.'
+        : 'When active, all trading pages will use the beta account instead of your real account.';
+      document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
+      document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
+      const fmt = n => '$' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2});
+      document.getElementById('bs-phase').textContent = (acct.challengePhase || '—').toUpperCase();
+      document.getElementById('bs-cash').textContent = fmt(acct.cash);
+      document.getElementById('bs-equity').textContent = fmt(acct.equity || acct.cash);
+      document.getElementById('bs-plan').textContent = acct.planId || '—';
+      document.getElementById('bs-kyc').textContent = (acct.kycStatus || '—').toUpperCase();
+      document.getElementById('bs-pnl').textContent = fmt(acct.realizedPnL);
+    } catch(e) { console.error('beta status:', e); }
+  };
+
+  window.enterBeta = async function() {
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/enter', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
+      window.loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  };
+
+  window.exitBeta = async function() {
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/exit', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = d.message;
+      window.loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  };
+
+  window.resetBeta = async function() {
+    if(!confirm('Reset beta account? This clears all positions and trades.')) return;
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/reset', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
+      window.loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  };
+
 </script>
 </body>
 </html>
