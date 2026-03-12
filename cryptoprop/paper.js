@@ -1,5 +1,5 @@
 import { setYear, toast, qs, money, fmtDate } from "./app.js";
-import { requireAuth, logout, getSession, apiFetch } from "./auth.js";
+import { requireAuth, logout, getSession, apiFetch } from "./app.js";
 
 
 function updatePayoutMini(account){
