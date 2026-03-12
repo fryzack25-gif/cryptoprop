@@ -1585,10 +1585,8 @@ function isDue(o){
 
 async function processPendingOrders(){
   try{
-    const db = await readData();
-    const accounts = db.accounts || {};
-    for(const email of Object.keys(accounts)){
-      const acct = accounts[email];
+    const accounts = await getAllAccounts();
+    for(const [email, acct] of Object.entries(accounts)){
       if(!acct || !Array.isArray(acct.pendingOrders) || acct.pendingOrders.length === 0) continue;
 
       const remaining = [];
@@ -1617,10 +1615,8 @@ async function processPendingOrders(){
       }
 
       acct.pendingOrders = remaining;
-      accounts[email] = acct;
+      await saveAccount(email, acct);
     }
-    db.accounts = accounts;
-    await writeData(db);
   }catch{
     // ignore
   }
