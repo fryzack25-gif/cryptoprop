@@ -313,7 +313,19 @@ details summary:hover{color:#9098c0}
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
           <button class="btn primary" id="betaEnterBtn" onclick="enterBeta()">🧪 Enter Beta Mode</button>
           <button class="btn" id="betaExitBtn" onclick="exitBeta()" style="display:none">✖ Exit Beta Mode</button>
-          <button class="btn ghost" onclick="resetBeta()">↺ Reset Beta Account</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="betaSeed" style="background:#1a1d23;border:1px solid rgba(255,255,255,0.1);color:#e8eaed;padding:6px 10px;border-radius:6px;font-size:12px;cursor:pointer">
+              <option value="25000">$25,000</option>
+              <option value="50000">$50,000</option>
+              <option value="100000" selected>$100,000</option>
+            </select>
+            <select id="betaPhase" style="background:#1a1d23;border:1px solid rgba(255,255,255,0.1);color:#e8eaed;padding:6px 10px;border-radius:6px;font-size:12px;cursor:pointer">
+              <option value="challenge">Challenge 1</option>
+              <option value="challenge2">Challenge 2</option>
+              <option value="funded" selected>Passed / Funded</option>
+            </select>
+            <button class="btn ghost" onclick="resetBeta()">↺ Reset Beta Account</button>
+          </div>
         </div>
         <div id="betaMsg" class="msg" style="margin-top:10px"></div>
       </div>
@@ -784,10 +796,13 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
   };
 
   window.resetBeta = async function() {
-    if(!confirm('Reset beta account? This clears all positions and trades.')) return;
+    const seed = document.getElementById('betaSeed')?.value || '100000';
+    const phase = document.getElementById('betaPhase')?.value || 'funded';
+    const phaseLabel = {'challenge':'Challenge 1','challenge2':'Challenge 2','funded':'Funded'}[phase] || phase;
+    if(!confirm(`Reset beta account to $${Number(seed).toLocaleString()} / ${phaseLabel}? This clears all positions and trades.`)) return;
     const msg = document.getElementById('betaMsg');
     try {
-      const d = await api('/api/admin/beta/reset', { method: 'POST' });
+      const d = await api('/api/admin/beta/reset', { method: 'POST', body: JSON.stringify({ seed: Number(seed), phase }) });
       msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
       window.loadBetaStatus();
     } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
