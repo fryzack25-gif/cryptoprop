@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth.js";
+import { apiFetch } from "./app.js";
 import { money } from "./app.js";
 
 function pct(x){ return (Number(x||0)*100).toFixed(2) + "%"; }
