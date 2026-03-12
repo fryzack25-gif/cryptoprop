@@ -802,7 +802,7 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
     if(!confirm(`Reset beta account to $${Number(seed).toLocaleString()} / ${phaseLabel}? This clears all positions and trades.`)) return;
     const msg = document.getElementById('betaMsg');
     try {
-      const d = await api('/api/admin/beta/reset', { method: 'POST', body: JSON.stringify({ seed: Number(seed), phase }) });
+      const d = await api('/api/admin/beta/reset', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ seed: Number(seed), phase }) });
       msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
       window.loadBetaStatus();
     } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
