@@ -12,9 +12,20 @@ function show(id, on){
   const el = document.getElementById(id);
   if(el) el.style.display = on ? "" : "none";
 }
-document.getElementById("tabLogin")?.addEventListener("click", () => { show("loginBox", true); show("signupBox", false); show("forgotBox", false); });
-document.getElementById("tabSignup")?.addEventListener("click", () => { show("loginBox", false); show("signupBox", true); show("forgotBox", false); });
-if(window.location.hash === "#signup"){ show("loginBox", false); show("signupBox", true); }
+function setTab(tab) {
+  const loginBtn = document.getElementById("tabLogin");
+  const signupBtn = document.getElementById("tabSignup");
+  if (tab === "login") {
+    loginBtn?.classList.add("primary"); signupBtn?.classList.remove("primary");
+    show("loginBox", true); show("signupBox", false); show("forgotBox", false);
+  } else {
+    signupBtn?.classList.add("primary"); loginBtn?.classList.remove("primary");
+    show("loginBox", false); show("signupBox", true); show("forgotBox", false);
+  }
+}
+document.getElementById("tabLogin")?.addEventListener("click", () => setTab("login"));
+document.getElementById("tabSignup")?.addEventListener("click", () => setTab("signup"));
+if(window.location.hash === "#signup"){ setTab("signup"); } else { setTab("login"); }
 document.getElementById("signupBtn")?.addEventListener("click", async () => {
   const email = document.getElementById("signupEmail")?.value || "";
   const password = document.getElementById("signupPass")?.value || "";
@@ -62,7 +73,13 @@ document.getElementById("loginBtn")?.addEventListener("click", async () => {
   const password = document.getElementById("loginPass")?.value || "";
   const msg = document.getElementById("loginMsg");
   if(msg) msg.textContent = "Signing in…";
-  try{ await post("/api/auth/login", { email, password }); window.location.href = "/dashboard.html"; }
+  try{
+    await post("/api/auth/login", { email, password });
+    // Check if they need onboarding
+    const acctRes = await fetch("/api/account");
+    const acct = acctRes.ok ? await acctRes.json() : {};
+    window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
+  }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
 document.getElementById("adminBtn")?.addEventListener("click", async () => {
@@ -72,4 +89,14 @@ document.getElementById("adminBtn")?.addEventListener("click", async () => {
   try{ await post("/api/auth/admin-elevate", { adminKey }); if(msg) msg.textContent = "Admin enabled ✅ Redirecting…"; window.location.href = "/admin.html"; }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
-(async function(){ try{ const res = await fetch("/api/auth/me"); const data = await res.json(); if(data.user) window.location.href = "/dashboard.html"; }catch(e){} })();
+(async function(){
+  try{
+    const res = await fetch("/api/auth/me");
+    const data = await res.json();
+    if(data.user){
+      const acctRes = await fetch("/api/account");
+      const acct = acctRes.ok ? await acctRes.json() : {};
+      window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
+    }
+  }catch(e){}
+})();
