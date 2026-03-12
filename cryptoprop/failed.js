@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth.js";
+import { apiFetch } from "./app.js";
 import { money, toast } from "./app.js";
 
 async function load(){
