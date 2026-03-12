@@ -381,10 +381,12 @@ async function getOrCreateAccount(email){
 
 // saveAccount is imported directly from db.js — no wrapper needed
 
+const HARDCODED_PAIRS = new Set(["BTC-USD","ETH-USD","SOL-USD","XRP-USD","ADA-USD","DOGE-USD","AVAX-USD","LINK-USD","DOT-USD","MATIC-USD","LTC-USD","BCH-USD","UNI-USD","ATOM-USD","ALGO-USD","XLM-USD","SHIB-USD","TRX-USD","TON-USD","NEAR-USD","ICP-USD","APT-USD","OP-USD","ARB-USD","FIL-USD","HBAR-USD","VET-USD","SAND-USD","MANA-USD","AXS-USD","AAVE-USD","GRT-USD","STX-USD","EGLD-USD","THETA-USD","FTM-USD","FLOW-USD","ROSE-USD","ENJ-USD","CHZ-USD","ZEC-USD","DASH-USD","ETC-USD","MKR-USD","SNX-USD","CRV-USD","COMP-USD","YFI-USD","SUSHI-USD","1INCH-USD"]);
+
 function allowlistProduct(product){
+  if(HARDCODED_PAIRS.has(product)) return true;
   if(Array.isArray(top50ProductIds) && top50ProductIds.includes(product)) return true;
-  const allowed = new Set(["BTC-USD","ETH-USD","SOL-USD","XRP-USD","ADA-USD","DOGE-USD","AVAX-USD","BNB-USD","LINK-USD"]);
-  return allowed.has(product);
+  return false;
 }
 
 
