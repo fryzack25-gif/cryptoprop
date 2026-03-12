@@ -759,10 +759,10 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
 
     // 1% of original starting capital per position
     const startEq = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
-    const maxNotional = startEq * 0.01;
+    const maxNotional = startEq * 0.025;
     const currentPosVal = acct.positions[p] ? (acct.positions[p].qty * price) : 0;
     if(currentPosVal + notional > maxNotional)
-      return res.status(400).json({ error: `Max position size is 1% of starting capital ($${maxNotional.toFixed(2)}). Current: $${currentPosVal.toFixed(2)}.` });
+      return res.status(400).json({ error: `Max position size is 2.5% of starting capital ($${maxNotional.toFixed(2)}). Current: $${currentPosVal.toFixed(2)}.` });
 
     // Deduct cash immediately
     acct.cash = round8((acct.cash || 0) - totalCost);
