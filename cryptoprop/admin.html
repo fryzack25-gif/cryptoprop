@@ -233,6 +233,7 @@ details summary:hover{color:#9098c0}
               <button class="btn s" onclick="opsAction('freeze',true)">🔒 Freeze</button>
               <button class="btn s" onclick="opsAction('freeze',false)">🔓 Unfreeze</button>
               <button class="btn s" onclick="opsAction('unlock-daily')">↻ Unlock daily</button>
+              <button class="btn s" onclick="opsAction('verify-email')">✉️ Verify email</button>
             </div>
           </div>
           <div class="ops-card">
@@ -642,7 +643,7 @@ async function opsAction(action, param){
   if(action==='flatten') body.reason = g('ops-reason').value.trim();
   if(action==='set-phase') body.phase = g('ops-phase').value;
   if(action==='reset' && !confirm('Reset this account?')) return;
-  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase'};
+  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase','verify-email':'/api/admin/user/verify-email'};
   try{
     await api(urlMap[action],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     await opsLoad();
