@@ -1,5 +1,5 @@
 import { setYear, toast, qs, money } from "./app.js";
-import { requireAuth, logout, getSession, apiFetch } from "./auth.js";
+import { requireAuth, logout, getSession, apiFetch } from "./app.js";
 
 
 function clamp01(x){ return Math.max(0, Math.min(1, x)); }
