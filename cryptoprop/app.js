@@ -9,9 +9,10 @@ export function toast(message){
   const t = document.getElementById("toast");
   if(!t) return;
   t.textContent = message;
+  t.classList.add("show");
   t.style.display = "block";
   clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>{ t.style.display="none"; }, 3200);
+  window.__toastTimer = setTimeout(()=>{ t.classList.remove("show"); t.style.display="none"; }, 3200);
 }
 
 export function qs(id){ return document.getElementById(id); }
