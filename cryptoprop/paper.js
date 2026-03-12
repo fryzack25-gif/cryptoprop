@@ -169,30 +169,35 @@ const ctx = canvas.getContext("2d");
 const wsStatus = document.getElementById("wsStatus");
 
 // -------------------- Market universe (Top 50 on Coinbase) --------------------
+const FALLBACK_PAIRS = ["BTC-USD","ETH-USD","SOL-USD","XRP-USD","ADA-USD","DOGE-USD","AVAX-USD","LINK-USD","DOT-USD","MATIC-USD","LTC-USD","BCH-USD","UNI-USD","ATOM-USD","ALGO-USD","XLM-USD","SHIB-USD","TRX-USD","TON-USD","NEAR-USD","ICP-USD","APT-USD","OP-USD","ARB-USD","FIL-USD","HBAR-USD","VET-USD","SAND-USD","MANA-USD","AXS-USD","AAVE-USD","GRT-USD","STX-USD","EGLD-USD","THETA-USD","FTM-USD","FLOW-USD","ROSE-USD","ENJ-USD","CHZ-USD","ZEC-USD","DASH-USD","ETC-USD","MKR-USD","SNX-USD","CRV-USD","COMP-USD","YFI-USD","SUSHI-USD","1INCH-USD"];
+
+function populatePairs(list){
+  if(!list || !list.length) return;
+  const current = productSel.value;
+  productSel.innerHTML = list.map(pid => `<option value="${pid}">${pid}</option>`).join("");
+  if(list.includes(current)) productSel.value = current;
+  const tickerBar = document.getElementById("tickerBar");
+  if(tickerBar){
+    tickerBar.innerHTML = list.slice(0,16).map((pid,i) => `
+      <div class="ticker-item${i===0?' selected':''}" data-sym="${pid}">
+        <div class="ticker-sym">${pid.replace('-USD','')}</div>
+        <div class="ticker-price neu" id="tb-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
+        <div class="ticker-chg neu" id="tc-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
+      </div>
+    `).join("");
+  }
+}
+
 async function loadUniverse(){
+  // Always populate with fallback first so pairs show immediately
+  populatePairs(FALLBACK_PAIRS);
   try{
     const res = await apiFetch("/api/market/top50", { method:"GET" });
     const data = await res.json();
     const list = Array.isArray(data.product_ids) ? data.product_ids : [];
-    if(list.length){
-      const current = productSel.value;
-      productSel.innerHTML = list.map(pid => `<option value="${pid}">${pid}</option>`).join("");
-      if(list.includes(current)) productSel.value = current;
-
-      // Populate ticker bar
-      const tickerBar = document.getElementById("tickerBar");
-      if(tickerBar){
-        tickerBar.innerHTML = list.slice(0,16).map((pid,i) => `
-          <div class="ticker-item${i===0?' selected':''}" data-sym="${pid}">
-            <div class="ticker-sym">${pid.replace('-USD','')}</div>
-            <div class="ticker-price neu" id="tb-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
-            <div class="ticker-chg neu" id="tc-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
-          </div>
-        `).join("");
-      }
-    }
+    if(list.length) populatePairs(list);
   }catch{
-    // ignore; keep existing options
+    // fallback already applied above
   }
 }
 
