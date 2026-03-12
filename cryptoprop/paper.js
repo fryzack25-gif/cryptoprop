@@ -550,6 +550,36 @@ function connectWs(){
 const msg = qs("msg");
 const _safeMsg = (text, color) => { if(msg){ msg.textContent = text; if(color) msg.style.color = color; } };
 
+window.setMaxQty = function() {
+  const side = document.getElementById("side").value;
+  const product = productSel.value;
+  const price = lastPrices[product];
+
+  if(!Number.isFinite(price) || price <= 0){
+    toast("No live price available yet");
+    return;
+  }
+
+  if(side === "buy"){
+    // 1% of starting capital minus current position value
+    const startEq = Number(account.startEquity || account.baseEquity || account.cash || 0);
+    const maxNotional = startEq * 0.01;
+    const currentPosVal = account.positions?.[product] ? (account.positions[product].qty * price) : 0;
+    const remaining = Math.max(0, maxNotional - currentPosVal);
+    // Also cap by available cash (minus 2% fee buffer)
+    const cashAvail = Math.max(0, (account.cash || 0) / 1.02);
+    const notional = Math.min(remaining, cashAvail);
+    const qty = notional / price;
+    if(qty <= 0){ toast("At max position or insufficient cash"); return; }
+    qs("qty").value = qty.toFixed(8).replace(/\.?0+$/, "");
+  } else {
+    // Sell: max is full position
+    const pos = account.positions?.[product];
+    if(!pos || pos.qty <= 0){ toast("No position to sell"); return; }
+    qs("qty").value = pos.qty.toFixed(8).replace(/\.?0+$/, "");
+  }
+};
+
 window.submitOrder = async function() {
   msg.textContent = "Submitting…";
   msg.style.color = "var(--term-muted)";
