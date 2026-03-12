@@ -444,7 +444,6 @@ async function tryLogin(){
     if(!res.ok) throw new Error(d.error || 'Invalid key');
     lastAttempt = 0;
     AKEY = key;
-    localStorage.setItem('cp_admin_key', key);
     g('gate').style.display = 'none';
     g('app').style.display = 'block';
     parseStats(d);
@@ -462,28 +461,13 @@ async function tryLogin(){
 
 function doLock(){
   AKEY = '';
-  localStorage.removeItem('cp_admin_key');
   g('gate').style.display = 'flex';
   g('app').style.display = 'none';
   g('gk').value = '';
   g('gerr').textContent = '';
 }
 
-// Auto-login
-(function(){
-  var saved = localStorage.getItem('cp_admin_key');
-  if(!saved) return;
-  fetch('/api/admin/overview', {headers:{'x-admin-key':saved}}).then(function(res){
-    if(!res.ok){ localStorage.removeItem('cp_admin_key'); return; }
-    AKEY = saved;
-    res.json().then(function(d){
-      g('gate').style.display = 'none';
-      g('app').style.display = 'block';
-      parseStats(d);
-      loadAll();
-    });
-  }).catch(function(){});
-})();
+
 
 // ── Nav ──
 function show(name, btn){
