@@ -3,352 +3,567 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CryptoProp — Trading</title>
-  <meta name="description" content="CryptoProp spot paper trading module using live market data from Coinbase." />
+  <title>CryptoProp — Trading Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --term-bg: #080b10;
+      --term-panel: #0d1117;
+      --term-border: rgba(255,255,255,0.07);
+      --term-border-bright: rgba(255,255,255,0.14);
+      --term-muted: #5a6a80;
+      --term-label: #7a8fa8;
+      --term-text: #c8d8e8;
+      --term-bright: #e8f0f8;
+      --term-green: #00e5a0;
+      --term-red: #ff4d6a;
+      --term-yellow: #f5c842;
+      --term-blue: #3d9eff;
+      --term-purple: #9d7cff;
+      --term-mono: 'JetBrains Mono', monospace;
+      --term-sans: 'Syne', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--term-bg); color: var(--term-text); font-family: var(--term-mono); font-size: 13px; overflow-x: hidden; }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; height: 48px;
+      background: var(--term-panel);
+      border-bottom: 1px solid var(--term-border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+    .topbar-brand { font-family: var(--term-sans); font-weight: 800; font-size: 15px; color: var(--term-bright); letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--term-green); box-shadow: 0 0 8px var(--term-green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .topbar-nav { display: flex; gap: 2px; }
+    .topbar-nav a { padding: 6px 12px; border-radius: 6px; color: var(--term-muted); font-family: var(--term-sans); font-size: 13px; font-weight: 600; text-decoration: none; transition: color .15s, background .15s; }
+    .topbar-nav a:hover { color: var(--term-text); background: rgba(255,255,255,0.05); }
+    .topbar-nav a.active { color: var(--term-bright); background: rgba(255,255,255,0.08); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-pill { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--term-green); font-weight: 600; }
+    .topbar-user { font-size: 11px; color: var(--term-muted); }
+    .btn-ghost-sm { background: rgba(255,255,255,0.05); border: 1px solid var(--term-border); border-radius: 6px; padding: 5px 12px; color: var(--term-muted); font-size: 11px; font-family: var(--term-mono); cursor: pointer; transition: all .15s; }
+    .btn-ghost-sm:hover { color: var(--term-text); border-color: var(--term-border-bright); }
+
+    /* ── TICKER BAR ── */
+    .tickerbar {
+      display: flex; gap: 0; overflow-x: auto; scrollbar-width: none;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--term-border);
+    }
+    .tickerbar::-webkit-scrollbar { display: none; }
+    .ticker-item {
+      flex-shrink: 0; padding: 8px 16px; cursor: pointer;
+      border-right: 1px solid var(--term-border);
+      transition: background .15s;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .ticker-item:hover { background: rgba(255,255,255,0.04); }
+    .ticker-item.selected { background: rgba(61,158,255,0.08); border-bottom: 2px solid var(--term-blue); }
+    .ticker-sym { font-weight: 700; font-size: 11px; color: var(--term-bright); letter-spacing: 0.05em; }
+    .ticker-price { font-size: 12px; font-weight: 600; }
+    .ticker-chg { font-size: 10px; }
+    .up { color: var(--term-green); }
+    .dn { color: var(--term-red); }
+    .neu { color: var(--term-muted); }
+
+    /* ── MAIN LAYOUT ── */
+    .terminal {
+      display: grid;
+      grid-template-columns: 280px 1fr 260px;
+      grid-template-rows: auto 1fr;
+      height: calc(100vh - 48px - 52px);
+      min-height: 600px;
+    }
+
+    /* ── LEFT PANEL: Order Ticket ── */
+    .order-panel {
+      background: var(--term-panel);
+      border-right: 1px solid var(--term-border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .panel-header {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--term-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title { font-family: var(--term-sans); font-weight: 700; font-size: 12px; color: var(--term-bright); letter-spacing: 0.08em; text-transform: uppercase; }
+    .panel-sub { font-size: 10px; color: var(--term-muted); margin-top: 2px; }
+
+    .pair-display { padding: 14px 16px; border-bottom: 1px solid var(--term-border); }
+    .pair-name { font-family: var(--term-sans); font-weight: 800; font-size: 20px; color: var(--term-bright); }
+    .pair-live { font-size: 24px; font-weight: 700; color: var(--term-green); letter-spacing: -0.02em; }
+    .pair-meta { font-size: 10px; color: var(--term-muted); margin-top: 4px; display: flex; gap: 10px; }
+    .ws-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--term-green); margin-right: 4px; animation: pulse 2s infinite; }
+    .ws-dot.off { background: var(--term-red); animation: none; }
+
+    /* Side toggle */
+    .side-toggle { display: grid; grid-template-columns: 1fr 1fr; margin: 12px 16px; border-radius: 8px; overflow: hidden; border: 1px solid var(--term-border); }
+    .side-btn { padding: 10px; text-align: center; cursor: pointer; font-weight: 700; font-size: 12px; font-family: var(--term-sans); border: none; background: transparent; color: var(--term-muted); transition: all .15s; letter-spacing: 0.05em; }
+    .side-btn.buy.active { background: rgba(0,229,160,0.15); color: var(--term-green); }
+    .side-btn.sell.active { background: rgba(255,77,106,0.15); color: var(--term-red); }
+    .side-btn:hover { background: rgba(255,255,255,0.04); }
+
+    /* Order form fields */
+    .order-form { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { font-size: 10px; color: var(--term-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+    .field-input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--term-border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--term-text);
+      font-family: var(--term-mono);
+      font-size: 13px;
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .field-input:focus { outline: none; border-color: var(--term-blue); background: rgba(61,158,255,0.04); }
+    .field-input:disabled { opacity: 0.4; cursor: not-allowed; }
+    .field-input[readonly] { color: var(--term-green); font-weight: 600; background: rgba(0,229,160,0.04); border-color: rgba(0,229,160,0.15); }
+    select.field-input { cursor: pointer; }
+
+    .type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .type-btn { padding: 7px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 700; font-family: var(--term-sans); border: 1px solid var(--term-border); border-radius: 6px; background: transparent; color: var(--term-muted); transition: all .15s; letter-spacing: 0.05em; }
+    .type-btn.active { border-color: var(--term-blue); color: var(--term-blue); background: rgba(61,158,255,0.08); }
+
+    .submit-btn {
+      width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer;
+      font-family: var(--term-sans); font-weight: 800; font-size: 14px; letter-spacing: 0.04em;
+      transition: all .15s; margin-top: 4px;
+    }
+    .submit-btn.buy { background: var(--term-green); color: #001a0e; }
+    .submit-btn.sell { background: var(--term-red); color: #1a0005; }
+    .submit-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    .order-msg { font-size: 11px; min-height: 16px; text-align: center; padding: 0 4px; }
+
+    .divider { height: 1px; background: var(--term-border); margin: 4px 0; }
+
+    /* ── CENTER: Chart + Tables ── */
+    .chart-area {
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .chart-controls {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      border-bottom: 1px solid var(--term-border);
+      background: rgba(255,255,255,0.01);
+    }
+    .gran-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--term-muted); font-family: var(--term-mono); font-size: 11px; cursor: pointer; transition: all .15s; }
+    .gran-btn.active { border-color: var(--term-border-bright); color: var(--term-bright); background: rgba(255,255,255,0.06); }
+    .gran-sep { width: 1px; height: 16px; background: var(--term-border); margin: 0 4px; }
+    .count-sel { background: rgba(255,255,255,0.04); border: 1px solid var(--term-border); border-radius: 4px; padding: 3px 8px; color: var(--term-text); font-size: 11px; font-family: var(--term-mono); }
+
+    .chart-wrap { flex: 1; position: relative; overflow: hidden; min-height: 200px; }
+    #candleCanvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+
+    /* Tables area */
+    .tables-area { height: 260px; display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--term-border); }
+    .table-pane { overflow-y: auto; border-right: 1px solid var(--term-border); }
+    .table-pane:last-child { border-right: none; }
+    .table-pane-header { padding: 8px 12px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--term-border); font-size: 10px; font-weight: 700; color: var(--term-label); text-transform: uppercase; letter-spacing: 0.08em; position: sticky; top: 0; z-index: 1; }
+    .term-table { width: 100%; border-collapse: collapse; }
+    .term-table th { padding: 6px 10px; text-align: left; font-size: 10px; color: var(--term-muted); font-weight: 600; letter-spacing: 0.05em; border-bottom: 1px solid var(--term-border); position: sticky; top: 28px; background: var(--term-panel); z-index: 1; }
+    .term-table td { padding: 6px 10px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .term-table tr:hover td { background: rgba(255,255,255,0.025); }
+    .cancel-btn { background: rgba(255,77,106,0.12); border: 1px solid rgba(255,77,106,0.2); border-radius: 4px; padding: 2px 8px; color: var(--term-red); font-size: 10px; font-family: var(--term-mono); cursor: pointer; transition: all .15s; }
+    .cancel-btn:hover { background: rgba(255,77,106,0.25); }
+
+    /* ── RIGHT PANEL: Portfolio + Risk ── */
+    .right-panel {
+      background: var(--term-panel);
+      border-left: 1px solid var(--term-border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .stat-row { padding: 10px 14px; border-bottom: 1px solid var(--term-border); }
+    .stat-label { font-size: 10px; color: var(--term-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 3px; }
+    .stat-val { font-size: 18px; font-weight: 700; color: var(--term-bright); letter-spacing: -0.02em; }
+    .stat-sub { font-size: 10px; color: var(--term-muted); margin-top: 2px; }
+
+    /* Progress bars */
+    .risk-block { padding: 10px 14px; border-bottom: 1px solid var(--term-border); }
+    .risk-title { font-size: 10px; color: var(--term-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .risk-row { margin-bottom: 8px; }
+    .risk-row-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .risk-row-label { font-size: 10px; color: var(--term-muted); }
+    .risk-row-val { font-size: 11px; font-weight: 700; }
+    .bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; transition: width .4s ease; }
+    .bar-daily { background: linear-gradient(90deg, var(--term-green), var(--term-yellow)); }
+    .bar-trail { background: linear-gradient(90deg, var(--term-yellow), var(--term-red)); }
+
+    /* Challenge progress */
+    .challenge-block { padding: 10px 14px; border-bottom: 1px solid var(--term-border); }
+
+    /* Mini action buttons */
+    .action-row { padding: 10px 14px; display: flex; gap: 6px; border-bottom: 1px solid var(--term-border); }
+    .action-btn { flex: 1; padding: 7px 6px; border-radius: 6px; border: 1px solid var(--term-border); background: rgba(255,255,255,0.03); color: var(--term-muted); font-size: 10px; font-family: var(--term-mono); cursor: pointer; transition: all .15s; text-align: center; }
+    .action-btn:hover { border-color: var(--term-border-bright); color: var(--term-text); background: rgba(255,255,255,0.06); }
+
+    /* Lock banner */
+    .lock-banner { margin: 10px 14px; padding: 10px 12px; background: rgba(255,77,106,0.08); border: 1px solid rgba(255,77,106,0.2); border-radius: 8px; display: none; }
+    .lock-banner-title { font-size: 11px; font-weight: 700; color: var(--term-red); margin-bottom: 3px; }
+    .lock-banner-sub { font-size: 10px; color: var(--term-muted); }
+
+    /* Toast */
+    .toast-term {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--term-panel); border: 1px solid var(--term-border-bright);
+      border-radius: 8px; padding: 10px 20px; font-size: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6); z-index: 999;
+      opacity: 0; transition: opacity .2s; pointer-events: none;
+    }
+    .toast-term.show { opacity: 1; }
+
+    /* Bottom status bar */
+    .statusbar {
+      height: 24px; background: rgba(61,158,255,0.08); border-top: 1px solid rgba(61,158,255,0.15);
+      display: flex; align-items: center; gap: 20px; padding: 0 16px;
+      font-size: 10px; color: var(--term-muted);
+    }
+    .statusbar-item { display: flex; align-items: center; gap: 5px; }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .notice-sm { font-size: 10px; color: var(--term-muted); line-height: 1.5; padding: 10px 16px; border-top: 1px solid var(--term-border); }
+
+    /* Responsive collapse */
+    @media (max-width: 900px) {
+      .terminal { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
+      .chart-area { min-height: 400px; }
+      .tables-area { grid-template-columns: 1fr; height: auto; }
+      .table-pane { height: 200px; border-right: none; border-bottom: 1px solid var(--term-border); }
+      .right-panel { border-left: none; border-top: 1px solid var(--term-border); }
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="wrap nav">
-      <a class="brand" href="index.html">
-        <span class="logo" aria-hidden="true"></span>
-        <span>CryptoProp</span>
-      </a>
 
-      <nav class="links" aria-label="Paper nav">
-        <a href="dashboard.html">Dashboard</a>
-        <a href="paper.html">Trading</a>
-        <a href="index.html#rules">Rules</a>
-      </nav>
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="topbar-brand" href="index.html">
+      <div class="brand-dot"></div>
+      CryptoProp
+    </a>
+    <nav class="topbar-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="paper.html" class="active">Trading</a>
+      <a href="index.html#rules">Rules</a>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-pill">LIVE DATA</div>
+    <span class="topbar-user" id="who"></span>
+    <button class="btn-ghost-sm" id="logoutBtn">Logout</button>
+  </div>
+</header>
 
-      <div class="right-tools">
-        <span id="who" class="small muted"></span>
-        <button class="btn ghost" id="logoutBtn">Logout</button>
+<!-- TICKER BAR -->
+<div class="tickerbar" id="tickerBar">
+  <!-- populated by JS -->
+</div>
+
+<!-- TERMINAL GRID -->
+<div class="terminal">
+
+  <!-- LEFT: ORDER TICKET -->
+  <div class="order-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Order Ticket</div>
+        <div class="panel-sub">Simulated fills • spot only</div>
       </div>
     </div>
-  </header>
 
-  <main class="wrap" style="padding-top:22px; padding-bottom:40px">
-    <div class="section-title">
-      <h2>Trading (spot)</h2>
-      <p class="muted">Live prices via Coinbase market data proxy. No real trades.</p>
-    </div>
-
-    <div class="split">
-      <section class="card glass" style="padding:18px">
-        <div class="section-title" style="margin-bottom:10px">
-          <h2 style="font-size:1.15rem">Order ticket</h2>
-          <p class="muted small">Market &amp; limit orders • simulated fills • spot only</p>
-          <p class="tiny muted" style="margin-top:6px">Prop rules: 80/20 profit split • max position size 1% of account (e.g., $250 on $25k)</p>
-        </div>
-
-        <form id="orderForm" style="padding:0">
-          <div class="row2">
-            <div>
-              <label for="product">Pair</label>
-              <select id="product" name="product" required>
-                <option value="BTC-USD">BTC-USD</option>
-              </select>
-            </div>
-            <div>
-              <label for="side">Side</label>
-              <select id="side" name="side" required>
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row2" style="margin-top:10px">
-            <div>
-              <label for="type">Order type</label>
-              <select id="type" name="type" required>
-                <option value="market" selected>Market</option>
-                <option value="limit">Limit</option>
-              </select>
-            </div>
-            <div>
-              <label for="limitPrice">Limit price (USD)</label>
-              <input id="limitPrice" name="limitPrice" type="number" step="0.01" min="0" placeholder="Only for limit orders" disabled />
-            </div>
-          </div>
-
-          <div class="row2">
-            <div>
-              <label for="qty">Quantity (base)</label>
-              <input id="qty" name="qty" type="number" step="0.00000001" min="0" placeholder="0.01" required />
-            </div>
-            <div>
-              <label for="price">Last price (USD)</label>
-              <div class="tiny muted" id="wsStatus" style="margin-top:6px">Live feed: connecting…</div>
-              <input id="price" name="price" type="text" readonly />
-            </div>
-          </div>
-
-          <button class="btn primary" type="submit">Place paper order</button>
-          <p id="msg" class="small muted" style="margin:0"></p>
-
-          <div class="notice tiny" style="margin-top:12px">
-            Prices are fetched from Coinbase Exchange market data (proxied through your server). Market orders include demo slippage + taker fees; limit fills use maker fees.
-          </div>
-        </form>
-      </section>
-
-      <aside class="card glass" style="padding:18px">
-        <div class="section-title" style="margin-bottom:10px">
-          <h2 style="font-size:1.15rem">Portfolio</h2>
-          <p class="muted small">Linked to your account liquidity</p>
-        </div>
-
-        <div class="grid3" style="grid-template-columns: 1fr; gap: 10px">
-          <div class="stat">
-            <b id="cash">$—</b>
-            <span>Cash (USD)</span>
-          </div>
-          <div class="stat">
-            <b id="equity">$—</b>
-            <span>Equity (USD)</span>
-          </div>
-          <div class="stat">
-            <b id="upl">$—</b>
-            <span>Unrealized P/L (USD)</span>
-          </div>
-        </div>
-
-        <div class="pillrow" style="margin-top:12px">
-          <button class="btn" id="resetBtn" type="button">Reset account</button>
-          <button class="btn teal" id="seedBtn" type="button">Seed liquidity ($50,000)</button>
-        </div>
-
-        <div class="disclaimer tiny" style="margin-top:12px">
-          This is a demo. Execution is simulated at last price; balances and positions are stored on the server per account.
-        </div>
-      </aside>
-    </div>
-
-    
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Chart</h2>
-        <p class="muted small">Coinbase candles (demo)</p>
-      </div>
-      <div class="row2">
+    <div class="pair-display">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <label for="gran">Granularity</label>
-          <select id="gran" name="gran">
-            <option value="60">1m</option>
-            <option value="300">5m</option>
-            <option value="900">15m</option>
-            <option value="3600" selected>1h</option>
-            <option value="21600">6h</option>
-            <option value="86400">1d</option>
-          </select>
+          <div class="pair-name" id="activePair">BTC-USD</div>
+          <div class="pair-live" id="price">—</div>
         </div>
-        <div>
-          <label for="candlesCount">Candles</label>
-          <select id="candlesCount" name="candlesCount">
-            <option value="50" selected>50</option>
-            <option value="100">100</option>
-            <option value="200">200</option>
-          </select>
+        <div style="text-align:right">
+          <div id="priceChange" class="neu" style="font-size:11px;font-weight:600">—</div>
+          <div class="pair-meta"><span><span class="ws-dot" id="wsDot"></span><span id="wsStatus">connecting…</span></span></div>
         </div>
       </div>
-      <div style="margin-top:12px">
-        <canvas id="candleCanvas" width="1100" height="360" style="width:100%; height:auto; border-radius:16px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.02)"></canvas>
-      </div>
-      <div class="tiny muted" style="margin-top:10px">
-        Candles are for visualization only. Not investment advice.
-      </div>
-    </section>
-
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Positions</h2>
-        <p class="muted small">Average cost tracking</p>
-      </div>
-      <table class="table" aria-label="Positions">
-        <thead>
-          <tr>
-            <th>Pair</th>
-            <th>Qty</th>
-            <th>Avg cost</th>
-            <th>Last</th>
-            <th>Unrealized P/L</th>
-          </tr>
-        </thead>
-        <tbody id="posBody"></tbody>
-      </table>
-    </section>
-
-    
-    
-    
-    
-    
-    <div class="card glass" id="lockBanner" style="display:none; padding:14px; margin-top:14px; border:1px solid rgba(255,77,77,0.35)">
-      <div style="font-weight:800">Trading locked</div>
-      <div class="muted small" id="lockText">—</div>
     </div>
 
-    <section class="card glass" id="challengeProgress" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Challenge progress</h2>
-        <p class="muted small">Target: +8% • Time limit: 30 days • Min trading days: 5 • Consistency: max 40% best-day share • On pass: reset to initial balance</p>
+    <div class="side-toggle">
+      <button class="side-btn buy active" id="buyBtn" onclick="setSide('buy')">▲ BUY</button>
+      <button class="side-btn sell" id="sellBtn" onclick="setSide('sell')">▼ SELL</button>
+    </div>
+
+    <div class="order-form">
+      <div class="field-group">
+        <div class="field-label">Pair</div>
+        <select id="product" class="field-input">
+          <option value="BTC-USD">BTC-USD</option>
+        </select>
       </div>
 
-      <div class="row2">
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Phase</div>
-          <div id="phase" style="font-weight:700; font-size:1.1rem">—</div>
-          <div class="tiny muted" id="timeLeft">—</div>
-        </div>
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Profit progress</div>
-          <div id="profitLine" style="font-weight:700; font-size:1.1rem">—</div>
-          <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
-            <div id="profitBar" style="height:10px; width:0%; background: var(--good); border-radius:999px"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row2" style="margin-top:12px">
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Trading days</div>
-          <div id="daysLine" style="font-weight:700; font-size:1.1rem">—</div>
-          <div class="tiny muted" id="consistencyLine">—</div>
-        </div>
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Payouts (funded)</div>
-          <div id="payoutLine" style="font-weight:700; font-size:1.1rem">—</div>
-          <div class="tiny muted" id="payoutSub">—</div>
-        </div>
-      </div>
-    </section>
-
-
-    <section class="card glass" id="payoutMini" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Payout status</h2>
-        <p class="muted small">Quick view while trading.</p>
-      </div>
-      <div class="row2">
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Withdrawable</div>
-          <div id="miniWithdrawable" style="font-weight:700; font-size:1.1rem">—</div>
-          <div class="tiny muted" id="miniEligible">—</div>
-        </div>
-        <div class="card" style="padding:14px">
-          <div class="tiny muted">Cap remaining</div>
-          <div id="miniCap" style="font-weight:700; font-size:1.1rem">—</div>
-          <div class="tiny muted" id="miniCapLine">—</div>
-        </div>
-      </div>
-    </section>
-
-
-    <section class="card glass" id="riskMeter" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Risk meter</h2>
-        <p class="muted small">Max daily drawdown: 2% • Max trailing drawdown: 5%</p>
-      </div>
-
-      <div class="card" style="padding:12px; margin-bottom:10px">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
-          <div>
-            <div class="tiny muted">Daily drawdown used</div>
-            <div style="font-weight:700"><span id="dailyUsedPct">—</span> / 2.00%</div>
-          </div>
-          <div class="tiny muted" id="dayEqLine">—</div>
-        </div>
-        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
-          <div id="dailyBar" style="height:10px; width:0%; background: var(--bad); border-radius:999px"></div>
+      <div class="field-group">
+        <div class="field-label">Order Type</div>
+        <div class="type-toggle">
+          <button class="type-btn active" id="typeMarket" onclick="setType('market')">MARKET</button>
+          <button class="type-btn" id="typeLimit" onclick="setType('limit')">LIMIT</button>
         </div>
       </div>
 
-      <div class="card" style="padding:12px">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px">
-          <div>
-            <div class="tiny muted">Trailing drawdown used</div>
-            <div style="font-weight:700"><span id="totalUsedPct">—</span> / 5.00%</div>
-          </div>
-          <div class="tiny muted" id="totalEqLine">—</div>
-        </div>
-        <div style="height:10px; background: rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin-top:10px">
-          <div id="totalBar" style="height:10px; width:0%; background: var(--warn); border-radius:999px"></div>
-        </div>
+      <div class="field-group" id="limitPriceGroup" style="display:none">
+        <div class="field-label">Limit Price (USD)</div>
+        <input id="limitPrice" type="number" step="0.01" min="0" class="field-input" placeholder="0.00" />
       </div>
-    </section>
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Order queue</h2>
-        <p class="muted small">Orders fill after a random 10–15 second delay</p>
+      <div class="field-group">
+        <div class="field-label">Quantity (base)</div>
+        <input id="qty" type="number" step="0.00000001" min="0" class="field-input" placeholder="0.001" required />
       </div>
-      <table class="table" aria-label="Pending orders">
-        <thead>
-          <tr>
-            <th>Queued</th>
-            <th>ETA</th>
-            <th>Pair</th>
-            <th>Side</th>
-            <th>Type</th>
-            <th>Qty</th>
-          </tr>
-        </thead>
+
+      <input type="hidden" id="side" value="buy" />
+      <input type="hidden" id="type" value="market" />
+
+      <button class="submit-btn buy" id="submitBtn" type="button" onclick="submitOrder()">
+        PLACE BUY ORDER
+      </button>
+      <div class="order-msg" id="msg"></div>
+
+      <div class="notice-sm" style="padding:0;font-size:10px;color:var(--term-muted);line-height:1.6">
+        Market orders include demo slippage + taker fees. Limit orders use maker fees. Max position size: 1% of account.
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: CHART + TABLES -->
+  <div class="chart-area">
+    <div class="chart-controls">
+      <button class="gran-btn" data-gran="60">1m</button>
+      <button class="gran-btn" data-gran="300">5m</button>
+      <button class="gran-btn" data-gran="900">15m</button>
+      <button class="gran-btn active" data-gran="3600">1h</button>
+      <button class="gran-btn" data-gran="21600">6h</button>
+      <button class="gran-btn" data-gran="86400">1d</button>
+      <div class="gran-sep"></div>
+      <select id="candlesCount" class="count-sel">
+        <option value="50" selected>50 bars</option>
+        <option value="100">100 bars</option>
+        <option value="200">200 bars</option>
+      </select>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="candleCanvas"></canvas>
+    </div>
+
+    <div class="tables-area">
+      <div class="table-pane">
+        <div class="table-pane-header">Positions</div>
+        <table class="term-table">
+          <thead><tr><th>Pair</th><th>Qty</th><th>Avg</th><th>UPL</th></tr></thead>
+          <tbody id="posBody"></tbody>
+        </table>
+      </div>
+      <div class="table-pane">
+        <div class="table-pane-header">Open Orders</div>
+        <table class="term-table">
+          <thead><tr><th>Pair</th><th>Side</th><th>Qty</th><th>Limit</th><th></th></tr></thead>
+          <tbody id="openBody"></tbody>
+        </table>
+      </div>
+      <div class="table-pane">
+        <div class="table-pane-header">Order History</div>
+        <table class="term-table">
+          <thead><tr><th>Time</th><th>Pair</th><th>Side</th><th>Fill</th></tr></thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PORTFOLIO + RISK -->
+  <div class="right-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Portfolio</div>
+        <div class="panel-sub" id="wsStatusRight">Live feed</div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-label">Equity</div>
+      <div class="stat-val" id="equity">$—</div>
+      <div class="stat-sub" id="equitySub">—</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Cash (USD)</div>
+      <div class="stat-val" id="cash">$—</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">Unrealized P/L</div>
+      <div class="stat-val" id="upl">$—</div>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn" id="resetBtn">Reset</button>
+      <button class="action-btn" id="seedBtn">Seed $50K</button>
+    </div>
+
+    <div class="lock-banner" id="lockBanner">
+      <div class="lock-banner-title">⚠ Trading Locked</div>
+      <div class="lock-banner-sub" id="lockText">—</div>
+    </div>
+
+    <!-- Risk Meter -->
+    <div class="risk-block">
+      <div class="risk-title">Risk Meter</div>
+      <div class="risk-row">
+        <div class="risk-row-top">
+          <span class="risk-row-label">Daily DD</span>
+          <span class="risk-row-val" id="dailyUsedPct">—</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bar-daily" id="dailyBar" style="width:0%"></div></div>
+        <div style="font-size:9px;color:var(--term-muted);margin-top:3px" id="dayEqLine">—</div>
+      </div>
+      <div class="risk-row">
+        <div class="risk-row-top">
+          <span class="risk-row-label">Trailing DD</span>
+          <span class="risk-row-val" id="totalUsedPct">—</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill bar-trail" id="totalBar" style="width:0%"></div></div>
+        <div style="font-size:9px;color:var(--term-muted);margin-top:3px" id="totalEqLine">—</div>
+      </div>
+    </div>
+
+    <!-- Challenge Progress -->
+    <div class="challenge-block">
+      <div class="risk-title">Challenge Progress</div>
+      <div class="risk-row">
+        <div class="risk-row-top">
+          <span class="risk-row-label">Profit Target</span>
+          <span class="risk-row-val up" id="profitLine">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" id="profitBar" style="width:0%; background: var(--term-green)"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div>
+          <div class="stat-label">Phase</div>
+          <div style="font-size:12px;font-weight:700;color:var(--term-bright)" id="phase">—</div>
+        </div>
+        <div>
+          <div class="stat-label">Time Left</div>
+          <div style="font-size:11px;font-weight:600" id="timeLeft">—</div>
+        </div>
+        <div>
+          <div class="stat-label">Trading Days</div>
+          <div style="font-size:12px;font-weight:700" id="daysLine">—</div>
+        </div>
+        <div>
+          <div class="stat-label">Consistency</div>
+          <div style="font-size:10px;color:var(--term-muted)" id="consistencyLine">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payout mini -->
+    <div class="challenge-block">
+      <div class="risk-title">Payout Status</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div class="stat-label">Withdrawable</div>
+          <div style="font-size:13px;font-weight:700;color:var(--term-green)" id="miniWithdrawable">—</div>
+        </div>
+        <div>
+          <div class="stat-label">Cap Remaining</div>
+          <div style="font-size:13px;font-weight:700" id="miniCap">—</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--term-muted);margin-top:6px" id="miniEligible">—</div>
+    </div>
+
+    <!-- Queue -->
+    <div class="challenge-block" style="border-bottom:none">
+      <div class="risk-title">Order Queue <span id="queueCount" style="color:var(--term-yellow)"></span></div>
+      <table class="term-table" style="margin-top:4px">
+        <thead><tr><th>Pair</th><th>Side</th><th>ETA</th></tr></thead>
         <tbody id="pendingBody"></tbody>
       </table>
-    </section>
+    </div>
+  </div>
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Open orders</h2>
-        <p class="muted small">Limit orders waiting to fill</p>
-      </div>
-      <table class="table" aria-label="Open orders">
-        <thead>
-          <tr>
-            <th>Placed</th>
-            <th>Pair</th>
-            <th>Side</th>
-            <th>Qty</th>
-            <th>Limit</th>
-            <th>Cancel</th>
-          </tr>
-        </thead>
-        <tbody id="openBody"></tbody>
-      </table>
-    </section>
+</div>
 
-    <section class="card glass" style="padding:18px; margin-top:14px">
-      <div class="section-title" style="margin-bottom:10px">
-        <h2 style="font-size:1.15rem">Order history</h2>
-        <p class="muted small">Most recent first</p>
-      </div>
-      <table class="table" aria-label="Orders">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Pair</th>
-            <th>Side</th>
-            <th>Qty</th>
-            <th>Fill price</th>
-            <th>Notional</th>
-          </tr>
-        </thead>
-        <tbody id="ordersBody"></tbody>
-      </table>
-    </section>
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="statusbar-item">
+    <div class="status-dot" id="statusDot" style="background:var(--term-yellow)"></div>
+    <span id="statusText">Connecting…</span>
+  </div>
+  <div class="statusbar-item">Spot only • No real trades</div>
+  <div class="statusbar-item" style="margin-left:auto">© <span id="year"></span> CryptoProp</div>
+</div>
 
-    <footer>
-      <div class="wrap" style="padding:0">
-        <div class="small">© <span id="year"></span> CryptoProp. Trading only.</div>
-      </div>
-    </footer>
-  </main>
+<div id="toast" class="toast-term"></div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script type="module" src="./paper.js"></script>
-  <script type="module" src="/app.js"></script>
+<script type="module" src="./paper.js"></script>
+<script type="module" src="/app.js"></script>
+<script>
+  // Side toggle helpers (called from inline onclick)
+  window.setSide = function(s) {
+    document.getElementById('side').value = s;
+    document.getElementById('buyBtn').classList.toggle('active', s==='buy');
+    document.getElementById('sellBtn').classList.toggle('active', s==='sell');
+    const btn = document.getElementById('submitBtn');
+    btn.className = 'submit-btn ' + s;
+    btn.textContent = 'PLACE ' + s.toUpperCase() + ' ORDER';
+  };
+  window.setType = function(t) {
+    document.getElementById('type').value = t;
+    document.getElementById('typeMarket').classList.toggle('active', t==='market');
+    document.getElementById('typeLimit').classList.toggle('active', t==='limit');
+    document.getElementById('limitPriceGroup').style.display = t==='limit' ? 'flex' : 'none';
+    document.getElementById('limitPrice').disabled = t !== 'limit';
+  };
+  // Gran buttons
+  document.querySelectorAll('.gran-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gran-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // gran value picked up by paper.js via data attribute
+      if(window._onGranChange) window._onGranChange(btn.dataset.gran);
+    });
+  });
+  // Ticker selection
+  window._onTickerSelect = null;
+  document.getElementById('tickerBar').addEventListener('click', e => {
+    const item = e.target.closest('.ticker-item');
+    if(!item) return;
+    document.querySelectorAll('.ticker-item').forEach(i => i.classList.remove('selected'));
+    item.classList.add('selected');
+    const sym = item.dataset.sym;
+    if(sym) {
+      document.getElementById('product').value = sym;
+      document.getElementById('activePair').textContent = sym;
+      if(window._onTickerSelect) window._onTickerSelect(sym);
+    }
+  });
+</script>
 </body>
 </html>
