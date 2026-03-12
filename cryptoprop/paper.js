@@ -563,7 +563,7 @@ window.setMaxQty = function() {
   if(side === "buy"){
     // 1% of starting capital minus current position value
     const startEq = Number(account.startEquity || account.baseEquity || account.cash || 0);
-    const maxNotional = startEq * 0.01;
+    const maxNotional = startEq * 0.025;
     const currentPosVal = account.positions?.[product] ? (account.positions[product].qty * price) : 0;
     const remaining = Math.max(0, maxNotional - currentPosVal);
     // Also cap by available cash (minus 2% fee buffer)
