@@ -160,7 +160,9 @@ const productSel = qs("product");
 const priceInput = qs("price");
 const typeSel = qs("type");
 const limitInput = qs("limitPrice");
-const granSel = qs("gran");
+let _currentGran = '3600'; // default 1h
+const granSel = { value: _currentGran }; // compat shim
+window._onGranChange = function(g){ _currentGran = g; granSel.value = g; loadChartForCurrentProduct(); };
 const countSel = qs("candlesCount");
 const canvas = qs("candleCanvas");
 const ctx = canvas.getContext("2d");
@@ -175,22 +177,46 @@ async function loadUniverse(){
     if(list.length){
       const current = productSel.value;
       productSel.innerHTML = list.map(pid => `<option value="${pid}">${pid}</option>`).join("");
-      // keep current selection if still exists
       if(list.includes(current)) productSel.value = current;
+
+      // Populate ticker bar
+      const tickerBar = document.getElementById("tickerBar");
+      if(tickerBar){
+        tickerBar.innerHTML = list.slice(0,16).map((pid,i) => `
+          <div class="ticker-item${i===0?' selected':''}" data-sym="${pid}">
+            <div class="ticker-sym">${pid.replace('-USD','')}</div>
+            <div class="ticker-price neu" id="tb-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
+            <div class="ticker-chg neu" id="tc-${pid.replace(/[^a-zA-Z0-9]/g,'_')}">—</div>
+          </div>
+        `).join("");
+      }
     }
   }catch{
     // ignore; keep existing options
   }
 }
 
+function updateTickerBar(pid, price, open24){
+  const safe = pid.replace(/[^a-zA-Z0-9]/g,'_');
+  const el = document.getElementById('tb-'+safe);
+  const chg = document.getElementById('tc-'+safe);
+  if(!el) return;
+  el.textContent = price >= 1000 ? '$'+price.toLocaleString(undefined,{maximumFractionDigits:0}) : '$'+price.toFixed(price<1?6:2);
+  if(Number.isFinite(open24) && open24 > 0){
+    const pct = ((price-open24)/open24*100).toFixed(2);
+    const cls = price>=open24?'up':'dn';
+    el.className = 'ticker-price '+cls;
+    if(chg){ chg.textContent=(price>=open24?'+':'')+pct+'%'; chg.className='ticker-chg '+cls; }
+  }
+}
+
 
 // -------------------- Order ticket helpers --------------------
 function setLimitEnabled(){
-  const isLimit = typeSel.value === "limit";
-  limitInput.disabled = !isLimit;
-  if(!isLimit) limitInput.value = "";
+  const isLimit = (document.getElementById("type")?.value || "market") === "limit";
+  if(limitInput) limitInput.disabled = !isLimit;
+  if(!isLimit && limitInput) limitInput.value = "";
 }
-typeSel.addEventListener("change", setLimitEnabled);
 setLimitEnabled();
 
 // -------------------- REST helpers (fallback + candles) --------------------
@@ -400,9 +426,15 @@ function connectWs(){
 
   ws.addEventListener("open", () => {
     wsConnected = true;
-    setWsStatus("Live feed: connected");
+    setWsStatus("connected");
     wsProducts = new Set();
     syncWsSubscriptions();
+    const dot = document.getElementById("statusDot");
+    const st = document.getElementById("statusText");
+    if(dot) dot.style.background = 'var(--term-green)';
+    if(st) st.textContent = 'Live feed connected';
+    const wsDot = document.getElementById("wsDot");
+    if(wsDot){ wsDot.classList.remove("off"); }
   });
 
   ws.addEventListener("message", (ev) => {
@@ -412,11 +444,30 @@ function connectWs(){
       if(msg.type === "ticker" && msg.product_id && msg.price){
         const p = msg.product_id;
         const price = Number(msg.price);
+        const open24 = Number(msg.open_24h);
         if(Number.isFinite(price)){
           lastPrices[p] = price;
           if(p === productSel.value){
             priceInput.value = price.toFixed(2);
+            // Update live price display
+            const liveEl = document.getElementById("price");
+            if(liveEl){
+              liveEl.textContent = price >= 1000 ? "$"+price.toLocaleString(undefined,{maximumFractionDigits:2}) : "$"+price.toFixed(price<1?6:2);
+              if(Number.isFinite(open24) && open24>0){
+                const pct = ((price-open24)/open24*100).toFixed(2);
+                liveEl.style.color = price>=open24 ? 'var(--term-green)' : 'var(--term-red)';
+                const chgEl = document.getElementById("priceChange");
+                if(chgEl){ chgEl.textContent=(price>=open24?"+":"")+pct+"%"; chgEl.className=price>=open24?"up":"dn"; }
+              }
+            }
+            // Status dot
+            const dot = document.getElementById("statusDot");
+            const st = document.getElementById("statusText");
+            if(dot) dot.style.background = 'var(--term-green)';
+            if(st) st.textContent = 'Live feed connected';
           }
+          updateTickerBar(p, price, open24);
+          render();
         }
       }
     }catch{
@@ -426,7 +477,13 @@ function connectWs(){
 
   ws.addEventListener("close", () => {
     wsConnected = false;
-    setWsStatus("Live feed: reconnecting…");
+    setWsStatus("reconnecting…");
+    const dot = document.getElementById("statusDot");
+    const st = document.getElementById("statusText");
+    if(dot) dot.style.background = 'var(--term-yellow)';
+    if(st) st.textContent = 'Reconnecting…';
+    const wsDot = document.getElementById("wsDot");
+    if(wsDot) wsDot.classList.add("off");
     setTimeout(connectWs, 1200);
   });
 
@@ -436,18 +493,17 @@ function connectWs(){
 }
 
 // -------------------- Trading actions --------------------
-const form = qs("orderForm");
 const msg = qs("msg");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+window.submitOrder = async function() {
   msg.textContent = "Submitting…";
+  msg.style.color = "var(--term-muted)";
 
   const payload = {
     product: productSel.value,
-    side: qs("side").value,
+    side: document.getElementById("side").value,
     qty: Number(qs("qty").value),
-    type: typeSel.value,
+    type: document.getElementById("type")?.value || "market",
     limitPrice: limitInput.value ? Number(limitInput.value) : null
   };
 
@@ -483,9 +539,10 @@ form.addEventListener("submit", async (e) => {
     render();
   }catch(err){
     msg.textContent = err.message;
+    msg.style.color = 'var(--term-red)';
     toast(err.message);
   }
-});
+};
 
 qs("resetBtn").addEventListener("click", async () => {
   if(confirm("Reset trading account? This clears positions, orders, and open orders.")){
@@ -596,9 +653,22 @@ async function refreshChart(){
   }
 }
 
-productSel.addEventListener("change", refreshChart);
-granSel.addEventListener("change", refreshChart);
+function loadChartForCurrentProduct(){ refreshChart(); }
+
+productSel.addEventListener("change", () => {
+  document.getElementById("activePair").textContent = productSel.value;
+  syncWsSubscriptions();
+  refreshChart();
+});
 countSel.addEventListener("change", refreshChart);
+
+// Ticker bar product selection
+window._onTickerSelect = function(sym){
+  productSel.value = sym;
+  document.getElementById("activePair").textContent = sym;
+  syncWsSubscriptions();
+  refreshChart();
+};
 
 // -------------------- Limit order processing loop --------------------
 async function processOpenOrders(){
