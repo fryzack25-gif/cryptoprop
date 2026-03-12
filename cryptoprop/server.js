@@ -2272,6 +2272,9 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
   if(safePhase === "challenge"){
     phaseFields = {
       challengePhase: "challenge",
+      challengeStep: 1,
+      stepStartDate: new Date().toISOString().slice(0,10),
+      stepStartEquity: safeSeed,
       challengeStartAt: new Date().toISOString(),
       challengePassedAt: null,
       fundedActivatedAt: null,
@@ -2281,23 +2284,29 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
     };
   } else if(safePhase === "challenge2"){
     phaseFields = {
-      challengePhase: "challenge2",
+      challengePhase: "challenge",
+      challengeStep: 2,
+      stepStartDate: new Date().toISOString().slice(0,10),
+      stepStartEquity: safeSeed,
       challengeStartAt: new Date().toISOString(),
       challengePassedAt: null,
       fundedActivatedAt: null,
       payoutEligibleAt: null,
-      realizedPnL: safeSeed * 0.02,
+      realizedPnL: safeSeed * 0.04,
       tradingDays: ["day1","day2","day3"],
     };
   } else {
     // funded
     phaseFields = {
       challengePhase: "funded",
+      challengeStep: 2,
+      stepStartDate: new Date(Date.now() - 5*86400000).toISOString().slice(0,10),
+      stepStartEquity: safeSeed,
       challengeStartAt: new Date(Date.now() - 5*86400000).toISOString(),
       challengePassedAt: new Date(Date.now() - 2*86400000).toISOString(),
       fundedActivatedAt: new Date(Date.now() - 2*86400000).toISOString(),
       payoutEligibleAt: new Date().toISOString(),
-      realizedPnL: safeSeed * 0.025,
+      realizedPnL: safeSeed * 0.055,
       tradingDays: ["day1","day2","day3","day4","day5"],
     };
   }
@@ -2305,6 +2314,8 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
   const fresh = {
     cash: safeSeed, baseEquity: safeSeed, firmProfit: 0,
     startEquity: safeSeed, equity: safeSeed,
+    peakEquity: safeSeed, trailingFloor: 0,
+    dayDate: null, dayStartEquity: safeSeed, dayLowEquity: safeSeed,
     positions: {}, orders: [], openOrders: [], pendingOrders: [],
     ...phaseFields,
     payoutsPaidTotal: 0, payoutsPaidThisPeriod: 0, payoutPeriodStart: null,
