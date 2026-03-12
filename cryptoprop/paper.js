@@ -249,12 +249,15 @@ async function refreshAllPricesREST(){
 async function loadAccount(){
   const res = await apiFetch("/api/account", { method:"GET" });
   account = await res.json();
+  account.positions = account.positions || {};
   account.openOrders = account.openOrders || [];
+  account.orders = account.orders || [];
+  account.pendingOrders = account.pendingOrders || [];
 }
 
 function computeEquity(){
   let eq = account.cash;
-  for(const [p, pos] of Object.entries(account.positions)){
+  for(const [p, pos] of Object.entries(account.positions || {})){
     const last = lastPrices[p];
     eq += pos.qty * (typeof last === "number" ? last : pos.avg);
   }
@@ -262,7 +265,7 @@ function computeEquity(){
 }
 
 function computeUnrealizedPLFor(product){
-  const pos = account.positions[product];
+  const pos = (account.positions || {})[product];
   if(!pos) return 0;
   const last = lastPrices[product];
   if(typeof last !== "number") return 0;
@@ -270,7 +273,7 @@ function computeUnrealizedPLFor(product){
 }
 
 function computeUnrealizedPL(){
-  return Object.keys(account.positions).reduce((a,p)=>a+computeUnrealizedPLFor(p),0);
+  return Object.keys(account.positions || {}).reduce((a,p)=>a+computeUnrealizedPLFor(p),0);
 }
 
 function escapeHtml(str){
@@ -288,7 +291,7 @@ function render(){
   qs("upl").textContent = (upl >= 0 ? "+" : "") + money(upl);
 
   const posBody = qs("posBody");
-  const products = Object.keys(account.positions).sort();
+  const products = Object.keys(account.positions || {}).sort();
   posBody.innerHTML = products.length ? products.map(p => {
       const pos = account.positions[p];
       const last = lastPrices[p];
@@ -584,10 +587,23 @@ async function fetchCandles(product, gran, limit){
   return await res.json();
 }
 
+function resizeCanvas(){
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+  ctx.scale(dpr, dpr);
+}
+
 function drawCandles(candles){
   if(!ctx || !canvas) return;
+  resizeCanvas();
+  const dpr = window.devicePixelRatio || 1;
   const data = Array.isArray(candles) ? candles.slice().reverse() : [];
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
   if(data.length === 0){
     ctx.fillStyle = "rgba(255,255,255,.65)";
@@ -606,7 +622,8 @@ function drawCandles(candles){
     minP = minP || 0; maxP = maxP || 1;
   }
 
-  const W = canvas.width, H = canvas.height;
+  const dpr2 = window.devicePixelRatio || 1;
+  const W = canvas.width / dpr2, H = canvas.height / dpr2;
   const pad = 28;
   const innerW = W - pad*2;
   const innerH = H - pad*2;
@@ -661,6 +678,8 @@ async function refreshChart(){
 }
 
 function loadChartForCurrentProduct(){ refreshChart(); }
+
+window.addEventListener("resize", () => refreshChart());
 
 productSel.addEventListener("change", () => {
   document.getElementById("activePair").textContent = productSel.value;
