@@ -72,9 +72,9 @@ function renderFailPlans() {
 
 window.buyFailPlan = async function(planId) {
   const msgEl = document.getElementById("failModalMsg");
-  if(msgEl){ msgEl.style.color="rgba(255,255,255,0.5)"; msgEl.textContent = "Processing…"; }
+  if(msgEl){ msgEl.style.color="rgba(255,255,255,0.5)"; msgEl.textContent = "Redirecting to checkout…"; }
   try {
-    const endpoint = _failOfferUsed ? "/api/plan/choose" : "/api/plan/retry-any";
+    const endpoint = _failOfferUsed ? "/api/plan/choose" : "/api/plan/retry-checkout";
     const res = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ planId }) });
     if(res.status === 401){
       if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = "Session expired — please log in again to complete your purchase."; }
@@ -86,12 +86,9 @@ window.buyFailPlan = async function(planId) {
       if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = data.error || "Purchase failed"; }
       return;
     }
-    account = data.account || account;
-    sessionStorage.removeItem("failModalShown");
-    const modal = document.getElementById("failedModal");
-    if(modal) modal.style.display = "none";
-    toast("✅ New challenge started! Good luck.");
-    render();
+    if(data.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
+    }
   } catch(e) {
     if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = e.message; }
   }
