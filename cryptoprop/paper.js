@@ -38,11 +38,13 @@ async function showFailedModal(account) {
   const reasonEl = document.getElementById("failModalReason");
   if(reasonEl) reasonEl.textContent = account.failReason || "Your account breached the risk rules.";
 
-  // Check if retry offer already used
+  // Check if retry offer already used — use plain fetch to avoid 401 redirect
   try {
-    const res = await apiFetch("/api/plan/retry-status");
-    const d = await res.json();
-    _failOfferUsed = !!d.used;
+    const res = await fetch("/api/plan/retry-status");
+    if(res.ok) {
+      const d = await res.json();
+      _failOfferUsed = !!d.used;
+    }
   } catch(e) { _failOfferUsed = false; }
 
   document.getElementById("failOfferBanner").style.display = _failOfferUsed ? "none" : "flex";
@@ -73,8 +75,12 @@ window.buyFailPlan = async function(planId) {
   if(msgEl){ msgEl.style.color="rgba(255,255,255,0.5)"; msgEl.textContent = "Processing…"; }
   try {
     const endpoint = _failOfferUsed ? "/api/plan/choose" : "/api/plan/retry-any";
-    const body = _failOfferUsed ? { planId } : { planId };
-    const res = await apiFetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    const res = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ planId }) });
+    if(res.status === 401){
+      if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = "Session expired — please log in again to complete your purchase."; }
+      setTimeout(() => { window.location.href = "/auth.html"; }, 2500);
+      return;
+    }
     const data = await res.json();
     if(!res.ok) {
       if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = data.error || "Purchase failed"; }
