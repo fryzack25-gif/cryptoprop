@@ -184,7 +184,7 @@ app.use(rateLimitByIp);
 // ---- ANTI_ABUSE_V1 ----
 const MAX_REQS_PER_MIN_PER_IP = 180;
 const MAX_ORDERS_PER_MIN_PER_ACCOUNT = 15;
-const MIN_HOLD_SECONDS = 12; // prevent instant flip/scalp in simulated env
+const MIN_HOLD_SECONDS = 0; // no hold restriction
 const ADMIN_KEY = process.env.ADMIN_KEY || null; // Must be set via env var — no fallback
 
 const ipBuckets = new Map(); // ip -> {ts,count}
@@ -756,6 +756,13 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
     const totalCost = notional + fee;
     if((acct.cash || 0) < totalCost)
       return res.status(400).json({ error: `Insufficient cash. Need $${totalCost.toFixed(2)}, have $${(acct.cash||0).toFixed(2)}` });
+
+    // 1% of original starting capital per position
+    const startEq = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
+    const maxNotional = startEq * 0.01;
+    const currentPosVal = acct.positions[p] ? (acct.positions[p].qty * price) : 0;
+    if(currentPosVal + notional > maxNotional)
+      return res.status(400).json({ error: `Max position size is 1% of starting capital ($${maxNotional.toFixed(2)}). Current: $${currentPosVal.toFixed(2)}.` });
 
     // Deduct cash immediately
     acct.cash = round8((acct.cash || 0) - totalCost);
