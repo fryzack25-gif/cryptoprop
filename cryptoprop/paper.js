@@ -9,8 +9,8 @@ function updatePayoutMini(account){
   const cl = document.getElementById("miniCapLine");
   if(!w) return;
   w.textContent = money(Number(account.withdrawable || 0));
-  c.textContent = money(Number(account.payoutCapRemaining || 0));
-  cl.textContent = `Weekly cap: ${money(Number(account.payoutCap || 0))} • Buffer: ${money(Number(account.profitBuffer||0))} • Daily cap: ${money(Number(account.dailyPayoutCap||0))}`;
+  if(c) c.textContent = money(Number(account.payoutCapRemaining || 0));
+  if(cl) cl.textContent = `Weekly cap: ${money(Number(account.payoutCap || 0))} • Buffer: ${money(Number(account.profitBuffer||0))} • Daily cap: ${money(Number(account.dailyPayoutCap||0))}`;
   const phase = account.challengePhase || "challenge";
   if(phase !== "funded") e.textContent = "Not funded yet";
   else{
