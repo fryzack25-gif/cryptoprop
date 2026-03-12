@@ -532,7 +532,10 @@ window.submitOrder = async function() {
     const res = await apiFetch(endpoint, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     const data = await res.json();
     account = data.account ? data.account : data;
+    account.positions = account.positions || {};
     account.openOrders = account.openOrders || [];
+    account.orders = account.orders || [];
+    account.pendingOrders = account.pendingOrders || [];
 
     if(data.fill?.price){
       const fp = Number(data.fill.price);
@@ -541,8 +544,11 @@ window.submitOrder = async function() {
     }
 
     qs("qty").value = "";
-    msg.textContent = payload.type === "limit" ? "Limit order placed." : (data.queued ? `Queued — filling in ~${Math.ceil((data.etaMs||12000)/1000)}s` : "Filled (demo).");
-    toast(payload.type === "limit" ? "Limit order placed ✅" : (data.queued ? "Order queued ✅" : "Order filled ✅"));
+    const fillMsg = payload.type === "limit"
+      ? "Limit order placed."
+      : data.fill ? `Filled @ $${Number(data.fill.price).toLocaleString()} • Fee: $${Number(data.fill.fee).toFixed(2)}` : "Order placed.";
+    msg.textContent = fillMsg;
+    toast(payload.type === "limit" ? "Limit order placed ✅" : "Order filled ✅");
 
     syncWsSubscriptions();
     render();
