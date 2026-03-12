@@ -479,7 +479,7 @@ async function acceptTerms() {
   const err = document.getElementById('termsErr');
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    const res = await fetch('/api/terms/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const res = await fetch('/api/terms/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accept: true }) });
     if(!res.ok) {
       const d = await res.json().catch(() => ({}));
       throw new Error(d.error || 'Failed to accept terms');
