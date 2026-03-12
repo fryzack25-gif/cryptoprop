@@ -168,7 +168,7 @@
     #candleCanvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
 
     /* Tables area */
-    .tables-area { height: 260px; display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--term-border); }
+    .tables-area { height: 260px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; border-top: 1px solid var(--term-border); }
     .table-pane { overflow-y: auto; border-right: 1px solid var(--term-border); }
     .table-pane:last-child { border-right: none; }
     .table-pane-header { padding: 8px 12px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--term-border); font-size: 10px; font-weight: 700; color: var(--term-label); text-transform: uppercase; letter-spacing: 0.08em; position: sticky; top: 0; z-index: 1; }
@@ -247,7 +247,7 @@
     @media (max-width: 900px) {
       .terminal { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
       .chart-area { min-height: 400px; }
-      .tables-area { grid-template-columns: 1fr; height: auto; }
+      .tables-area { grid-template-columns: 1fr 1fr; height: auto; }
       .table-pane { height: 200px; border-right: none; border-bottom: 1px solid var(--term-border); }
       .right-panel { border-left: none; border-top: 1px solid var(--term-border); }
     }
@@ -440,6 +440,16 @@
         <table class="term-table">
           <thead><tr><th>Time</th><th>Pair</th><th>Side</th><th>Fill</th></tr></thead>
           <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+      <div class="table-pane" style="border-right:none">
+        <div class="table-pane-header" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Holdings</span>
+          <span id="holdingsTotalVal" style="color:var(--term-green);font-size:10px;font-weight:700"></span>
+        </div>
+        <table class="term-table">
+          <thead><tr><th>Pair</th><th>Qty</th><th>Value</th><th>% Port</th></tr></thead>
+          <tbody id="holdingsBody"></tbody>
         </table>
       </div>
     </div>
