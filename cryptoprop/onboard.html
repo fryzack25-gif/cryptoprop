@@ -550,7 +550,7 @@ async function buyPlan() {
   if(!selectedPlan) return;
   const btn = document.getElementById('buyBtn');
   const err = document.getElementById('planErr');
-  btn.disabled = true; btn.textContent = 'Starting challenge…';
+  btn.disabled = true; btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
   try {
     const body = { planId: selectedPlan };
@@ -561,7 +561,7 @@ async function buyPlan() {
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.error || 'Purchase failed');
-    window.location.href = '/paper.html';
+    window.location.href = d.checkoutUrl;
   } catch(e) {
     err.textContent = e.message;
     btn.disabled = false; updateBuyBtn();
