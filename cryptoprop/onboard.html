@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Get Started</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080a0f;
+      --surface: #0e1118;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.14);
+      --green: #00e5a0;
+      --green-dim: rgba(0,229,160,0.12);
+      --green-glow: rgba(0,229,160,0.25);
+      --red: #ff4d6a;
+      --text: #e8eaed;
+      --muted: rgba(255,255,255,0.45);
+      --mono: 'DM Mono', monospace;
+      --display: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--display);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,229,160,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 80% 80%, rgba(0,100,255,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    /* Logo */
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px var(--green-glow);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+    .logo-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+    }
+    .step-node {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      font-family: var(--mono);
+      border: 2px solid var(--border);
+      color: var(--muted);
+      background: var(--surface);
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .step-node.active {
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 0 0 4px var(--green-dim);
+    }
+    .step-node.done {
+      border-color: var(--green);
+      background: var(--green);
+      color: #000;
+    }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .step-line.done { background: var(--green); }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px;
+      animation: fadeUp 0.35s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    /* Step 1 — Welcome */
+    .welcome-title {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .welcome-title span { color: var(--green); }
+    .welcome-sub {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+    .how-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .how-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .how-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .how-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .how-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    .rules-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .rule-pill {
+      background: rgba(0,229,160,0.07);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    /* Step 2 — Terms */
+    .terms-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .terms-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .terms-scroll {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 20px;
+      font-family: var(--mono);
+    }
+    .terms-scroll::-webkit-scrollbar { width: 4px; }
+    .terms-scroll::-webkit-scrollbar-track { background: transparent; }
+    .terms-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    .terms-scroll h3 { color: var(--text); font-size: 12px; margin: 14px 0 6px; font-family: var(--display); }
+    .terms-scroll h3:first-child { margin-top: 0; }
+    .terms-checkbox-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    .terms-checkbox-row input[type=checkbox] {
+      width: 18px; height: 18px; flex-shrink: 0;
+      accent-color: var(--green); margin-top: 1px; cursor: pointer;
+    }
+    .terms-checkbox-row label {
+      font-size: 13px; color: var(--text); line-height: 1.5; cursor: pointer;
+    }
+
+    /* Step 3 — Plans */
+    .plans-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .plans-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .plan-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+    .plan-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s;
+      background: rgba(255,255,255,0.02);
+      position: relative;
+    }
+    .plan-card:hover { border-color: var(--border-bright); background: rgba(255,255,255,0.04); }
+    .plan-card.selected { border-color: var(--green); background: rgba(0,229,160,0.06); box-shadow: 0 0 0 4px var(--green-dim); }
+    .plan-card.popular::before {
+      content: 'POPULAR';
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #000;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .plan-size { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .plan-label { font-size: 11px; color: var(--muted); margin-bottom: 12px; font-family: var(--mono); }
+    .plan-price { font-size: 26px; font-weight: 800; color: var(--text); }
+    .plan-price-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+    .promo-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .promo-input {
+      flex: 1; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 9px 14px;
+      font-size: 12px; font-family: var(--mono); outline: none;
+    }
+    .promo-input:focus { border-color: var(--border-bright); }
+    .promo-msg { font-size: 11px; min-height: 16px; margin-bottom: 16px; font-family: var(--mono); }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 10px;
+      font-family: var(--display);
+      font-size: 14px; font-weight: 800;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary:hover { background: #00ffb3; transform: translateY(-1px); box-shadow: 0 8px 24px var(--green-glow); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 20px;
+      font-family: var(--display);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-bright); }
+
+    .btn-row { display: flex; gap: 10px; align-items: center; }
+    .btn-row .btn-primary { flex: 1; }
+
+    /* Error */
+    .err-msg { font-size: 12px; color: var(--red); font-family: var(--mono); min-height: 16px; margin-top: 8px; }
+
+    @media (max-width: 520px) {
+      .card { padding: 24px 20px; }
+      .how-grid { grid-template-columns: 1fr; }
+      .plan-grid { grid-template-columns: 1fr; }
+      .welcome-title { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="logo-row">
+    <div class="logo-dot"></div>
+    <div class="logo-name">CryptoProp</div>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="steps" id="stepIndicator">
+    <div class="step-node active" id="sn1">1</div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-node" id="sn2">2</div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step-node" id="sn3">3</div>
+  </div>
+
+  <div class="card">
+
+    <!-- STEP 1: Welcome -->
+    <div class="step-panel active" id="step1">
+      <div class="welcome-title">Welcome to<br><span>CryptoProp.</span></div>
+      <p class="welcome-sub">You're about to start a funded trading evaluation. Here's how it works in 60 seconds.</p>
+
+      <div class="how-grid">
+        <div class="how-item">
+          <div class="how-num">01 —</div>
+          <div class="how-title">Buy a Challenge</div>
+          <div class="how-desc">Choose your account size — $25K, $50K, or $100K. Pay a one-time evaluation fee.</div>
+        </div>
+        <div class="how-item">
+          <div class="how-num">02 —</div>
+          <div class="how-title">Pass the Rules</div>
+          <div class="how-desc">Hit your profit target while staying within daily and trailing drawdown limits.</div>
+        </div>
+        <div class="how-item">
+          <div class="how-num">03 —</div>
+          <div class="how-title">Get Funded</div>
+          <div class="how-desc">Pass the challenge and move to a funded account with real payout eligibility.</div>
+        </div>
+        <div class="how-item">
+          <div class="how-num">04 —</div>
+          <div class="how-title">Earn Payouts</div>
+          <div class="how-desc">Keep up to 80% of profits. Request payouts weekly once eligible.</div>
+        </div>
+      </div>
+
+      <div class="rules-row">
+        <span class="rule-pill">2% daily drawdown</span>
+        <span class="rule-pill">5% trailing drawdown</span>
+        <span class="rule-pill">Spot only</span>
+        <span class="rule-pill">2.5% max position</span>
+        <span class="rule-pill">Up to 80% profit split</span>
+      </div>
+
+      <button class="btn-primary" onclick="goStep(2)">Let's Go →</button>
+    </div>
+
+    <!-- STEP 2: Terms -->
+    <div class="step-panel" id="step2">
+      <div class="terms-title">Trader Agreement</div>
+      <p class="terms-sub">Read and accept the terms before choosing your plan. This only takes a moment.</p>
+
+      <div class="terms-scroll" id="termsScroll">
+        <h3>1. Nature of the Evaluation</h3>
+        CryptoProp operates a simulated trading evaluation. All trading is conducted in a simulated environment using real market data. No real funds are traded during the challenge phase. Payouts are discretionary performance-based payments made by CryptoProp to successful traders.
+
+        <h3>2. Risk Rules</h3>
+        You must not exceed a 2% daily drawdown from your day's starting equity, or a 5% trailing drawdown from your peak equity at any time. Breaching either rule will result in immediate challenge failure.
+
+        <h3>3. Position Limits</h3>
+        Maximum position size per asset is 2.5% of your starting account capital. Spot trading only — no leverage, no perpetuals.
+
+        <h3>4. Profit Target</h3>
+        You must reach the profit target for your plan while respecting all risk rules and minimum trading day requirements. Consistency rules apply — no single day may account for an excessive portion of total profits.
+
+        <h3>5. Payouts</h3>
+        Upon reaching funded status, you may request payouts. Payout amounts are subject to a weekly cap and profit split. CryptoProp retains a portion of profits as per your plan. Payouts are made at CryptoProp's discretion and are not guaranteed.
+
+        <h3>6. Fees</h3>
+        A 2% fee is applied to all trades to simulate realistic execution costs. The evaluation fee is non-refundable except where required by law.
+
+        <h3>7. Account Behaviour</h3>
+        Accounts found to be engaged in exploitative strategies, API abuse, or any form of manipulation will be terminated without refund. CryptoProp reserves the right to close any account at its discretion.
+
+        <h3>8. Acknowledgement</h3>
+        By accepting these terms, you confirm that you have read and understood the rules of the evaluation and agree to trade within them.
+      </div>
+
+      <label class="terms-checkbox-row" for="termsCheck">
+        <input type="checkbox" id="termsCheck" />
+        <label for="termsCheck">I have read and agree to the CryptoProp Trader Agreement. I understand this is a simulated evaluation and payouts are performance-based.</label>
+      </label>
+
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn-primary" id="acceptTermsBtn" onclick="acceptTerms()" disabled>Accept & Continue →</button>
+      </div>
+      <div class="err-msg" id="termsErr"></div>
+    </div>
+
+    <!-- STEP 3: Choose Plan -->
+    <div class="step-panel" id="step3">
+      <div class="plans-title">Choose Your Plan</div>
+      <p class="plans-sub">Select your account size. All plans include the same challenge rules — just different capital amounts.</p>
+
+      <div class="plan-grid">
+        <div class="plan-card" id="plan-25k" onclick="selectPlan('25k')">
+          <div class="plan-size">$25K</div>
+          <div class="plan-label">Starter</div>
+          <div class="plan-price" id="price-25k">$149</div>
+          <div class="plan-price-sub">one-time fee</div>
+        </div>
+        <div class="plan-card popular" id="plan-50k" onclick="selectPlan('50k')">
+          <div class="plan-size">$50K</div>
+          <div class="plan-label">Standard</div>
+          <div class="plan-price" id="price-50k">$279</div>
+          <div class="plan-price-sub">one-time fee</div>
+        </div>
+        <div class="plan-card" id="plan-100k" onclick="selectPlan('100k')">
+          <div class="plan-size">$100K</div>
+          <div class="plan-label">Pro</div>
+          <div class="plan-price" id="price-100k">$499</div>
+          <div class="plan-price-sub">one-time fee</div>
+        </div>
+      </div>
+
+      <div class="promo-row">
+        <input class="promo-input" id="promoInput" placeholder="Promo code (optional)" />
+        <button class="btn-ghost" onclick="applyPromo()" id="promoBtn" style="padding:9px 16px;font-size:12px">Apply</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+
+      <button class="btn-primary" id="buyBtn" onclick="buyPlan()" disabled>Select a plan to continue</button>
+      <div class="err-msg" id="planErr"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PLANS = { '25k': 149, '50k': 279, '100k': 499 };
+let selectedPlan = null;
+let promoData = null;
+let currentStep = 1;
+
+// ---- Step navigation ----
+function goStep(n) {
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  // re-trigger animation
+  const card = document.querySelector('.card');
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+  updateStepUI();
+}
+
+function updateStepUI() {
+  [1,2,3].forEach(i => {
+    const node = document.getElementById('sn' + i);
+    node.className = 'step-node';
+    if(i < currentStep) node.className = 'step-node done', node.textContent = '✓';
+    else if(i === currentStep) node.className = 'step-node active', node.textContent = i;
+    else node.textContent = i;
+  });
+  [1,2].forEach(i => {
+    document.getElementById('sl' + i).className = 'step-line' + (currentStep > i ? ' done' : '');
+  });
+}
+
+// ---- Terms ----
+document.getElementById('termsCheck').addEventListener('change', function() {
+  document.getElementById('acceptTermsBtn').disabled = !this.checked;
+});
+
+async function acceptTerms() {
+  const btn = document.getElementById('acceptTermsBtn');
+  const err = document.getElementById('termsErr');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/terms/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    if(!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || 'Failed to accept terms');
+    }
+    goStep(3);
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Accept & Continue →';
+  }
+}
+
+// ---- Plan selection ----
+function selectPlan(id) {
+  selectedPlan = id;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan-' + id).classList.add('selected');
+  updateBuyBtn();
+}
+
+function updateBuyBtn() {
+  const btn = document.getElementById('buyBtn');
+  if(!selectedPlan) { btn.disabled = true; btn.textContent = 'Select a plan to continue'; return; }
+  const base = PLANS[selectedPlan];
+  const final = promoData ? Math.max(0, base - Math.round(base * promoData.discountPct / 100)) : base;
+  btn.disabled = false;
+  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${final}`;
+}
+
+async function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msg = document.getElementById('promoMsg');
+  const btn = document.getElementById('promoBtn');
+  if(!code) return;
+  if(!selectedPlan) { msg.style.color = 'var(--red)'; msg.textContent = 'Select a plan first.'; return; }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const res = await fetch('/api/promo/validate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, planId: selectedPlan })
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.error || 'Invalid code');
+    promoData = d;
+    msg.style.color = 'var(--green)';
+    msg.textContent = `✅ ${d.discountPct}% off applied — you save $${d.discountAmt}!`;
+    updatePrices();
+    updateBuyBtn();
+  } catch(e) {
+    promoData = null;
+    msg.style.color = 'var(--red)'; msg.textContent = e.message;
+  } finally { btn.disabled = false; btn.textContent = 'Apply'; }
+}
+
+function updatePrices() {
+  Object.entries(PLANS).forEach(([id, base]) => {
+    const el = document.getElementById('price-' + id);
+    if(!el) return;
+    if(promoData) {
+      const disc = Math.max(0, base - Math.round(base * promoData.discountPct / 100));
+      el.innerHTML = `<span style="font-size:14px;text-decoration:line-through;color:var(--muted);font-weight:400">$${base}</span> $${disc}`;
+    } else {
+      el.textContent = '$' + base;
+    }
+  });
+}
+
+async function buyPlan() {
+  if(!selectedPlan) return;
+  const btn = document.getElementById('buyBtn');
+  const err = document.getElementById('planErr');
+  btn.disabled = true; btn.textContent = 'Starting challenge…';
+  err.textContent = '';
+  try {
+    const body = { planId: selectedPlan };
+    if(promoData) body.promoCode = promoData.code;
+    const res = await fetch('/api/plan/choose', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.error || 'Purchase failed');
+    window.location.href = '/paper.html';
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; updateBuyBtn();
+  }
+}
+
+// ---- Init: check if already onboarded ----
+(async function init() {
+  try {
+    const res = await fetch('/api/auth/me');
+    const d = await res.json();
+    if(!d.user) { window.location.href = '/auth.html'; return; }
+
+    const acctRes = await fetch('/api/account');
+    if(!acctRes.ok) return;
+    const acct = await acctRes.json();
+
+    // Already has a plan — send to dashboard
+    if(acct.planId) { window.location.href = '/dashboard.html'; return; }
+
+    // Terms already accepted — skip to step 3
+    if(acct.termsAccepted) { currentStep = 1; goStep(3); return; }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
