@@ -98,4 +98,38 @@ document.addEventListener("click", async (e) => {
 });
 
 
+
+export async function apiFetch(url, opts){
+  const res = await fetch(url, opts || {});
+  if(res.status === 401){ window.location.href = "/auth.html"; throw new Error("Not authenticated"); }
+  return res;
+}
+
+export function getSession(){
+  try{ return JSON.parse(sessionStorage.getItem("cp_session") || "null"); }catch{ return null; }
+}
+
+export function setSession(data){
+  sessionStorage.setItem("cp_session", JSON.stringify(data));
+}
+
+export async function requireAuth(){
+  try{
+    const res = await fetch("/api/auth/me");
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok || !data.user){ window.location.href = "/auth.html"; return null; }
+    setSession(data.user);
+    return data.user;
+  }catch{
+    window.location.href = "/auth.html";
+    return null;
+  }
+}
+
+export async function logout(){
+  try{ await fetch("/api/auth/logout", { method:"POST" }); }catch(e){}
+  sessionStorage.removeItem("cp_session");
+  window.location.href = "/auth.html";
+}
+
 // Auth guard removed from app.js - handled per-page in dashboard.html
