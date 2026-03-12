@@ -755,13 +755,16 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
   }
 
   window.openBetaPage = async function(url) {
+    // Open immediately (before any await) so browser doesn't block it as a popup
+    var win = window.open('', '_blank');
     try {
       await fetch('/api/admin/beta/activate-session', {
         method: 'POST',
         headers: { 'x-admin-key': AKEY, 'Content-Type': 'application/json' }
       });
-      window.open(url, '_blank');
+      win.location.href = url;
     } catch(e) {
+      win.close();
       alert('Failed to activate beta session: ' + e.message);
     }
   };
