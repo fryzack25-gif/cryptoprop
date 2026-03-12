@@ -2193,7 +2193,6 @@ app.get("/api/terms/status", requireAuth, async (req, res) => {
 });
 
 app.post("/api/terms/accept", requireAuth, async (req, res) => {
-  if(!req.body?.accept) return res.status(400).json({ error:"Must accept" });
   const acct = await getOrCreateAccount(currentEmail(req));
   acct.termsAccepted = true;
   acct.termsAcceptedAt = new Date().toISOString();
