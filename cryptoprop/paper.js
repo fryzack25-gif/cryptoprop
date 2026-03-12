@@ -629,9 +629,11 @@ window.submitOrder = async function() {
     syncWsSubscriptions();
     render();
   }catch(err){
-    msg.textContent = err.message;
+    const isPortLimit = err.message && err.message.includes("Max position size");
+    const displayMsg = isPortLimit ? "Over port limit" : err.message;
+    msg.textContent = displayMsg;
     msg.style.color = 'var(--term-red)';
-    toast(err.message);
+    toast("⚠️ " + displayMsg);
   }
 };
 
