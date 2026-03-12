@@ -2613,6 +2613,40 @@ app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req,
   return res.json({ ok:true, account: acct, offer: { original, discounted, oneTime:true } });
 });
 
+// ---- RETRY_ANY_PLAN_50PCT ----
+app.post("/api/plan/retry-any", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after a failed challenge" });
+  if(acct.retryAnyUsed) return res.status(400).json({ error: "One-time retry offer already used" });
+
+  const planId = (req.body?.planId || "").toString();
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error: "Invalid plan" });
+
+  const original = plan.price;
+  const finalPrice = Math.round(original * 0.5);
+
+  // Mark used, reset challenge with new plan
+  acct.retryAnyUsed = true;
+  acct.planId = planId;
+  acct.startEquity = plan.startEquity;
+  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: finalPrice, type: "retry_50pct" };
+  acct.attemptsByPlan = acct.attemptsByPlan || {};
+  acct.attemptsByPlan[planId] = Number(acct.attemptsByPlan[planId] || 0) + 1;
+  resetChallengeAttempt(acct);
+
+  await saveAccount(email, acct);
+  return res.json({ ok: true, account: acct, offer: { original, finalPrice, discountPct: 50, oneTime: true } });
+});
+
+// ---- CHECK RETRY OFFER STATUS ----
+app.get("/api/plan/retry-status", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  return res.json({ eligible: !!acct.challengeFailed, used: !!acct.retryAnyUsed });
+});
+
 // ------------------- Admin Referral Codes -------------------
 app.get("/api/admin/referral/list", requireAdmin, async (req, res) => {
   const db = ensureReferrals(await readData());
