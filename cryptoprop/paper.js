@@ -107,8 +107,6 @@ function updateChallengeProgress(account){
 
 
 
-function clamp01(x){ return Math.max(0, Math.min(1, x)); }
-
 function updateRiskMeter(account){
   const dailyLimit = 0.02;
   const totalLimit = 0.05;
@@ -326,7 +324,7 @@ function render(){
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-cancel");
         try{
-          const res = await apiFetch("/api/orders/cancel", { method:"POST", body: JSON.stringify({ id }) });
+          const res = await apiFetch("/api/orders/cancel", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
           account = await res.json();
           account.openOrders = account.openOrders || [];
           toast("Order canceled");
@@ -380,6 +378,11 @@ const ordersBody = qs("ordersBody");
         <td>${money(o.notional)}</td>
       </tr>
   `).join("") : `<tr><td colspan="6">No orders yet.</td></tr>`;
+
+  updateRiskMeter(account);
+  updateChallengeProgress(account);
+  updatePayoutMini(account);
+  renderLockBanner(account);
 }
 
 // -------------------- WebSocket (real-time ticker) --------------------
@@ -522,7 +525,7 @@ window.submitOrder = async function() {
 
   try{
     const endpoint = payload.type === "limit" ? "/api/orders/limit" : "/api/trade";
-    const res = await apiFetch(endpoint, { method:"POST", body: JSON.stringify(payload) });
+    const res = await apiFetch(endpoint, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     const data = await res.json();
     account = data.account ? data.account : data;
     account.openOrders = account.openOrders || [];
@@ -704,10 +707,12 @@ productSel.addEventListener("change", async () => {
   syncWsSubscriptions();
 });
 
-// Faster polling: 1 second (open-order processing + REST fallback)
+// Polling: process open orders every 2s, reload account every 10s
+let _pollCount = 0;
 setInterval(async () => {
-  await loadAccount();
+  _pollCount++;
   await processOpenOrders();
   await refreshSelectedPriceREST();
+  if(_pollCount % 5 === 0) await loadAccount();
   render();
-}, 1000);
+}, 2000);
