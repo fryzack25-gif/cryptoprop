@@ -1810,12 +1810,7 @@ app.get("/api/market/tickers", async (req, res) => {
   return res.json({ tickers: out, ts: Date.now() });
 });
 
-// ---- Static site ----
-app.use(express.static(__dirname));
 
-app.get("*", async (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
 
 
 // ------------------- Admin API (demo) -------------------
@@ -2793,6 +2788,13 @@ function jaccard(a, b){
   const union = a.size + b.size - inter;
   return union === 0 ? 0 : inter / union;
 }
+
+// ---- Static site (must be LAST, after all API routes) ----
+app.use(express.static(__dirname));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // ---- Startup: init DB then start server ----
 initDb()
