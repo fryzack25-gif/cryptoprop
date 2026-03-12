@@ -607,6 +607,16 @@ window.submitOrder = async function() {
     const endpoint = payload.type === "limit" ? "/api/orders/limit" : "/api/trade";
     const res = await apiFetch(endpoint, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
     const data = await res.json();
+
+    if(!res.ok){
+      const isPortLimit = (data.error || "").includes("Max position size");
+      const displayMsg = isPortLimit ? "Over port limit" : (data.error || "Order failed");
+      msg.textContent = displayMsg;
+      msg.style.color = "var(--term-red)";
+      toast("⚠️ " + displayMsg);
+      return;
+    }
+
     account = data.account ? data.account : data;
     account.positions = account.positions || {};
     account.openOrders = account.openOrders || [];
