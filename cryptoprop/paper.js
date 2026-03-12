@@ -282,6 +282,52 @@ function escapeHtml(str){
   }[m]));
 }
 
+function renderHoldings(){
+  const body = document.getElementById("holdingsBody");
+  const totalEl = document.getElementById("holdingsTotalVal");
+  if(!body) return;
+
+  const positions = account.positions || {};
+  const pairs = Object.keys(positions).filter(p => positions[p].qty > 0);
+
+  if(pairs.length === 0){
+    body.innerHTML = `<tr><td colspan="4" style="color:var(--term-muted)">No holdings.</td></tr>`;
+    if(totalEl) totalEl.textContent = "";
+    return;
+  }
+
+  // Compute total holdings value
+  let totalHeld = 0;
+  const rows = pairs.map(p => {
+    const pos = positions[p];
+    const last = lastPrices[p];
+    const val = typeof last === "number" ? pos.qty * last : pos.qty * pos.avg;
+    totalHeld += val;
+    return { p, pos, last, val };
+  });
+
+  // Sort by value descending
+  rows.sort((a, b) => b.val - a.val);
+
+  const equity = computeEquity();
+
+  body.innerHTML = rows.map(({ p, pos, last, val }) => {
+    const pct = equity > 0 ? (val / equity * 100).toFixed(1) : "0.0";
+    const sym = p.replace("-USD", "");
+    const qtyStr = pos.qty >= 1 ? pos.qty.toFixed(4) : pos.qty.toFixed(8);
+    const valStr = "$" + val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const priceColor = typeof last === "number" ? "" : "color:var(--term-muted)";
+    return `<tr>
+      <td style="font-weight:700;color:var(--term-bright)">${sym}</td>
+      <td style="font-family:var(--term-mono);${priceColor}">${qtyStr}</td>
+      <td style="color:var(--term-green)">${valStr}</td>
+      <td style="color:var(--term-muted)">${pct}%</td>
+    </tr>`;
+  }).join("");
+
+  if(totalEl) totalEl.textContent = "$" + totalHeld.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
 function render(){
   const equity = computeEquity();
   const upl = computeUnrealizedPL();
@@ -386,6 +432,7 @@ const ordersBody = qs("ordersBody");
   updateChallengeProgress(account);
   updatePayoutMini(account);
   renderLockBanner(account);
+  renderHoldings();
 }
 
 // -------------------- WebSocket (real-time ticker) --------------------
