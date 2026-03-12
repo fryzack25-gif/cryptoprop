@@ -1822,14 +1822,31 @@ app.get("*", async (req, res) => {
 
 
 // Activate beta session — called with admin key, sets session to beta account
+// One-time beta tokens (in-memory, expire after 30s)
+const betaTokens = new Map();
+
 app.post("/api/admin/beta/activate-session", async (req, res) => {
   const key = (req.headers["x-admin-key"] || req.body?.adminKey || "").toString();
   if(!ADMIN_KEY || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid key" });
   await ensureBetaAccount();
-  // Log the session in as the beta user
+  const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  betaTokens.set(token, Date.now());
+  setTimeout(() => betaTokens.delete(token), 30000); // expire after 30s
+  return res.json({ ok: true, token });
+});
+
+// Redeem beta token — sets session and redirects to target page
+app.get("/api/admin/beta/redeem", async (req, res) => {
+  const token = (req.query.token || "").toString();
+  const page = req.query.page === "dashboard" ? "/dashboard.html" : "/paper.html";
+  if(!token || !betaTokens.has(token)) return res.redirect("/auth.html?error=invalid_beta_token");
+  const issued = betaTokens.get(token);
+  betaTokens.delete(token);
+  if(Date.now() - issued > 30000) return res.redirect("/auth.html?error=expired_beta_token");
+  await ensureBetaAccount();
   req.session.user = { email: BETA_EMAIL, isAdmin: true, betaMode: true };
   req.session.betaMode = true;
-  return res.json({ ok: true });
+  return res.redirect(page);
 });
 
 // Admin key validation — no session, key only
