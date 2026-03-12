@@ -151,7 +151,7 @@ app.use(session({
   name: "cp.sid",
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     httpOnly: true,
     sameSite: "lax",
@@ -1846,7 +1846,11 @@ app.get("/api/admin/beta/redeem", async (req, res) => {
   await ensureBetaAccount();
   req.session.user = { email: BETA_EMAIL, isAdmin: true, betaMode: true };
   req.session.betaMode = true;
-  return res.redirect(page);
+  // Explicitly save session before redirect so cookie is set in new tab
+  req.session.save((err) => {
+    if(err) return res.redirect("/auth.html?error=session_error");
+    res.redirect(page);
+  });
 });
 
 // Admin key validation — no session, key only
