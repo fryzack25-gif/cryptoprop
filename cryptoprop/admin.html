@@ -439,14 +439,13 @@ async function tryLogin(){
   lastAttempt = now;
   g('gerr').textContent='Checking…';
   try{
-    var res = await fetch('/api/admin/overview', {headers:{'x-admin-key':key}});
+    var res = await fetch('/api/admin/validate-key', {method:'POST', headers:{'x-admin-key':key}});
     var d = await res.json().catch(function(){ return {}; });
     if(!res.ok) throw new Error(d.error || 'Invalid key');
     lastAttempt = 0;
     AKEY = key;
     g('gate').style.display = 'none';
     g('app').style.display = 'block';
-    parseStats(d);
     loadAll();
   } catch(e){
     g('gerr').textContent = e.message || 'Invalid key';
