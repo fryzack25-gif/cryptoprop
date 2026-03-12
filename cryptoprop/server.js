@@ -163,7 +163,13 @@ app.use(session({
 function ensureUsers(db){ db.users = db.users || {}; return db; }
 function sanitizeEmail(email){ return (email||"").toString().trim().toLowerCase(); }
 function getSessionUser(req){ return req.session && req.session.user ? req.session.user : null; }
-function currentEmail(req){ const u = getSessionUser(req); return u ? u.email : null; }
+function currentEmail(req){
+  const u = getSessionUser(req);
+  if(!u) return null;
+  // Admin beta mode: impersonate the beta account
+  if(u.betaMode && u.isAdmin) return "__beta__@cryptoprop.internal";
+  return u.email;
+}
 function requireAuth(req, res, next){
   const u = getSessionUser(req);
   if(!u) return res.status(401).json({ error:"Not authenticated" });
@@ -2181,6 +2187,99 @@ const PLANS = {
   "100k": { startEquity: 100000, price: 499 }
 };
 
+
+
+// ---- BETA / IMPERSONATION MODE ----
+const BETA_EMAIL = "__beta__@cryptoprop.internal";
+
+async function ensureBetaAccount() {
+  let acct = await getAccount(BETA_EMAIL);
+  if (!acct) {
+    acct = {
+      cash: 100000, baseEquity: 100000, firmProfit: 0,
+      startEquity: 100000, equity: 100000,
+      positions: {}, orders: [], openOrders: [], pendingOrders: [],
+      challengePhase: "funded",
+      challengeStartAt: new Date(Date.now() - 5*86400000).toISOString(),
+      challengePassedAt: new Date(Date.now() - 2*86400000).toISOString(),
+      fundedActivatedAt: new Date(Date.now() - 2*86400000).toISOString(),
+      payoutEligibleAt: new Date().toISOString(),
+      payoutsPaidTotal: 0, payoutsPaidThisPeriod: 0, payoutPeriodStart: null,
+      realizedPnL: 2500, tradingDays: ["day1","day2","day3","day4","day5"],
+      dailyProfitHistory: {}, lastEquityAtCheck: null,
+      challengeHistory: [], extensionsUsed: {}, stepMaxDaysOverride: null,
+      attemptsByPlan: { "100k": 1 }, retryOfferUsed: {},
+      planId: "100k",
+      lastPurchase: { time: new Date().toISOString(), planId: "100k", amount: 0, type: "beta" },
+      equityHistory: [], devices: [], ips: [],
+      emailVerified: true, phoneVerified: true,
+      kycStatus: "approved", kycSubmittedAt: new Date().toISOString(), kycProfile: null,
+      termsAccepted: true, termsAcceptedAt: new Date().toISOString(),
+      termsVersion: "1.0", termsIp: "127.0.0.1", termsUserAgent: "beta",
+      referredBy: null, referralAppliedAt: null, firstPurchaseCredited: false,
+      isBeta: true
+    };
+    await saveAccount(BETA_EMAIL, acct);
+  }
+  // Ensure beta user exists
+  let user = await getUser(BETA_EMAIL);
+  if (!user) {
+    const hash = await bcrypt.hash("beta-test-account", 10);
+    await saveUser(BETA_EMAIL, { email: BETA_EMAIL, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: true, isAdmin: false, isBeta: true });
+  }
+  return acct;
+}
+
+// Admin: enter beta mode
+app.post("/api/admin/beta/enter", requireAdmin, async (req, res) => {
+  await ensureBetaAccount();
+  req.session.user.betaMode = true;
+  return res.json({ ok: true, message: "Beta mode active — you are now trading as the beta account" });
+});
+
+// Admin: exit beta mode
+app.post("/api/admin/beta/exit", requireAdmin, async (req, res) => {
+  req.session.user.betaMode = false;
+  return res.json({ ok: true, message: "Beta mode exited" });
+});
+
+// Admin: reset beta account to fresh funded state
+app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
+  await getAccount(BETA_EMAIL); // ensure exists
+  const fresh = {
+    cash: 100000, baseEquity: 100000, firmProfit: 0,
+    startEquity: 100000, equity: 100000,
+    positions: {}, orders: [], openOrders: [], pendingOrders: [],
+    challengePhase: "funded",
+    challengeStartAt: new Date(Date.now() - 5*86400000).toISOString(),
+    challengePassedAt: new Date(Date.now() - 2*86400000).toISOString(),
+    fundedActivatedAt: new Date(Date.now() - 2*86400000).toISOString(),
+    payoutEligibleAt: new Date().toISOString(),
+    payoutsPaidTotal: 0, payoutsPaidThisPeriod: 0, payoutPeriodStart: null,
+    realizedPnL: 2500, tradingDays: ["day1","day2","day3","day4","day5"],
+    dailyProfitHistory: {}, lastEquityAtCheck: null,
+    challengeHistory: [], extensionsUsed: {}, stepMaxDaysOverride: null,
+    attemptsByPlan: { "100k": 1 }, retryOfferUsed: {},
+    planId: "100k",
+    lastPurchase: { time: new Date().toISOString(), planId: "100k", amount: 0, type: "beta" },
+    equityHistory: [], devices: [], ips: [],
+    emailVerified: true, phoneVerified: true,
+    kycStatus: "approved", kycSubmittedAt: new Date().toISOString(), kycProfile: null,
+    termsAccepted: true, termsAcceptedAt: new Date().toISOString(),
+    termsVersion: "1.0", termsIp: "127.0.0.1", termsUserAgent: "beta",
+    referredBy: null, referralAppliedAt: null, firstPurchaseCredited: false,
+    isBeta: true
+  };
+  await saveAccount(BETA_EMAIL, fresh);
+  return res.json({ ok: true, message: "Beta account reset to funded state with $100K" });
+});
+
+// Admin: get beta mode status
+app.get("/api/admin/beta/status", requireAdmin, async (req, res) => {
+  const active = !!(req.session.user && req.session.user.betaMode);
+  const acct = await getAccount(BETA_EMAIL);
+  return res.json({ ok: true, active, account: acct });
+});
 
 // ---- PROMO CODES ----
 // Admin creates codes via POST /api/admin/promo/create
