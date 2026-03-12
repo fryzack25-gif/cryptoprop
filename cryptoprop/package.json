@@ -12,6 +12,7 @@
     "express-session": "^1.17.3",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "stripe": "^14.0.0"
   }
 }
