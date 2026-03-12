@@ -36,10 +36,15 @@ document.getElementById("signupBtn")?.addEventListener("click", async () => {
   if(msg) msg.textContent = "Creating…";
   try{
     const data = await post("/api/auth/signup", { email, password });
-    if(msg) msg.textContent = "Created ✅ Check your email for a verification code.";
-    show("verifyBox", true);
-    const vc = document.getElementById("verifyCode");
-    if(vc && data.verifyCode) vc.value = data.verifyCode;
+    if(data.autoVerified) {
+      if(msg) { msg.textContent = "Account created ✅ You can now log in."; msg.style.color = "#4ade80"; }
+      setTimeout(() => setTab("login"), 1500);
+    } else {
+      if(msg) msg.textContent = "Created ✅ Check your email for a verification code.";
+      show("verifyBox", true);
+      const vc = document.getElementById("verifyCode");
+      if(vc && data.verifyCode) vc.value = data.verifyCode;
+    }
   }catch(e){ if(msg) msg.textContent = e.message; }
 });
 document.getElementById("verifyBtn")?.addEventListener("click", async () => {
