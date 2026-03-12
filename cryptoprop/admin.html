@@ -131,6 +131,7 @@ details summary:hover{color:#9098c0}
     <button class="nav-btn" onclick="show('ops',this)">⚙️ Ops Console</button>
     <button class="nav-btn" onclick="show('referrals',this)">🔗 Referrals</button>
     <button class="nav-btn" onclick="show('promos',this)">🎟️ Promo Codes</button>
+    <button class="nav-btn" onclick="show('beta',this)">🧪 Beta Mode</button>
     <button class="nav-btn" onclick="show('risk',this)">🚨 Risk</button>
     <button class="nav-btn" onclick="show('audit',this)">📋 Audit Log</button>
     <div class="side-foot">
@@ -296,6 +297,54 @@ details summary:hover{color:#9098c0}
         </table>
       </div>
     </div>
+
+    <!-- Beta Mode -->
+    <div id="sec-beta" class="sec">
+      <div class="pg-title">Beta Mode</div>
+      <div class="pg-sub">Impersonate a pre-funded beta account to test the trading platform end-to-end</div>
+
+      <!-- Status card -->
+      <div class="card" id="betaStatusCard" style="margin-bottom:16px; border: 1px solid rgba(255,204,0,0.2); background: rgba(255,204,0,0.04)">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+          <div id="betaIndicator" style="width:10px;height:10px;border-radius:50%;background:#555;flex-shrink:0"></div>
+          <div style="font-weight:700" id="betaStatusLabel">Beta mode: OFF</div>
+        </div>
+        <div class="tiny muted" id="betaStatusSub">When active, all trading pages will use the beta account instead of your real account. Your real account is unaffected.</div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn primary" id="betaEnterBtn" onclick="enterBeta()">🧪 Enter Beta Mode</button>
+          <button class="btn" id="betaExitBtn" onclick="exitBeta()" style="display:none">✖ Exit Beta Mode</button>
+          <button class="btn ghost" onclick="resetBeta()">↺ Reset Beta Account</button>
+        </div>
+        <div id="betaMsg" class="msg" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Beta account snapshot -->
+      <div class="card" id="betaAccountCard">
+        <div style="font-weight:600;margin-bottom:12px">Beta Account Snapshot</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="betaStats">
+          <div><div class="tiny muted">Phase</div><div id="bs-phase" style="font-weight:700">—</div></div>
+          <div><div class="tiny muted">Cash</div><div id="bs-cash" style="font-weight:700">—</div></div>
+          <div><div class="tiny muted">Equity</div><div id="bs-equity" style="font-weight:700">—</div></div>
+          <div><div class="tiny muted">Plan</div><div id="bs-plan" style="font-weight:700">—</div></div>
+          <div><div class="tiny muted">KYC</div><div id="bs-kyc" style="font-weight:700">—</div></div>
+          <div><div class="tiny muted">Realized P&L</div><div id="bs-pnl" style="font-weight:700">—</div></div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="card" style="margin-top:16px">
+        <div style="font-weight:600;margin-bottom:10px">How it works</div>
+        <ol style="color:var(--muted,#aaa);font-size:0.875rem;line-height:2;padding-left:18px;margin:0">
+          <li>Click <strong>Enter Beta Mode</strong> — your session is now impersonating the beta account</li>
+          <li>Open the <a href="/paper.html" target="_blank" style="color:#7c5cff">Trading page</a> or <a href="/dashboard.html" target="_blank" style="color:#7c5cff">Dashboard</a> in a new tab</li>
+          <li>All trades, data, and API calls will use the beta account ($100K funded)</li>
+          <li>When done testing, come back here and click <strong>Exit Beta Mode</strong></li>
+          <li>Use <strong>Reset Beta Account</strong> any time to wipe positions and start fresh</li>
+        </ol>
+        <div class="tiny muted" style="margin-top:10px">⚠ Beta mode is session-scoped — it resets if you log out or your session expires.</div>
+      </div>
+    </div>
+
 
     <!-- Referrals -->
     <div id="sec-referrals" class="sec">
@@ -617,6 +666,71 @@ document.addEventListener('click', async function(e){
   // kyc
   var kb = e.target.closest('[data-kyc]');
   if(kb){ try{ await api('/api/admin/kyc/set-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:kb.dataset.kyc,status:kb.dataset.ks})}); loadKyc(); }catch(err){ alert(err.message); } return; }
+
+
+  // ---- Beta Mode ----
+  async function loadBetaStatus() {
+    try {
+      const d = await api('/api/admin/beta/status');
+      const active = d.active;
+      const acct = d.account || {};
+
+      document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
+      document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
+      document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta mode: ACTIVE' : 'Beta mode: OFF';
+      document.getElementById('betaStatusSub').textContent = active
+        ? 'You are currently trading as the beta account. Open the trading page to test.'
+        : 'When active, all trading pages will use the beta account instead of your real account.';
+      document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
+      document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
+
+      // populate snapshot
+      const fmt = n => '$' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2});
+      document.getElementById('bs-phase').textContent = (acct.challengePhase || '—').toUpperCase();
+      document.getElementById('bs-cash').textContent = fmt(acct.cash);
+      document.getElementById('bs-equity').textContent = fmt(acct.equity || acct.cash);
+      document.getElementById('bs-plan').textContent = acct.planId || '—';
+      document.getElementById('bs-kyc').textContent = (acct.kycStatus || '—').toUpperCase();
+      document.getElementById('bs-pnl').textContent = fmt(acct.realizedPnL);
+    } catch(e) {
+      console.error('beta status:', e);
+    }
+  }
+
+  async function enterBeta() {
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/enter', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
+      loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  }
+
+  async function exitBeta() {
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/exit', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = d.message;
+      loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  }
+
+  async function resetBeta() {
+    if (!confirm('Reset beta account? This clears all positions and trades.')) return;
+    const msg = document.getElementById('betaMsg');
+    try {
+      const d = await api('/api/admin/beta/reset', { method: 'POST' });
+      msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
+      loadBetaStatus();
+    } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
+  }
+
+  // Hook into show() to auto-load beta status
+  const _prevShow = window.show;
+  window.show = function(id, btn) {
+    _prevShow(id, btn);
+    if (id === 'beta') loadBetaStatus();
+  };
 
   // ---- Promo Codes ----
   async function loadPromos() {
