@@ -170,6 +170,8 @@ const FALLBACK_PAIRS = ["BTC-USD","ETH-USD","SOL-USD","XRP-USD","ADA-USD","DOGE-
 
 function populatePairs(list){
   if(!list || !list.length) return;
+  // Never replace a longer list with a shorter one (API fallback can be smaller)
+  if(productSel.options.length > list.length) return;
   const current = productSel.value;
   productSel.innerHTML = list.map(pid => `<option value="${pid}">${pid}</option>`).join("");
   if(list.includes(current)) productSel.value = current;
