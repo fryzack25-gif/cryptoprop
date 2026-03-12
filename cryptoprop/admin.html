@@ -743,14 +743,7 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
       const d = await api('/api/admin/beta/status');
       const active = d.active;
       const acct = d.account || {};
-      document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
-      document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
-      document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta mode: ACTIVE' : 'Beta mode: OFF';
-      document.getElementById('betaStatusSub').textContent = active
-        ? 'You are currently trading as the beta account. Open the trading page to test.'
-        : 'When active, all trading pages will use the beta account instead of your real account.';
-      document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
-      document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
+      _applyBetaUI(active);
       const fmt = n => '$' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2});
       document.getElementById('bs-phase').textContent = (acct.challengePhase || '—').toUpperCase();
       document.getElementById('bs-cash').textContent = fmt(acct.cash);
@@ -761,12 +754,26 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
     } catch(e) { console.error('beta status:', e); }
   };
 
+  var _betaActive = false;
+
+  function _applyBetaUI(active) {
+    _betaActive = active;
+    document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
+    document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
+    document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta Mode: ON' : 'Beta Mode: OFF';
+    document.getElementById('betaStatusSub').textContent = active
+      ? 'You are currently trading as the beta account. Open the trading page to test.'
+      : 'When active, all trading pages will use the beta account instead of your real account.';
+    document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
+    document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
+  }
+
   window.enterBeta = async function() {
     const msg = document.getElementById('betaMsg');
     try {
       const d = await api('/api/admin/beta/enter', { method: 'POST' });
+      _applyBetaUI(true);
       msg.className = 'msg ok'; msg.textContent = '✅ ' + d.message;
-      window.loadBetaStatus();
     } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
   };
 
@@ -774,8 +781,8 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
     const msg = document.getElementById('betaMsg');
     try {
       const d = await api('/api/admin/beta/exit', { method: 'POST' });
+      _applyBetaUI(false);
       msg.className = 'msg ok'; msg.textContent = d.message;
-      window.loadBetaStatus();
     } catch(e) { msg.className = 'msg err'; msg.textContent = e.message; }
   };
 
