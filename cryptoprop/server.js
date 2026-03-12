@@ -717,7 +717,7 @@ app.post("/api/account/reset", requireAuth, async (req, res) => {
 });
 
 // Place a simulated spot trade at last price (auth required)
-app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async (req, res) => {
+app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
   await refreshTop50Universe(false).catch(()=>{});
 
   const email = currentEmail(req);
@@ -2214,7 +2214,7 @@ async function ensureBetaAccount() {
       emailVerified: true, phoneVerified: true,
       kycStatus: "approved", kycSubmittedAt: new Date().toISOString(), kycProfile: null,
       termsAccepted: true, termsAcceptedAt: new Date().toISOString(),
-      termsVersion: "1.0", termsIp: "127.0.0.1", termsUserAgent: "beta",
+      termsVersion: "2026-02-25-e24c9e37f4c48042", termsIp: "127.0.0.1", termsUserAgent: "beta",
       referredBy: null, referralAppliedAt: null, firstPurchaseCredited: false,
       isBeta: true
     };
@@ -2267,7 +2267,7 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
     emailVerified: true, phoneVerified: true,
     kycStatus: "approved", kycSubmittedAt: new Date().toISOString(), kycProfile: null,
     termsAccepted: true, termsAcceptedAt: new Date().toISOString(),
-    termsVersion: "1.0", termsIp: "127.0.0.1", termsUserAgent: "beta",
+    termsVersion: "2026-02-25-e24c9e37f4c48042", termsIp: "127.0.0.1", termsUserAgent: "beta",
     referredBy: null, referralAppliedAt: null, firstPurchaseCredited: false,
     isBeta: true
   };
