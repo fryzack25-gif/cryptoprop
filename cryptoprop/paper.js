@@ -21,6 +21,76 @@ function updatePayoutMini(account){
 
 
 
+// ---- Challenge Failed Modal ----
+const PLANS_INFO = [
+  { id: "25k",  label: "$25K",  price: 149,  equity: 25000  },
+  { id: "50k",  label: "$50K",  price: 279,  equity: 50000  },
+  { id: "100k", label: "$100K", price: 499,  equity: 100000 },
+];
+let _failOfferUsed = false;
+
+async function showFailedModal(account) {
+  const modal = document.getElementById("failedModal");
+  if(!modal) return;
+  if(sessionStorage.getItem("failModalShown")) return;
+  sessionStorage.setItem("failModalShown", "1");
+
+  const reasonEl = document.getElementById("failModalReason");
+  if(reasonEl) reasonEl.textContent = account.failReason || "Your account breached the risk rules.";
+
+  // Check if retry offer already used
+  try {
+    const res = await apiFetch("/api/plan/retry-status");
+    const d = await res.json();
+    _failOfferUsed = !!d.used;
+  } catch(e) { _failOfferUsed = false; }
+
+  document.getElementById("failOfferBanner").style.display = _failOfferUsed ? "none" : "flex";
+  document.getElementById("failOfferUsed").style.display = _failOfferUsed ? "block" : "none";
+
+  renderFailPlans();
+  modal.style.display = "flex";
+}
+
+function renderFailPlans() {
+  const container = document.getElementById("failModalPlans");
+  if(!container) return;
+  container.innerHTML = PLANS_INFO.map(p => {
+    const discounted = _failOfferUsed ? p.price : Math.round(p.price * 0.5);
+    return `<div style="border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;text-align:center;background:rgba(255,255,255,0.03)">
+      <div style="font-size:18px;font-weight:800;color:#e8eaed">${p.label}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin:3px 0 10px">Challenge Account</div>
+      ${!_failOfferUsed ? `<div style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:line-through">$${p.price}</div>` : ""}
+      <div style="font-size:22px;font-weight:800;color:${!_failOfferUsed ? "#00e5a0" : "#fff"}">$${discounted}</div>
+      ${!_failOfferUsed ? `<div style="font-size:10px;color:#00e5a0;font-weight:700;margin-top:2px">50% OFF</div>` : ""}
+      <button onclick="buyFailPlan('${p.id}')" style="margin-top:12px;width:100%;background:#00e5a0;color:#000;border:none;border-radius:6px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:0.03em">Buy Now</button>
+    </div>`;
+  }).join("");
+}
+
+window.buyFailPlan = async function(planId) {
+  const msgEl = document.getElementById("failModalMsg");
+  if(msgEl){ msgEl.style.color="rgba(255,255,255,0.5)"; msgEl.textContent = "Processing…"; }
+  try {
+    const endpoint = _failOfferUsed ? "/api/plan/choose" : "/api/plan/retry-any";
+    const body = _failOfferUsed ? { planId } : { planId };
+    const res = await apiFetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if(!res.ok) {
+      if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = data.error || "Purchase failed"; }
+      return;
+    }
+    account = data.account || account;
+    sessionStorage.removeItem("failModalShown");
+    const modal = document.getElementById("failedModal");
+    if(modal) modal.style.display = "none";
+    toast("✅ New challenge started! Good luck.");
+    render();
+  } catch(e) {
+    if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = e.message; }
+  }
+};
+
 function renderLockBanner(account){
   const b = document.getElementById("lockBanner");
   const t = document.getElementById("lockText");
@@ -102,6 +172,11 @@ function updateChallengeProgress(account){
   if(phase === "funded" && !sessionStorage.getItem("seenPassed")){
     sessionStorage.setItem("seenPassed","1");
     window.location.href = "passed.html";
+  }
+
+  // show failed modal
+  if(account.challengeFailed){
+    showFailedModal(account);
   }
 }
 
