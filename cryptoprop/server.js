@@ -1832,6 +1832,15 @@ app.get("*", async (req, res) => {
 
 
 // ------------------- Admin API (demo) -------------------
+
+// Admin key validation — no session, key only
+app.post("/api/admin/validate-key", async (req, res) => {
+  const key = (req.headers["x-admin-key"] || "").toString();
+  if(!ADMIN_KEY) return res.status(500).json({ error:"ADMIN_KEY not configured" });
+  if(!key || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid key" });
+  return res.json({ ok: true });
+});
+
 app.get("/api/admin/overview", requireAdmin, async (req, res) => {
   const db = await readData();
   const accounts = db.accounts || {};
