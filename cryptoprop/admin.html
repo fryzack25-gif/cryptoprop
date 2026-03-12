@@ -744,9 +744,12 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
     document.getElementById('betaIndicator').style.background = active ? '#00e5a0' : '#555';
     document.getElementById('betaIndicator').style.boxShadow = active ? '0 0 8px #00e5a0' : 'none';
     document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta Mode: ON' : 'Beta Mode: OFF';
-    document.getElementById('betaStatusSub').textContent = active
-      ? 'You are currently trading as the beta account. Open the trading page to test.'
-      : 'When active, all trading pages will use the beta account instead of your real account.';
+    const sub = document.getElementById('betaStatusSub');
+    if(active){
+      sub.innerHTML = 'You are now trading as the beta account. <a href="/paper.html" target="_blank" style="color:#00e5a0;font-weight:700">Open Trading →</a> &nbsp; <a href="/dashboard.html" target="_blank" style="color:#00e5a0;font-weight:700">Open Dashboard →</a>';
+    } else {
+      sub.textContent = 'When active, all trading pages will use the beta account instead of your real account.';
+    }
     document.getElementById('betaEnterBtn').style.display = active ? 'none' : '';
     document.getElementById('betaExitBtn').style.display = active ? '' : 'none';
   }
