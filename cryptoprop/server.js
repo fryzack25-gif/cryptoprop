@@ -726,15 +726,12 @@ app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async 
   const s = String(side || "").trim().toLowerCase();
   const q = Number(qty);
 
-  if(!p || !s || !Number.isFinite(q) || q <= 0){
+  if(!p || !s || !Number.isFinite(q) || q <= 0)
     return res.status(400).json({ error: "Invalid order parameters." });
-  }
-  if(s !== "buy" && s !== "sell"){
+  if(s !== "buy" && s !== "sell")
     return res.status(400).json({ error: "Side must be buy or sell." });
-  }
-  if(!allowlistProduct(p)){
-    return res.status(400).json({ error: "Unsupported product. Use a Coinbase USD pair from /api/market/top50." });
-  }
+  if(!allowlistProduct(p))
+    return res.status(400).json({ error: "Unsupported product." });
 
   const acct = await getOrCreateAccount(email);
   acct.positions = acct.positions || {};
@@ -742,91 +739,73 @@ app.post("/api/trade", requireAuth, requireTermsAccepted, guardChallenge, async 
   acct.openOrders = acct.openOrders || [];
   acct.pendingOrders = acct.pendingOrders || [];
 
-  // Use current price to enforce position cap (1% hard cap)
-  let priceNow;
+  let price;
   try{
-    priceNow = await fetchCoinbaseTicker(p);
+    price = await fetchCoinbaseTicker(p);
   }catch(err){
     return res.status(502).json({ error: err.message || "Market data unavailable." });
   }
 
-  acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash || 0);
-  const maxNotional = maxTradeNotional(acct);
-  const notionalNow = q * priceNow;
+  const FEE_RATE = 0.02; // 2% fee
+  const notional = q * price;
+  const fee = notional * FEE_RATE;
+  const id = cryptoRandomId();
+  const now = new Date().toISOString();
 
   if(s === "buy"){
-    const mh = enforceMinHold(email, p);
-    if(!mh.ok){ return res.status(400).json({ error: `Min hold rule: wait ${Math.ceil(mh.waitMs/1000)}s before trading ${p} again.` }); }
+    const totalCost = notional + fee;
+    if((acct.cash || 0) < totalCost)
+      return res.status(400).json({ error: `Insufficient cash. Need $${totalCost.toFixed(2)}, have $${(acct.cash||0).toFixed(2)}` });
 
-    const posNot = positionNotional(acct, p, priceNow);
-    const openNot = openBuyNotional(acct, p);
-    const after = posNot + openNot + notionalNow;
-    if(after > maxNotional){
-      return res.status(400).json({ error: `Position size too large (1% max). Current+open: $${(posNot+openNot).toFixed(2)}; After: $${after.toFixed(2)}; Limit: $${maxNotional.toFixed(2)}` });
-    }
+    // Deduct cash immediately
+    acct.cash = round8((acct.cash || 0) - totalCost);
 
-    // Reserve cash using worst-case fee + price buffer
-    const reserveBuffer = 1.01; // small cushion
-    const reservedCash = (notionalNow * reserveBuffer) + (notionalNow * TAKER_FEE);
-    if((acct.cash || 0) < reservedCash){
-      return res.status(400).json({ error: "Insufficient cash." });
-    }
-    acct.cash = (acct.cash || 0) - reservedCash;
+    // Add to position immediately
+    const pos = acct.positions[p] || { qty: 0, avg: 0 };
+    const newQty = round8((pos.qty || 0) + q);
+    pos.avg = newQty === 0 ? 0 : (((pos.qty || 0) * (pos.avg || 0)) + (q * price)) / newQty;
+    pos.qty = newQty;
+    acct.positions[p] = pos;
 
-    const id = cryptoRandomId();
-    const etaMs = randomFillDelayMs();
-    const executeAt = Date.now() + etaMs;
-
-    acct.pendingOrders.unshift({
-      id,
-      time: new Date().toISOString(),
-      executeAt,
-      product: p,
-      side: s,
-      qty: round8(q),
-      reservedCash,
-      feeRate: TAKER_FEE,
-      type: "market"
-    });
+    acct.tradingDays = uniqPush(acct.tradingDays || [], isoDay());
+    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: FEE_RATE });
 
     await saveAccount(email, acct);
-    return res.json({ ok: true, queued: true, id, executeAt, etaMs, account: acct });
+    return res.json({ ok: true, fill: { price, qty: q, notional, fee }, account: acct });
   }
 
   if(s === "sell"){
-    const mh = enforceMinHold(email, p);
-    if(!mh.ok){ return res.status(400).json({ error: `Min hold rule: wait ${Math.ceil(mh.waitMs/1000)}s before trading ${p} again.` }); }
+    const pos = acct.positions[p] || { qty: 0, avg: 0 };
+    if((pos.qty || 0) < q)
+      return res.status(400).json({ error: `Insufficient position. Have ${(pos.qty||0).toFixed(8)} ${p}, need ${q}` });
+
+    // Remove from position immediately
+    const avg = pos.avg || 0;
+    pos.qty = round8(pos.qty - q);
+    if(pos.qty <= 0) delete acct.positions[p];
+    else acct.positions[p] = pos;
+
+    // Add cash (proceeds minus fee)
+    const proceeds = notional - fee;
+    acct.cash = round8((acct.cash || 0) + proceeds);
+
+    // Realized P&L
+    const realized = q * (price - avg);
+    acct.realizedPnL = Number(acct.realizedPnL || 0) + realized;
+    if(realized > 0){
+      const firmCut = realized * PROFIT_SPLIT_FIRM;
+      acct.cash = round8(acct.cash - firmCut);
+      acct.firmProfit = (acct.firmProfit || 0) + firmCut;
+    }
+
+    acct.tradingDays = uniqPush(acct.tradingDays || [], isoDay());
+    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: FEE_RATE });
+
+    await saveAccount(email, acct);
+    return res.json({ ok: true, fill: { price, qty: q, notional, fee }, account: acct });
   }
 
-  // SELL: reserve qty by removing from position now
-  const pos = acct.positions[p] || { qty: 0, avg: 0 };
-  if((pos.qty || 0) < q){
-    return res.status(400).json({ error: "Insufficient position." });
-  }
-  const avg = pos.avg || 0;
-  pos.qty = round8(pos.qty - q);
-  if(pos.qty === 0) delete acct.positions[p];
-  else acct.positions[p] = pos;
-
-  const id = cryptoRandomId();
-  const etaMs = randomFillDelayMs();
-  const executeAt = Date.now() + etaMs;
-
-  acct.pendingOrders.unshift({
-    id,
-    time: new Date().toISOString(),
-    executeAt,
-    product: p,
-    side: s,
-    qty: round8(q),
-    reservedQty: round8(q),
-    avg,
-    feeRate: TAKER_FEE,
-    type: "market"
-  });
-
-  await saveAccount(email, acct);
-  return res.json({ ok: true, queued: true, id, executeAt, etaMs, account: acct });
+  return res.status(400).json({ error: "Unknown side." });
 });
 
 app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
