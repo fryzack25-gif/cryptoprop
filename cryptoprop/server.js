@@ -2086,15 +2086,19 @@ app.post("/api/auth/signup", async (req, res) => {
   if(existing) return res.status(400).json({ error:"Account already exists" });
   const hash = await bcrypt.hash(password, 12);
   const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-  await saveUser(email, { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: false, verifyCode, isAdmin: false });
-  // In production: send verifyCode via email.
-  console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
-  await sendEmail({
-    to: email,
-    subject: "Your CryptoProp verification code",
-    html: `<p>Hi,</p><p>Your CryptoProp email verification code is:</p><h2 style="letter-spacing:4px">${verifyCode}</h2><p>Enter this code on the verification page to activate your account.</p><p>If you didn't create an account, you can ignore this email.</p>`
-  });
-  return res.json({ ok:true, message: "Account created. Check your email for a verification code." });
+  // Auto-verify if no email provider configured
+  const autoVerified = !RESEND_API_KEY;
+  await saveUser(email, { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: autoVerified, verifyCode: autoVerified ? null : verifyCode, isAdmin: false });
+  if (!autoVerified) {
+    console.log("[CryptoProp] Verify code for", email, "=>", verifyCode);
+    await sendEmail({
+      to: email,
+      subject: "Your CryptoProp verification code",
+      html: `<p>Hi,</p><p>Your CryptoProp email verification code is:</p><h2 style="letter-spacing:4px">${verifyCode}</h2><p>Enter this code on the verification page to activate your account.</p><p>If you didn't create an account, you can ignore this email.</p>`
+    });
+    return res.json({ ok:true, message: "Account created. Check your email for a verification code." });
+  }
+  return res.json({ ok:true, autoVerified: true, message: "Account created. You can now log in." });
 });
 
 app.post("/api/auth/verify-email", async (req, res) => {
@@ -2512,6 +2516,18 @@ app.get("/api/admin/audit", requireAdmin, async (req, res) => {
   const db = await readData();
   const audit = Array.isArray(db.audit) ? db.audit : [];
   return res.json({ ok:true, audit: audit.slice(0, limit) });
+});
+
+app.post("/api/admin/user/verify-email", requireAdmin, async (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  if(!email) return res.status(400).json({ error: "Email required" });
+  const u = await getUser(email);
+  if(!u) return res.status(404).json({ error: "User not found" });
+  u.emailVerified = true;
+  u.verifyCode = null;
+  await saveUser(email, u);
+  await auditLog(req, "admin_verify_email", email, {});
+  return res.json({ ok: true, email });
 });
 
 app.post("/api/admin/account/unlock-daily", requireAdmin, async (req, res) => {
