@@ -2256,22 +2256,63 @@ app.post("/api/admin/beta/exit", requireAdmin, async (req, res) => {
 // Admin: reset beta account to fresh funded state
 app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
   await getAccount(BETA_EMAIL); // ensure exists
+
+  const seedAmount = Number(req.body?.seed) || 100000;
+  const phase = String(req.body?.phase || "funded").trim();
+
+  const validSeeds = [25000, 50000, 100000];
+  const validPhases = ["challenge", "challenge2", "funded"];
+  const safeSeed = validSeeds.includes(seedAmount) ? seedAmount : 100000;
+  const safePhase = validPhases.includes(phase) ? phase : "funded";
+
+  const planId = safeSeed === 25000 ? "25k" : safeSeed === 50000 ? "50k" : "100k";
+
+  // Build phase-specific fields
+  let phaseFields = {};
+  if(safePhase === "challenge"){
+    phaseFields = {
+      challengePhase: "challenge",
+      challengeStartAt: new Date().toISOString(),
+      challengePassedAt: null,
+      fundedActivatedAt: null,
+      payoutEligibleAt: null,
+      realizedPnL: 0,
+      tradingDays: [],
+    };
+  } else if(safePhase === "challenge2"){
+    phaseFields = {
+      challengePhase: "challenge2",
+      challengeStartAt: new Date().toISOString(),
+      challengePassedAt: null,
+      fundedActivatedAt: null,
+      payoutEligibleAt: null,
+      realizedPnL: safeSeed * 0.02,
+      tradingDays: ["day1","day2","day3"],
+    };
+  } else {
+    // funded
+    phaseFields = {
+      challengePhase: "funded",
+      challengeStartAt: new Date(Date.now() - 5*86400000).toISOString(),
+      challengePassedAt: new Date(Date.now() - 2*86400000).toISOString(),
+      fundedActivatedAt: new Date(Date.now() - 2*86400000).toISOString(),
+      payoutEligibleAt: new Date().toISOString(),
+      realizedPnL: safeSeed * 0.025,
+      tradingDays: ["day1","day2","day3","day4","day5"],
+    };
+  }
+
   const fresh = {
-    cash: 100000, baseEquity: 100000, firmProfit: 0,
-    startEquity: 100000, equity: 100000,
+    cash: safeSeed, baseEquity: safeSeed, firmProfit: 0,
+    startEquity: safeSeed, equity: safeSeed,
     positions: {}, orders: [], openOrders: [], pendingOrders: [],
-    challengePhase: "funded",
-    challengeStartAt: new Date(Date.now() - 5*86400000).toISOString(),
-    challengePassedAt: new Date(Date.now() - 2*86400000).toISOString(),
-    fundedActivatedAt: new Date(Date.now() - 2*86400000).toISOString(),
-    payoutEligibleAt: new Date().toISOString(),
+    ...phaseFields,
     payoutsPaidTotal: 0, payoutsPaidThisPeriod: 0, payoutPeriodStart: null,
-    realizedPnL: 2500, tradingDays: ["day1","day2","day3","day4","day5"],
     dailyProfitHistory: {}, lastEquityAtCheck: null,
     challengeHistory: [], extensionsUsed: {}, stepMaxDaysOverride: null,
-    attemptsByPlan: { "100k": 1 }, retryOfferUsed: {},
-    planId: "100k",
-    lastPurchase: { time: new Date().toISOString(), planId: "100k", amount: 0, type: "beta" },
+    attemptsByPlan: { [planId]: 1 }, retryOfferUsed: {},
+    planId,
+    lastPurchase: { time: new Date().toISOString(), planId, amount: 0, type: "beta" },
     equityHistory: [], devices: [], ips: [],
     emailVerified: true, phoneVerified: true,
     kycStatus: "approved", kycSubmittedAt: new Date().toISOString(), kycProfile: null,
@@ -2281,7 +2322,7 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
     isBeta: true
   };
   await saveAccount(BETA_EMAIL, fresh);
-  return res.json({ ok: true, message: "Beta account reset to funded state with $100K" });
+  return res.json({ ok: true, message: `Beta account reset: $${safeSeed.toLocaleString()} / ${safePhase}` });
 });
 
 // Admin: get beta mode status
