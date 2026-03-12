@@ -1063,7 +1063,7 @@ const MIN_TRADING_DAYS = 5;
 const CONSISTENCY_MAX_DAY_SHARE = 0.40; // max single-day profit share of total profit to pass
 const PAYOUT_FIRST_DELAY_DAYS = 14;     // first payout available 14 days after funded activation
 const PAYOUT_PERIOD_DAYS = 7;           // weekly payout cadence
-const PAYOUT_CAP_PCT = 0.04;            // max 4% of starting equity per payout period
+const PAYOUT_CAP_PCT = 0.02;            // max 2% of starting equity per payout period
 
 // ---- Challenge rules (demo) ----
 const CHALLENGE_DAILY_DD = 0.02;  // 2% daily max drawdown
