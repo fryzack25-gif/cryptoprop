@@ -2024,6 +2024,7 @@ function resetChallengeAttempt(acct){
   acct.failReason = null;
   acct.failedAt = null;
   acct.frozen = false;
+  acct.retryAnyUsed = false; // reset so 50% offer is available next failure
 
   acct.challengeStep = 1;
   acct.stepStartDate = utcDateKey();
@@ -2618,8 +2619,6 @@ app.post("/api/plan/retry-any", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after a failed challenge" });
-  if(acct.retryAnyUsed) return res.status(400).json({ error: "One-time retry offer already used" });
-
   const planId = (req.body?.planId || "").toString();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error: "Invalid plan" });
@@ -2644,6 +2643,7 @@ app.post("/api/plan/retry-any", requireAuth, async (req, res) => {
 app.get("/api/plan/retry-status", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
+  // Offer is available whenever they have failed and haven't used it this failure
   return res.json({ eligible: !!acct.challengeFailed, used: !!acct.retryAnyUsed });
 });
 
