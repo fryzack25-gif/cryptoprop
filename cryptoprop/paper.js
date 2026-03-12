@@ -160,7 +160,7 @@ const granSel = { value: _currentGran }; // compat shim
 window._onGranChange = function(g){ _currentGran = g; granSel.value = g; loadChartForCurrentProduct(); };
 const countSel = qs("candlesCount");
 const canvas = qs("candleCanvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
 const wsStatus = document.getElementById("wsStatus");
 
 // -------------------- Market universe (Top 50 on Coinbase) --------------------
@@ -499,6 +499,7 @@ function connectWs(){
 
 // -------------------- Trading actions --------------------
 const msg = qs("msg");
+const _safeMsg = (text, color) => { if(msg){ msg.textContent = text; if(color) msg.style.color = color; } };
 
 window.submitOrder = async function() {
   msg.textContent = "Submitting…";
@@ -584,6 +585,7 @@ async function fetchCandles(product, gran, limit){
 }
 
 function drawCandles(candles){
+  if(!ctx || !canvas) return;
   const data = Array.isArray(candles) ? candles.slice().reverse() : [];
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -689,7 +691,9 @@ async function processOpenOrders(){
 
 // -------------------- Init --------------------
 const _user = await requireAuth();
-if(_user) qs("who").textContent = `Signed in as ${_user.email}`;
+if(!_user) throw new Error("Not authenticated"); // stops module if redirected
+
+qs("who").textContent = `Signed in as ${_user.email}`;
 await loadAccount();
 await loadUniverse();
 connectWs();
