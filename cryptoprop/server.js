@@ -1833,6 +1833,18 @@ app.get("*", async (req, res) => {
 
 // ------------------- Admin API (demo) -------------------
 
+
+// Activate beta session — called with admin key, sets session to beta account
+app.post("/api/admin/beta/activate-session", async (req, res) => {
+  const key = (req.headers["x-admin-key"] || req.body?.adminKey || "").toString();
+  if(!ADMIN_KEY || key !== ADMIN_KEY) return res.status(403).json({ error:"Invalid key" });
+  await ensureBetaAccount();
+  // Log the session in as the beta user
+  req.session.user = { email: BETA_EMAIL, isAdmin: true, betaMode: true };
+  req.session.betaMode = true;
+  return res.json({ ok: true });
+});
+
 // Admin key validation — no session, key only
 app.post("/api/admin/validate-key", async (req, res) => {
   const key = (req.headers["x-admin-key"] || "").toString();
