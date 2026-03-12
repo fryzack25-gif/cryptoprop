@@ -746,7 +746,7 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
     document.getElementById('betaStatusLabel').textContent = active ? '🟢 Beta Mode: ON' : 'Beta Mode: OFF';
     const sub = document.getElementById('betaStatusSub');
     if(active){
-      sub.innerHTML = 'You are now trading as the beta account. <a href="#" onclick="openBetaPage('/paper.html')" style="color:#00e5a0;font-weight:700">Open Trading →</a> &nbsp; <a href="#" onclick="openBetaPage('/dashboard.html')" style="color:#00e5a0;font-weight:700">Open Dashboard →</a>';
+      sub.innerHTML = 'You are now trading as the beta account. <a href="#" onclick="openBetaPage(&apos;/paper.html&apos;)" style="color:#00e5a0;font-weight:700">Open Trading →</a> &nbsp; <a href="#" onclick="openBetaPage(&apos;/dashboard.html&apos;)" style="color:#00e5a0;font-weight:700">Open Dashboard →</a>';
     } else {
       sub.textContent = 'When active, all trading pages will use the beta account instead of your real account.';
     }
