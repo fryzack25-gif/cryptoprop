@@ -167,6 +167,7 @@ function currentEmail(req){
   const u = getSessionUser(req);
   if(!u) return null;
   // Admin beta mode: impersonate the beta account
+  if(req.session && req.session.betaMode) return "__beta__@cryptoprop.internal";
   if(u.betaMode && u.isAdmin) return "__beta__@cryptoprop.internal";
   return u.email;
 }
@@ -2233,13 +2234,15 @@ async function ensureBetaAccount() {
 // Admin: enter beta mode
 app.post("/api/admin/beta/enter", requireAdmin, async (req, res) => {
   await ensureBetaAccount();
-  req.session.user.betaMode = true;
+  req.session.betaMode = true;
+  if(req.session.user) req.session.user.betaMode = true;
   return res.json({ ok: true, message: "Beta mode active — you are now trading as the beta account" });
 });
 
 // Admin: exit beta mode
 app.post("/api/admin/beta/exit", requireAdmin, async (req, res) => {
-  req.session.user.betaMode = false;
+  req.session.betaMode = false;
+  if(req.session.user) req.session.user.betaMode = false;
   return res.json({ ok: true, message: "Beta mode exited" });
 });
 
@@ -2276,7 +2279,7 @@ app.post("/api/admin/beta/reset", requireAdmin, async (req, res) => {
 
 // Admin: get beta mode status
 app.get("/api/admin/beta/status", requireAdmin, async (req, res) => {
-  const active = !!(req.session.user && req.session.user.betaMode);
+  const active = !!(req.session.betaMode || (req.session.user && req.session.user.betaMode));
   const acct = await getAccount(BETA_EMAIL);
   return res.json({ ok: true, active, account: acct });
 });
