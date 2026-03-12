@@ -161,6 +161,8 @@ window._onGranChange = function(g){ _currentGran = g; granSel.value = g; loadCha
 const countSel = qs("candlesCount");
 const canvas = qs("candleCanvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
+let _chartCandles = [];
+let _chartGeom = null; // { pad, xStep, W, H, minP, maxP, priceToY }
 const wsStatus = document.getElementById("wsStatus");
 
 // -------------------- Market universe (Top 50 on Coinbase) --------------------
@@ -333,8 +335,18 @@ function render(){
   const upl = computeUnrealizedPL();
 
   qs("cash").textContent = money(account.cash);
-  qs("equity").textContent = money(equity);
-  qs("upl").textContent = (upl >= 0 ? "+" : "") + money(upl);
+
+  const startEq = Number(account.startEquity || 0);
+  const equityEl = qs("equity");
+  equityEl.textContent = money(equity);
+  if(startEq > 0){
+    const equityDiff = equity - startEq;
+    equityEl.style.color = equityDiff >= 0 ? "var(--term-green)" : "var(--term-red)";
+  }
+
+  const uplEl = qs("upl");
+  uplEl.textContent = (upl >= 0 ? "+" : "") + money(upl);
+  uplEl.style.color = upl > 0 ? "var(--term-green)" : upl < 0 ? "var(--term-red)" : "var(--term-label)";
 
   const posBody = qs("posBody");
   const products = Object.keys(account.positions || {}).sort();
@@ -349,7 +361,7 @@ function render(){
           <td>${pos.qty ? pos.qty.toFixed(8) : "0"}</td>
           <td>${pos.avg ? money(pos.avg) : "—"}</td>
           <td>${lastTxt}</td>
-          <td style="color:${uplOne>=0?'var(--good)':'var(--bad)'}">${uplOne>=0?'+':''}${money(uplOne)}</td>
+          <td style="color:${uplOne>0?'var(--term-green)':uplOne<0?'var(--term-red)':'var(--term-label)'}">${uplOne>=0?'+':''}${money(uplOne)}</td>
         </tr>`;
     }).join("") : `<tr><td colspan="5">No positions.</td></tr>`;
 
@@ -732,6 +744,10 @@ function drawCandles(candles){
   const xStep = innerW / data.length;
   const priceToY = (p) => pad + (maxP - p) * (innerH / (maxP - minP));
 
+  // Store for hover lookup
+  _chartCandles = data;
+  _chartGeom = { pad, xStep, W, H, minP, maxP, priceToY };
+
   const bodyW = Math.max(2, xStep * 0.55);
   for(let i=0;i<data.length;i++){
     const low = Number(data[i][1]), high = Number(data[i][2]), open = Number(data[i][3]), close = Number(data[i][4]);
@@ -772,6 +788,61 @@ async function refreshChart(){
 }
 
 function loadChartForCurrentProduct(){ refreshChart(); }
+
+// ---- Candle hover tooltip ----
+(function setupCandleTooltip(){
+  if(!canvas) return;
+  let tooltip = document.getElementById("candleTooltip");
+  if(!tooltip){
+    tooltip = document.createElement("div");
+    tooltip.id = "candleTooltip";
+    tooltip.style.cssText = "position:absolute;pointer-events:none;display:none;background:rgba(15,17,21,0.92);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:7px 11px;font-size:11px;font-family:monospace;color:#e8eaed;z-index:100;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.5)";
+    canvas.parentElement.style.position = "relative";
+    canvas.parentElement.appendChild(tooltip);
+  }
+
+  canvas.addEventListener("mousemove", e => {
+    if(!_chartGeom || _chartCandles.length === 0){ tooltip.style.display="none"; return; }
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const { pad, xStep, W, H } = _chartGeom;
+
+    // Find which candle we're over
+    const idx = Math.floor((mx - pad) / xStep);
+    if(idx < 0 || idx >= _chartCandles.length){ tooltip.style.display="none"; return; }
+
+    const c = _chartCandles[idx];
+    const time = c[0] ? new Date(Number(c[0])*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+    const low   = Number(c[1]), high  = Number(c[2]);
+    const open  = Number(c[3]), close = Number(c[4]);
+    const up = close >= open;
+    const chg = open > 0 ? ((close - open) / open * 100) : 0;
+    const fmt = n => n >= 1000 ? "$"+n.toLocaleString(undefined,{maximumFractionDigits:2}) : "$"+n.toFixed(n<1?6:2);
+    const color = up ? "#7ee787" : "#ff6b6b";
+
+    tooltip.innerHTML =
+      `<div style="color:rgba(255,255,255,0.5);margin-bottom:4px;font-size:10px">${time}</div>` +
+      `<div style="display:grid;grid-template-columns:auto auto;gap:2px 12px">` +
+      `<span style="color:rgba(255,255,255,0.5)">O</span><span>${fmt(open)}</span>` +
+      `<span style="color:rgba(255,255,255,0.5)">H</span><span>${fmt(high)}</span>` +
+      `<span style="color:rgba(255,255,255,0.5)">L</span><span>${fmt(low)}</span>` +
+      `<span style="color:rgba(255,255,255,0.5)">C</span><span style="color:${color};font-weight:700">${fmt(close)}</span>` +
+      `<span style="color:rgba(255,255,255,0.5)">%</span><span style="color:${color}">${chg>=0?"+":""}${chg.toFixed(2)}%</span>` +
+      `</div>`;
+
+    tooltip.style.display = "block";
+
+    // Position tooltip: prefer right of cursor, flip left if near edge
+    const tw = tooltip.offsetWidth + 16;
+    const left = (mx + 14 + tw > W) ? mx - tw + 4 : mx + 14;
+    const top  = Math.max(4, Math.min(my - 20, H - tooltip.offsetHeight - 4));
+    tooltip.style.left = left + "px";
+    tooltip.style.top  = top  + "px";
+  });
+
+  canvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+})();
 
 window.addEventListener("resize", () => refreshChart());
 
