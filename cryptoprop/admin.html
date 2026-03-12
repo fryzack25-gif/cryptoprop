@@ -755,11 +755,14 @@ if(_se && g('ops-email')) g('ops-email').value = _se;
   }
 
   window.openBetaPage = async function(url) {
+    // Open window immediately (synchronously) before any await to avoid popup blocker
+    const page = url.includes('dashboard') ? 'dashboard' : 'paper';
+    const win = window.open('', '_blank');
     try {
       const d = await api('/api/admin/beta/activate-session', { method: 'POST' });
-      const page = url.includes('dashboard') ? 'dashboard' : 'paper';
-      window.open('/api/admin/beta/redeem?token=' + encodeURIComponent(d.token) + '&page=' + page, '_blank');
+      win.location.href = '/api/admin/beta/redeem?token=' + encodeURIComponent(d.token) + '&page=' + page;
     } catch(e) {
+      win.close();
       alert('Failed to open beta page: ' + e.message);
     }
   };
