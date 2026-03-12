@@ -419,14 +419,13 @@ const ordersBody = qs("ordersBody");
   const orders = account.orders || [];
   ordersBody.innerHTML = orders.length ? orders.slice(0,25).map(o => `
       <tr>
-        <td>${fmtDate(o.time)}</td>
         <td>${escapeHtml(o.product)}</td>
         <td><span class="tag ${o.side==='buy'?'good':'warn'}">${escapeHtml(o.side.toUpperCase())}</span></td>
         <td>${Number(o.qty).toFixed(8)}</td>
         <td>${money(o.price)}</td>
         <td>${money(o.notional)}</td>
       </tr>
-  `).join("") : `<tr><td colspan="6">No orders yet.</td></tr>`;
+  `).join("") : `<tr><td colspan="5">No orders yet.</td></tr>`;
 
   updateRiskMeter(account);
   updateChallengeProgress(account);
