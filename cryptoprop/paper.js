@@ -146,11 +146,8 @@ function updateRiskMeter(account){
 }
 
 
-requireAuth();
+// Auth check happens in init below
 setYear();
-
-const session = getSession();
-qs("who").textContent = session?.email ? `Signed in as ${session.email}` : "";
 qs("logoutBtn").addEventListener("click", () => logout());
 
 let lastPrices = {};
@@ -688,6 +685,8 @@ async function processOpenOrders(){
 }
 
 // -------------------- Init --------------------
+const _user = await requireAuth();
+if(_user) qs("who").textContent = `Signed in as ${_user.email}`;
 await loadAccount();
 await loadUniverse();
 connectWs();
