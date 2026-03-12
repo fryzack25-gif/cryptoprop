@@ -226,10 +226,9 @@ function enforceMinHold(email, product){
 
 
 function requireAdmin(req, res, next){
+  if(!ADMIN_KEY) return res.status(500).json({ error:"ADMIN_KEY not configured on server" });
   const hdr = (req.headers["x-admin-key"] || req.query.adminKey || "").toString();
-  if(hdr && ADMIN_KEY && hdr === ADMIN_KEY) return next();
-  const u = getSessionUser(req);
-  if(u && u.isAdmin) return next();
+  if(hdr && hdr === ADMIN_KEY) return next();
   return res.status(403).json({ error:"Admin only" });
 }
 
