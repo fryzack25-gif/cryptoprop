@@ -8,6 +8,18 @@ import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import { initDb, readData, writeData, getUser, saveUser, getAccount, saveAccount, getAllAccounts, pool } from "./db.js";
 
+// ---- STRIPE ----
+import Stripe from "stripe";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || null;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || null;
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+
+const STRIPE_PRICE_IDS = {
+  "25k": "price_1TAILWR6m1wPvtFMHNZu4gSE",
+  "50k": "price_1TAIM5R6m1wPvtFM6nDD2tYd",
+  "100k": "price_1TAIMkR6m1wPvtFMN2mtav38",
+};
+
 // ---- EMAIL via Resend ----
 const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
 const FROM_EMAIL = "CryptoProp <noreply@thecryptoprop.com>";
@@ -2414,12 +2426,13 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
   const promoCode = (req.body?.promoCode || "").toString().trim().toUpperCase();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
+  if(!stripe) return res.status(500).json({ error:"Payment processing not configured" });
 
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
 
-  // Apply promo code if provided
-  let paid = plan.price;
+  // Validate promo code if provided (discount applied via Stripe coupon or price override)
+  let discountPct = 0;
   let promoApplied = null;
   if(promoCode){
     const codes = await getPromoCodes();
@@ -2429,33 +2442,53 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
       return res.status(400).json({ error: "Promo code has expired" });
     if(promo.maxUses && (promo.uses || 0) >= promo.maxUses)
       return res.status(400).json({ error: "Promo code has reached its usage limit" });
-    const discountAmt = Math.round(plan.price * (promo.discountPct / 100));
-    paid = Math.max(0, plan.price - discountAmt);
+    discountPct = promo.discountPct;
+    promoApplied = { code: promoCode, discountPct };
+    // increment uses now (will be confirmed on webhook)
     promo.uses = (promo.uses || 0) + 1;
     codes[promoCode] = promo;
     await savePromoCodes(codes);
-    promoApplied = { code: promoCode, discountPct: promo.discountPct, discountAmt, originalPrice: plan.price, finalPrice: paid };
   }
 
-  acct.attemptsByPlan = acct.attemptsByPlan || {};
-  acct.retryOfferUsed = acct.retryOfferUsed || {};
-  const prevAttempts = Number(acct.attemptsByPlan[planId] || 0);
-  acct.attemptsByPlan[planId] = prevAttempts + 1;
+  const priceId = STRIPE_PRICE_IDS[planId];
+  if(!priceId) return res.status(500).json({ error:"No price configured for this plan" });
 
-  acct.planId = planId;
-  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: paid, type: "initial", promo: promoApplied };
-  acct.startEquity = plan.startEquity;
-  acct.cash = Number(acct.cash || plan.startEquity);
-  acct.equity = Number(acct.equity || plan.startEquity);
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
 
-  if(acct.referredBy && !acct.firstPurchaseCredited){
-    await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
-    acct.firstPurchaseCredited = true;
+  // Build line items — apply discount as Stripe coupon if needed
+  const lineItems = [{ price: priceId, quantity: 1 }];
+
+  const sessionParams = {
+    mode: "payment",
+    payment_method_types: ["card"],
+    line_items: lineItems,
+    customer_email: email,
+    success_url: `${baseUrl}/paper.html?payment=success`,
+    cancel_url: `${baseUrl}/onboard.html`,
+    metadata: {
+      userEmail: email,
+      planId,
+      promoCode: promoCode || "",
+    },
+  };
+
+  // Apply discount coupon if promo code provided
+  if(discountPct > 0){
+    try {
+      const coupon = await stripe.coupons.create({ percent_off: discountPct, duration: "once", name: promoCode });
+      sessionParams.discounts = [{ coupon: coupon.id }];
+    } catch(e) {
+      console.error("Stripe coupon creation failed:", e.message);
+    }
   }
 
-  resetChallengeAttempt(acct);
-  await saveAccount(email, acct);
-  return res.json({ ok:true, account: acct, promoApplied });
+  try {
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    return res.json({ ok: true, checkoutUrl: session.url });
+  } catch(e) {
+    console.error("Stripe session error:", e.message);
+    return res.status(500).json({ error: "Failed to create checkout session" });
+  }
 });
 
 // ------------------- Admin Ops Console -------------------
@@ -2585,6 +2618,99 @@ function retryDiscount(planId, attempts){
   if(attempts === 1) return 10;
   return 0;
 }
+
+// ---- Helper: activate plan after confirmed payment ----
+async function activatePlan(email, planId, amountPaid, type = "initial", meta = {}) {
+  const plan = PLANS[planId];
+  if(!plan) return;
+  const acct = await getOrCreateAccount(email);
+  acct.attemptsByPlan = acct.attemptsByPlan || {};
+  acct.attemptsByPlan[planId] = Number(acct.attemptsByPlan[planId] || 0) + 1;
+  acct.planId = planId;
+  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: amountPaid, type, ...meta };
+  acct.startEquity = plan.startEquity;
+  acct.cash = plan.startEquity;
+  acct.equity = plan.startEquity;
+  if(acct.referredBy && !acct.firstPurchaseCredited){
+    await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
+    acct.firstPurchaseCredited = true;
+  }
+  resetChallengeAttempt(acct);
+  await saveAccount(email, acct);
+}
+
+// ---- Stripe Webhook ----
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  if(!stripe || !STRIPE_WEBHOOK_SECRET) return res.status(500).json({ error: "Stripe not configured" });
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], STRIPE_WEBHOOK_SECRET);
+  } catch(e) {
+    console.error("Stripe webhook signature failed:", e.message);
+    return res.status(400).send("Webhook signature error");
+  }
+
+  if(event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const email = session.metadata?.userEmail || session.customer_email;
+    const planId = session.metadata?.planId;
+    const amountPaid = session.amount_total ? session.amount_total / 100 : null;
+    const retryType = session.metadata?.retryType || "initial";
+    if(email && planId) {
+      try {
+        if(retryType === "retry") {
+          // Reset with retry flag
+          const acct = await getOrCreateAccount(email);
+          acct.retryAnyUsed = true;
+          await activatePlan(email, planId, amountPaid, "retry_50pct");
+        } else {
+          await activatePlan(email, planId, amountPaid, "initial");
+        }
+        console.log(`[Stripe] Plan activated: ${email} → ${planId} $${amountPaid}`);
+      } catch(e) {
+        console.error("[Stripe] activatePlan error:", e.message);
+      }
+    }
+  }
+
+  res.json({ received: true });
+});
+
+// ---- Stripe Checkout for retry (50% off) ----
+app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after a failed challenge" });
+  if(!stripe) return res.status(500).json({ error: "Payment not configured" });
+
+  const planId = (req.body?.planId || "").toString();
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error: "Invalid plan" });
+
+  const priceId = STRIPE_PRICE_IDS[planId];
+  if(!priceId) return res.status(500).json({ error: "No price configured for this plan" });
+
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
+
+  try {
+    const coupon = await stripe.coupons.create({ percent_off: 50, duration: "once", name: "RETRY50" });
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: email,
+      discounts: [{ coupon: coupon.id }],
+      success_url: `${baseUrl}/paper.html?payment=success`,
+      cancel_url: `${baseUrl}/paper.html`,
+      metadata: { userEmail: email, planId, retryType: "retry" },
+    });
+    return res.json({ ok: true, checkoutUrl: session.url });
+  } catch(e) {
+    console.error("Stripe retry session error:", e.message);
+    return res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
 app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
