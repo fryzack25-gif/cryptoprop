@@ -81,6 +81,9 @@ document.getElementById("loginBtn")?.addEventListener("click", async () => {
   try{
     await post("/api/auth/login", { email, password });
     // Check if they need onboarding
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if(next && next.startsWith("/")) { window.location.href = next; return; }
     const acctRes = await fetch("/api/account");
     const acct = acctRes.ok ? await acctRes.json() : {};
     window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
