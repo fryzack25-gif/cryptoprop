@@ -30,10 +30,15 @@ document.getElementById("signupBtn")?.addEventListener("click", async () => {
   const email = document.getElementById("signupEmail")?.value || "";
   const password = document.getElementById("signupPass")?.value || "";
   const confirm = document.getElementById("signupConfirm")?.value || "";
+  const termsCheck = document.getElementById("termsCheck");
   const msg = document.getElementById("signupMsg");
+  if(!termsCheck?.checked){
+    if(msg){ msg.textContent = "You must read and accept all legal agreements to create an account."; msg.style.color = "#ff4d6a"; }
+    return;
+  }
   if(password !== confirm){ if(msg) msg.textContent = "Passwords do not match."; return; }
   if(password.length < 8){ if(msg) msg.textContent = "Password must be at least 8 characters."; return; }
-  if(msg) msg.textContent = "Creating…";
+  if(msg){ msg.textContent = "Creating…"; msg.style.color = ""; }
   try{
     const data = await post("/api/auth/signup", { email, password });
     if(data.autoVerified) {
@@ -52,7 +57,20 @@ document.getElementById("verifyBtn")?.addEventListener("click", async () => {
   const code = document.getElementById("verifyCode")?.value || "";
   const msg = document.getElementById("verifyMsg");
   if(msg) msg.textContent = "Verifying…";
-  try{ await post("/api/auth/verify-email", { email, code }); if(msg) msg.textContent = "Verified ✅ You can log in now."; }
+  try{
+    await post("/api/auth/verify-email", { email, code });
+    // Log in silently so we can call terms/accept (requires auth session)
+    try{
+      const passEl = document.getElementById("signupPass");
+      if(passEl?.value){
+        await post("/api/auth/login", { email, password: passEl.value });
+        await post("/api/terms/accept", { accept: true });
+        await post("/api/auth/logout", {});
+      }
+    }catch(_){}
+    if(msg){ msg.textContent = "Verified ✅ You can now log in."; msg.style.color = "#4ade80"; }
+    setTimeout(() => setTab("login"), 1500);
+  }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
 document.getElementById("forgotLink")?.addEventListener("click", (e) => {
