@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Rules</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    :root {
+      --green: #00e5a0;
+      --green-dim: rgba(0,229,160,0.1);
+      --green-glow: rgba(0,229,160,0.2);
+      --red: #ff4d6a;
+      --red-dim: rgba(255,77,106,0.1);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.1);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96,165,250,0.1);
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.13);
+      --text: #e8eaed;
+      --muted: rgba(255,255,255,0.45);
+      --mono: 'DM Mono', monospace;
+      --display: 'Syne', sans-serif;
+    }
+
+    body { font-family: var(--display); }
+
+    .rules-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .rules-hero {
+      margin-bottom: 48px;
+    }
+    .rules-hero h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .rules-hero h1 span { color: var(--green); }
+    .rules-hero p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* Section headers */
+    .rules-section {
+      margin-bottom: 40px;
+    }
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Phase cards */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .phase-card:hover { border-color: var(--border-bright); }
+    .phase-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .phase-card.phase1::before { background: var(--green); }
+    .phase-card.phase2::before { background: var(--blue); }
+    .phase-card.funded::before { background: var(--amber); }
+
+    .phase-badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      display: inline-block;
+    }
+    .phase1 .phase-badge { background: var(--green-dim); color: var(--green); }
+    .phase2 .phase-badge { background: var(--blue-dim); color: var(--blue); }
+    .funded .phase-badge { background: var(--amber-dim); color: var(--amber); }
+
+    .phase-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .rule-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .rule-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .rule-key { color: var(--muted); }
+    .rule-val {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .rule-val.good { color: var(--green); }
+    .rule-val.warn { color: var(--amber); }
+    .rule-val.danger { color: var(--red); }
+
+    /* Risk rules — horizontal pills */
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .risk-card:hover { border-color: var(--border-bright); }
+    .risk-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .risk-number {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: var(--mono);
+      margin-bottom: 4px;
+    }
+    .risk-number.red { color: var(--red); }
+    .risk-number.amber { color: var(--amber); }
+    .risk-number.green { color: var(--green); }
+    .risk-label { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    /* Plan comparison table */
+    .plan-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .plan-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-table th:not(:first-child) { text-align: center; }
+    .plan-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .plan-table td:not(:first-child) {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .plan-table tr:last-child td { border-bottom: none; }
+    .plan-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .plan-table .row-label { color: var(--muted); font-size: 12px; }
+
+    /* Info callout */
+    .callout {
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .callout.green { background: var(--green-dim); border: 1px solid rgba(0,229,160,0.15); color: var(--text); }
+    .callout.red { background: var(--red-dim); border: 1px solid rgba(255,77,106,0.15); color: var(--text); }
+    .callout.amber { background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.15); color: var(--text); }
+    .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* Payout section */
+    .payout-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .payout-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+    }
+    .payout-stat-num {
+      font-size: 24px;
+      font-weight: 800;
+      font-family: var(--mono);
+      color: var(--green);
+      margin-bottom: 5px;
+    }
+    .payout-stat-label { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+    @media (max-width: 600px) {
+      .phase-grid { grid-template-columns: 1fr; }
+      .risk-grid { grid-template-columns: 1fr 1fr; }
+      .payout-grid { grid-template-columns: 1fr 1fr; }
+      .rules-hero h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="topbar-brand" href="index.html">
+      <div class="brand-dot"></div>
+      CryptoProp
+    </a>
+    <nav class="topbar-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="paper.html">Trading</a>
+      <a href="rules.html" class="active">Rules</a>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-pill">LIVE DATA</div>
+    <span class="topbar-user" id="who"></span>
+    <button class="btn-ghost-sm" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="rules-wrap">
+
+  <div class="rules-hero">
+    <h1>Trader <span>Rules.</span></h1>
+    <p>Every rule is enforced in real time. Breaching any risk limit fails your challenge immediately. Read carefully before you start trading.</p>
+  </div>
+
+  <!-- ── RISK LIMITS ── -->
+  <div class="rules-section">
+    <div class="section-label">Risk Limits — Apply at All Times</div>
+
+    <div class="risk-grid" style="margin-bottom:14px;">
+      <div class="risk-card">
+        <div class="risk-icon">📉</div>
+        <div class="risk-number red">2%</div>
+        <div class="risk-label">Max daily drawdown from day-start equity</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-icon">🔻</div>
+        <div class="risk-number red">5%</div>
+        <div class="risk-label">Max trailing drawdown from peak equity (ever)</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-icon">📦</div>
+        <div class="risk-number amber">2.5%</div>
+        <div class="risk-label">Max position size per asset (of starting equity)</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <span class="callout-icon">⚠️</span>
+      <span>Breaching either drawdown limit — daily or trailing — results in <strong>immediate challenge failure</strong>. There is no grace period. Your account is locked and you will need to purchase a new challenge to continue.</span>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">ℹ️</span>
+      <span>The trailing drawdown follows your <strong>peak equity ever reached</strong>, not your starting equity. If you grow your account to $55K on a $50K challenge, your floor moves to $52,250 (5% below $55K) and never drops back down.</span>
+    </div>
+  </div>
+
+  <!-- ── CHALLENGE PHASES ── -->
+  <div class="rules-section">
+    <div class="section-label">Challenge Phases</div>
+
+    <div class="phase-grid">
+      <div class="phase-card phase1">
+        <div class="phase-badge">Phase 1</div>
+        <div class="phase-title">Challenge</div>
+        <div class="rule-row">
+          <span class="rule-key">Profit target</span>
+          <span class="rule-val good">8%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Time limit</span>
+          <span class="rule-val">30 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Min trading days</span>
+          <span class="rule-val">5 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max trailing drawdown</span>
+          <span class="rule-val danger">5%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max daily drawdown</span>
+          <span class="rule-val danger">2%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Consistency rule</span>
+          <span class="rule-val warn">Max 40% in one day</span>
+        </div>
+      </div>
+
+      <div class="phase-card phase2">
+        <div class="phase-badge">Phase 2</div>
+        <div class="phase-title">Verification</div>
+        <div class="rule-row">
+          <span class="rule-key">Profit target</span>
+          <span class="rule-val good">5%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Time limit</span>
+          <span class="rule-val">45 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Min trading days</span>
+          <span class="rule-val">7 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max trailing drawdown</span>
+          <span class="rule-val danger">4%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max daily drawdown</span>
+          <span class="rule-val danger">2%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Consistency rule</span>
+          <span class="rule-val warn">Max 40% in one day</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✅</span>
+      <span>Pass both phases while respecting all risk rules and you move to <strong>Funded status</strong>. The consistency rule means no single trading day can account for more than 40% of your total profits — sustained, disciplined trading is rewarded.</span>
+    </div>
+  </div>
+
+  <!-- ── TRADING RULES ── -->
+  <div class="rules-section">
+    <div class="section-label">Trading Rules</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>Value</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Markets allowed</td>
+            <td><span style="color:var(--green);font-family:var(--mono);font-size:12px">Spot only</span></td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">BTC, ETH and major altcoins. No leverage, no perpetuals.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Trading fee</td>
+            <td>2%</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Applied per trade to simulate real execution costs.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Max position size</td>
+            <td>2.5%</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Of your starting account equity, per asset.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Holding period</td>
+            <td><span style="color:var(--green);font-family:var(--mono);font-size:12px">None</span></td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">No minimum hold time. Open and close freely.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Prohibited strategies</td>
+            <td><span style="color:var(--red);font-family:var(--mono);font-size:12px">Banned</span></td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Exploitative strategies, API abuse, or any form of manipulation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAYOUT RULES ── -->
+  <div class="rules-section">
+    <div class="section-label">Funded Account &amp; Payouts</div>
+
+    <div class="payout-grid" style="margin-bottom:14px;">
+      <div class="payout-stat">
+        <div class="payout-stat-num">80%</div>
+        <div class="payout-stat-label">Profit split to trader</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">2%</div>
+        <div class="payout-stat-label">Max payout per 7-day period</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">8%</div>
+        <div class="payout-stat-label">Profit buffer before first payout</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">14d</div>
+        <div class="payout-stat-label">Waiting period after funded activation</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Payout Rule</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Profit split</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">You keep 80% of net profits. CryptoProp retains 20%.</td>
+          </tr>
+          <tr>
+            <td class="row-label">First payout delay</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">14 days after funded account activation before any payout request.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Payout cadence</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Weekly — once every 7 days after the first payout becomes available.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Weekly cap</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Max 2% of starting equity per 7-day period. ($500 on $25K, $1,000 on $50K, $2,000 on $100K)</td>
+          </tr>
+          <tr>
+            <td class="row-label">Profit buffer</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Must earn 8% above starting equity before withdrawing anything. This buffer stays in the account at all times.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Daily profit cap</td>
+            <td style="color:var(--muted);font-size:12px;font-family:inherit">Daily gains counted toward payouts are capped at 4% of starting equity. Losses count in full.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">ℹ️</span>
+      <span>Payouts are <strong>performance-based discretionary payments</strong> from CryptoProp. They are not guaranteed. CryptoProp reserves the right to withhold payouts if account behaviour violates the trader agreement.</span>
+    </div>
+  </div>
+
+  <!-- ── PLAN SIZES ── -->
+  <div class="rules-section">
+    <div class="section-label">Account Sizes</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Starting Equity</th>
+            <th>Evaluation Fee</th>
+            <th>Phase 1 Target</th>
+            <th>Phase 2 Target</th>
+            <th>Weekly Payout Cap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:700">Starter</td>
+            <td>$25,000</td>
+            <td>$149</td>
+            <td style="color:var(--green)">$2,000</td>
+            <td style="color:var(--blue)">$1,250</td>
+            <td>$500</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">Standard</td>
+            <td>$50,000</td>
+            <td>$279</td>
+            <td style="color:var(--green)">$4,000</td>
+            <td style="color:var(--blue)">$2,500</td>
+            <td>$1,000</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">Pro</td>
+            <td>$100,000</td>
+            <td>$499</td>
+            <td style="color:var(--green)">$8,000</td>
+            <td style="color:var(--blue)">$5,000</td>
+            <td>$2,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { apiFetch, requireAuth, logout } from "/app.js";
+  const me = await requireAuth();
+  if(!me) return;
+  const whoEl = document.getElementById("who");
+  if(whoEl) whoEl.textContent = me.email;
+  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+</script>
+</body>
+</html>
