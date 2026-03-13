@@ -1950,6 +1950,7 @@ app.get("/api/admin/overview", requireAdmin, async (req, res) => {
       totalDD: Number(a.totalDD || 0),
       withdrawable: withdrawableAmount(a),
       pendingPayouts: (Array.isArray(a.payoutRequests)?a.payoutRequests:[]).filter(r=>r.status==="pending").length,
+      kycStatus: a.kycStatus || "not_started",
       deviceCount: (Array.isArray(a.devices)?a.devices:[]).length,
       ipCount: (Array.isArray(a.ips)?a.ips:[]).length
     };
@@ -2064,8 +2065,16 @@ app.get("/api/admin/kyc/pending", requireAdmin, async (req, res) => {
   const pending = [];
   for(const email of Object.keys(accounts)){
     const a = accounts[email];
-    if(a.kycStatus === "pending"){
-      pending.push({ email, submittedAt: a.kycSubmittedAt, profile: a.kycProfile || null });
+    if(a.kycStatus && a.kycStatus !== "not_started"){
+      pending.push({
+        email,
+        kycStatus: a.kycStatus,
+        submittedAt: a.kycSubmittedAt || null,
+        approvedAt: a.kycApprovedAt || null,
+        profile: a.kycProfile || null,
+        stripeSessionId: a.kycStripeSessionId || null,
+        failReason: a.kycFailReason || null,
+      });
     }
   }
   pending.sort((x,y)=> new Date(y.submittedAt||0).getTime() - new Date(x.submittedAt||0).getTime());
@@ -2078,7 +2087,7 @@ app.post("/api/admin/kyc/set-status", requireAdmin, async (req, res) => {
   db.accounts = db.accounts || {};
   const a = db.accounts[email];
   if(!a) return res.status(404).json({ error:"Not found" });
-  if(!["approved","rejected","pending"].includes(status)) return res.status(400).json({ error:"Invalid status" });
+  if(!["approved","rejected","pending","not_started","failed"].includes(status)) return res.status(400).json({ error:"Invalid status" });
   a.kycStatus = status;
   db.accounts[email] = a;
   await writeData(db);
