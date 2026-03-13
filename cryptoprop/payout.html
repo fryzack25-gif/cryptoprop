@@ -6,295 +6,283 @@
   <title>CryptoProp — Payout</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" />
   <style>
     :root {
-      --term-bg:#080b10; --term-panel:#0d1117; --term-border:rgba(255,255,255,0.07);
-      --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80;
-      --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0;
-      --term-red:#ff4d6a; --term-mono:'JetBrains Mono',monospace;
-      --term-sans:'Syne',sans-serif; --amber:#f59e0b;
+      --bg:#080b10; --panel:#0d1117; --border:rgba(255,255,255,0.07);
+      --border2:rgba(255,255,255,0.14); --muted:#5a6a80; --text:#c8d8e8;
+      --bright:#e8f0f8; --green:#00e5a0; --red:#ff4d6a;
+      --mono:'JetBrains Mono',monospace; --sans:'Syne',sans-serif; --amber:#f59e0b;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html,body{background:var(--term-bg);color:var(--term-text);font-family:var(--term-mono);font-size:13px;}
+    html,body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;}
+    a{text-decoration:none;}
 
-    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--term-panel);border-bottom:1px solid var(--term-border);position:sticky;top:0;z-index:100;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
     .topbar-left{display:flex;align-items:center;gap:20px;}
-    .topbar-brand{font-family:var(--term-sans);font-weight:800;font-size:15px;color:var(--term-bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
-    .brand-dot{width:8px;height:8px;border-radius:50%;background:var(--term-green);box-shadow:0 0 8px var(--term-green);animation:pulse 2s infinite;}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .topbar-nav{display:flex;gap:2px;}
-    .topbar-nav a{padding:6px 12px;border-radius:6px;color:var(--term-muted);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;transition:color .15s,background .15s;}
-    .topbar-nav a:hover{color:var(--term-text);background:rgba(255,255,255,0.05);}
-    .topbar-nav a.active{color:var(--term-bright);background:rgba(255,255,255,0.08);}
+    .brand{font-family:var(--sans);font-weight:800;font-size:15px;color:var(--bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    nav a{padding:6px 12px;border-radius:6px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;text-decoration:none;transition:.15s;}
+    nav a:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+    nav a.on{color:var(--bright);background:rgba(255,255,255,0.08);}
     .topbar-right{display:flex;align-items:center;gap:12px;}
-    .topbar-pill{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--term-green);font-weight:600;}
-    .topbar-user{font-size:11px;color:var(--term-muted);}
-    .btn-ghost-sm{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:6px;padding:5px 12px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;transition:all .15s;}
-    .btn-ghost-sm:hover{color:var(--term-text);border-color:var(--term-border-bright);}
+    .pill{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--green);font-weight:600;}
+    #whoEl{font-size:11px;color:var(--muted);}
+    .ghostbtn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--muted);font-size:11px;font-family:var(--mono);cursor:pointer;transition:.15s;}
+    .ghostbtn:hover{color:var(--text);border-color:var(--border2);}
 
     .wrap{max-width:660px;margin:0 auto;padding:40px 24px 80px;}
 
-    .page-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--term-green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
-    .page-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--term-green);box-shadow:0 0 6px var(--term-green);}
-    .page-title{font-family:var(--term-sans);font-size:28px;font-weight:800;color:var(--term-bright);letter-spacing:-0.02em;margin-bottom:6px;}
-    .page-sub{font-size:12px;color:var(--term-muted);line-height:1.6;margin-bottom:32px;}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
+    .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+    h1{font-family:var(--sans);font-size:28px;font-weight:800;color:var(--bright);letter-spacing:-0.02em;margin-bottom:6px;}
+    .sub{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:32px;}
 
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
-    .scard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;}
-    .slabel{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
-    .sval{font-size:20px;font-weight:700;color:var(--term-bright);}
-    .sval.g{color:var(--term-green);}
-    .sval.a{color:var(--amber);}
-    .ssub{font-size:10px;color:var(--term-muted);margin-top:4px;}
+    .sc{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:16px;}
+    .sc .lbl{font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+    .sc .val{font-size:20px;font-weight:700;color:var(--bright);}
+    .sc .val.g{color:var(--green);}
+    .sc .val.a{color:var(--amber);}
+    .sc .hint{font-size:10px;color:var(--muted);margin-top:4px;}
 
-    .pbar-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;margin-bottom:16px;}
-    .pbar-head{display:flex;justify-content:space-between;margin-bottom:10px;}
-    .pbar-label{font-size:11px;color:var(--term-muted);text-transform:uppercase;letter-spacing:0.08em;}
-    .pbar-pct{font-size:12px;font-weight:700;font-family:var(--term-mono);}
-    .pbar-track{height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;}
-    .pbar-fill{height:8px;border-radius:999px;transition:width .6s ease;}
-    .pbar-sub{font-size:11px;color:var(--term-muted);margin-top:8px;}
+    .bufcard{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+    .bufcard .row{display:flex;justify-content:space-between;margin-bottom:10px;}
+    .bufcard .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+    .bufcard .pct{font-size:12px;font-weight:700;font-family:var(--mono);}
+    .track{height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;}
+    .fill{height:8px;border-radius:999px;transition:width .6s;}
+    .bufcard .hint{font-size:11px;color:var(--muted);margin-top:8px;}
 
-    .notice{border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:16px;display:flex;gap:10px;}
-    .notice.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
-    .notice.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);}
+    .alert{border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:16px;}
+    .alert.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
 
-    .fcard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;margin-bottom:20px;}
-    .fcard-title{font-family:var(--term-sans);font-size:15px;font-weight:700;color:var(--term-bright);margin-bottom:16px;}
+    .formcard{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:20px;}
+    .formcard h2{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--bright);margin-bottom:16px;}
     .frow{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-    .fgroup{flex:1;}
-    .flabel{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
-    .finput{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-bright);font-family:var(--term-mono);font-size:13px;outline:none;transition:border-color .15s;}
-    .finput:focus{border-color:var(--term-green);}
-    .finput:disabled{opacity:0.4;}
-    .maxbtn{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;white-space:nowrap;transition:all .15s;}
-    .maxbtn:hover{color:var(--term-text);border-color:var(--term-border-bright);}
-    .subbtn{width:100%;padding:13px;background:var(--term-green);color:#000;border:none;border-radius:8px;font-family:var(--term-sans);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;}
-    .subbtn:hover:not(:disabled){background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.25);}
-    .subbtn:disabled{opacity:0.4;cursor:not-allowed;}
+    .fgrp{flex:1;}
+    .fgrp label{font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
+    .fgrp input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;padding:10px 14px;color:var(--bright);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s;}
+    .fgrp input:focus{border-color:var(--green);}
+    .maxbtn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;padding:10px 14px;color:var(--muted);font-size:11px;font-family:var(--mono);cursor:pointer;transition:.15s;white-space:nowrap;}
+    .maxbtn:hover{color:var(--text);border-color:var(--border2);}
+    .subbtn{width:100%;padding:13px;background:var(--green);color:#000;border:none;border-radius:8px;font-family:var(--sans);font-size:14px;font-weight:800;cursor:pointer;transition:.15s;}
+    .subbtn:hover:not([disabled]){background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.2);}
+    .subbtn[disabled]{opacity:0.4;cursor:not-allowed;}
     .fmsg{font-size:12px;margin-top:10px;min-height:16px;}
-    .fmsg.ok{color:var(--term-green);}
-    .fmsg.err{color:var(--term-red);}
+    .fmsg.ok{color:var(--green);}
+    .fmsg.err{color:var(--red);}
 
-    .hcard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
-    .htitle{font-family:var(--term-sans);font-size:14px;font-weight:700;color:var(--term-bright);padding:14px 18px;border-bottom:1px solid var(--term-border);}
-    .htable{width:100%;border-collapse:collapse;font-size:12px;}
-    .htable th{text-align:left;padding:9px 18px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);}
-    .htable td{padding:11px 18px;border-bottom:1px solid var(--term-border);}
-    .htable tr:last-child td{border-bottom:none;}
-    .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;}
-    .pill.pending{background:rgba(245,158,11,0.1);color:var(--amber);}
-    .pill.paid{background:rgba(0,229,160,0.1);color:var(--term-green);}
-    .pill.rejected{background:rgba(255,77,106,0.1);color:var(--term-red);}
-    .hempty{text-align:center;color:var(--term-muted);padding:28px!important;}
+    .histcard{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+    .histcard h2{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--bright);padding:14px 18px;border-bottom:1px solid var(--border);}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{text-align:left;padding:9px 18px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+    td{padding:11px 18px;border-bottom:1px solid var(--border);}
+    tr:last-child td{border-bottom:none;}
+    .chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;}
+    .chip.pending{background:rgba(245,158,11,0.1);color:var(--amber);}
+    .chip.paid{background:rgba(0,229,160,0.1);color:var(--green);}
+    .chip.rejected{background:rgba(255,77,106,0.1);color:var(--red);}
+    .empty{text-align:center;color:var(--muted);padding:28px!important;}
 
-    .locked{text-align:center;padding:80px 24px;}
-    .locked h2{font-family:var(--term-sans);font-size:20px;font-weight:800;color:var(--term-bright);margin-bottom:10px;}
-    .locked p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:360px;margin:0 auto 20px;}
-    .locked a{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.06);border:1px solid var(--term-border);border-radius:8px;color:var(--term-text);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;}
+    #lockedView{text-align:center;padding:80px 24px;}
+    #lockedView h2{font-family:var(--sans);font-size:20px;font-weight:800;color:var(--bright);margin-bottom:10px;}
+    #lockedView p{font-size:13px;color:var(--muted);line-height:1.7;max-width:360px;margin:0 auto 20px;}
+    #lockedView a{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;}
   </style>
 </head>
 <body>
 
 <header class="topbar">
   <div class="topbar-left">
-    <a class="topbar-brand" href="index.html"><div class="brand-dot"></div>CryptoProp</a>
-    <nav class="topbar-nav">
+    <a class="brand" href="index.html"><div class="dot"></div>CryptoProp</a>
+    <nav>
       <a href="dashboard.html">Dashboard</a>
       <a href="paper.html">Trading</a>
       <a href="rules.html">Rules</a>
-      <a href="payout.html" class="active">Payout</a>
+      <a href="payout.html" class="on">Payout</a>
     </nav>
   </div>
   <div class="topbar-right">
-    <div class="topbar-pill">FUNDED</div>
-    <span class="topbar-user" id="who"></span>
-    <button class="btn-ghost-sm" id="logoutBtn">Logout</button>
+    <div class="pill">LIVE</div>
+    <span id="whoEl"></span>
+    <button class="ghostbtn" onclick="doLogout()">Logout</button>
   </div>
 </header>
 
 <div class="wrap" id="lockedView" style="display:none">
-  <div class="locked">
-    <div style="font-size:40px;margin-bottom:16px">🔒</div>
-    <h2>Funded accounts only</h2>
-    <p>Pass both challenge phases to unlock payouts. Keep trading to hit your targets.</p>
-    <a href="paper.html">← Back to Trading</a>
-  </div>
+  <div style="font-size:40px;margin-bottom:16px">🔒</div>
+  <h2>Funded accounts only</h2>
+  <p>Pass both challenge phases to unlock payouts.</p>
+  <a href="paper.html">← Back to Trading</a>
 </div>
 
 <div class="wrap" id="fundedView" style="display:none">
-  <div class="page-badge">Funded Account</div>
-  <div class="page-title">Request Payout</div>
-  <div class="page-sub">Withdraw your earned profits. Requests are reviewed within 5 business days.</div>
+  <div class="badge">Funded Account</div>
+  <h1>Request Payout</h1>
+  <div class="sub">Withdraw your profits. Requests appear in the admin panel and are processed within 5 business days.</div>
 
   <div class="stats">
-    <div class="scard">
-      <div class="slabel">Available</div>
-      <div class="sval g" id="valWithdrawable">—</div>
-      <div class="ssub" id="subWithdrawable">—</div>
-    </div>
-    <div class="scard">
-      <div class="slabel">Weekly cap left</div>
-      <div class="sval" id="valCap">—</div>
-      <div class="ssub" id="subCap">—</div>
-    </div>
-    <div class="scard">
-      <div class="slabel">Total paid out</div>
-      <div class="sval a" id="valTotal">—</div>
-      <div class="ssub">All time</div>
-    </div>
+    <div class="sc"><div class="lbl">Available</div><div class="val g" id="vWith">—</div><div class="hint" id="hWith">—</div></div>
+    <div class="sc"><div class="lbl">Weekly cap left</div><div class="val" id="vCap">—</div><div class="hint" id="hCap">—</div></div>
+    <div class="sc"><div class="lbl">Total paid out</div><div class="val a" id="vTotal">—</div><div class="hint">All time</div></div>
   </div>
 
-  <div class="pbar-card">
-    <div class="pbar-head">
-      <span class="pbar-label">3% profit buffer</span>
-      <span class="pbar-pct" id="bufPct">—</span>
-    </div>
-    <div class="pbar-track"><div class="pbar-fill" id="bufFill" style="width:0%"></div></div>
-    <div class="pbar-sub" id="bufSub">—</div>
+  <div class="bufcard">
+    <div class="row"><span class="lbl">3% profit buffer</span><span class="pct" id="bPct">—</span></div>
+    <div class="track"><div class="fill" id="bFill" style="width:0%"></div></div>
+    <div class="hint" id="bSub">—</div>
   </div>
 
-  <div id="alertArea"></div>
+  <div id="alertBox"></div>
 
-  <div class="fcard">
-    <div class="fcard-title">New Request</div>
+  <div class="formcard">
+    <h2>New Request</h2>
     <div class="frow">
-      <div class="fgroup">
-        <label class="flabel" for="amt">Amount (USD)</label>
-        <input class="finput" id="amt" type="number" step="0.01" min="1" placeholder="0.00" />
+      <div class="fgrp">
+        <label for="amtInput">Amount (USD)</label>
+        <input id="amtInput" type="number" step="0.01" min="1" placeholder="0.00" />
       </div>
-      <button class="maxbtn" id="maxBtn">Max</button>
+      <button class="maxbtn" onclick="setMax()">Max</button>
     </div>
-    <button class="subbtn" id="subBtn">Request Payout</button>
+    <button class="subbtn" id="subBtn" onclick="submitPayout()">Request Payout</button>
     <div class="fmsg" id="fmsg"></div>
   </div>
 
-  <div class="hcard">
-    <div class="htitle">Payout History</div>
-    <table class="htable">
-      <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
-      <tbody id="hbody"><tr><td class="hempty" colspan="3">No payouts yet.</td></tr></tbody>
-    </table>
+  <div class="histcard">
+    <h2>Payout History</h2>
+    <table><thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody id="histBody"><tr><td class="empty" colspan="3">No payouts yet.</td></tr></tbody></table>
   </div>
 </div>
 
-<script type="module">
-  import { apiFetch, requireAuth, logout } from "/app.js";
+<script>
+var _withdrawable = 0, _capLeft = 0;
 
-  const $ = id => document.getElementById(id);
-  const money = n => "$" + Number(n||0).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
-  const fmtD = s => s ? new Date(s).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"}) : "—";
+function money(n) {
+  return '$' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(s) {
+  return s ? new Date(s).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+}
+function g(id) { return document.getElementById(id); }
 
-  const me = await requireAuth();
-  if (!me) return;
-  $("who").textContent = me.email;
-  $("logoutBtn").addEventListener("click", logout);
+function doLogout() {
+  fetch('/api/auth/logout', {method:'POST'}).catch(function(){});
+  sessionStorage.removeItem('cp_session');
+  window.location.href = '/auth.html?force=true';
+}
 
-  const r = await apiFetch("/api/account");
-  const a = await r.json();
+function setMax() {
+  g('amtInput').value = Math.min(_withdrawable, _capLeft).toFixed(2);
+}
 
-  if (a.challengePhase !== "funded") {
-    $("lockedView").style.display = "";
+async function submitPayout() {
+  var amount = Number(g('amtInput').value);
+  var msg = g('fmsg');
+  if (!amount || amount <= 0) { msg.className='fmsg err'; msg.textContent='Enter a valid amount.'; return; }
+  if (amount > _withdrawable) { msg.className='fmsg err'; msg.textContent='Exceeds available: ' + money(_withdrawable); return; }
+  if (amount > _capLeft)      { msg.className='fmsg err'; msg.textContent='Exceeds weekly cap: ' + money(_capLeft); return; }
+  var btn = g('subBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  msg.className='fmsg'; msg.textContent='';
+  try {
+    var r = await fetch('/api/payout/request', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({amount: amount})
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    msg.className='fmsg ok';
+    msg.textContent = '✅ Payout request for ' + money(amount) + ' submitted to admin.';
+    g('amtInput').value = '';
+    btn.textContent = 'Submitted ✓';
+    loadHistory();
+  } catch(e) {
+    msg.className='fmsg err'; msg.textContent = e.message;
+    btn.disabled=false; btn.textContent='Request Payout';
+  }
+}
+
+async function loadHistory() {
+  try {
+    var r = await fetch('/api/account');
+    if (!r.ok) return;
+    var a = await r.json();
+    var rows = [].concat(a.payoutRequests||[], a.payouts||[])
+      .sort(function(x,y){ return new Date(y.time||y.requestedAt) - new Date(x.time||x.requestedAt); });
+    var body = g('histBody');
+    if (!rows.length) { body.innerHTML='<tr><td class="empty" colspan="3">No payouts yet.</td></tr>'; return; }
+    body.innerHTML = rows.map(function(p) {
+      return '<tr><td>'+fmtDate(p.time||p.requestedAt)+'</td>'
+        +'<td style="color:var(--green)">'+money(p.amount)+'</td>'
+        +'<td><span class="chip '+(p.status||'pending')+'">'+(p.status||'pending')+'</span></td></tr>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function init() {
+  // Check auth
+  var r = await fetch('/api/auth/me');
+  if (!r.ok) { window.location.href = '/auth.html?force=true'; return; }
+  var me = await r.json();
+  g('whoEl').textContent = me.user ? me.user.email : '';
+
+  // Load account
+  var r2 = await fetch('/api/account');
+  if (!r2.ok) { window.location.href = '/auth.html?force=true'; return; }
+  var a = await r2.json();
+
+  if (a.challengePhase !== 'funded') {
+    g('lockedView').style.display = '';
     return;
   }
 
-  $("fundedView").style.display = "";
+  g('fundedView').style.display = '';
 
-  const withdrawable = Math.max(0, Number(a.withdrawable || 0));
-  const capLeft      = Math.max(0, Number(a.payoutCapRemaining || 0));
-  const totalPaid    = Number(a.payoutsPaidTotal || 0);
-  const eligible     = Number(a.payoutEligiblePnL || 0);
-  const buffer       = Number(a.profitBuffer || 0);
-  const bufPct       = buffer > 0 ? Math.min(100, Math.round(eligible / buffer * 100)) : 100;
+  _withdrawable = Math.max(0, Number(a.withdrawable || 0));
+  _capLeft      = Math.max(0, Number(a.payoutCapRemaining || 0));
+  var totalPaid = Number(a.payoutsPaidTotal || 0);
+  var eligible  = Number(a.payoutEligiblePnL || 0);
+  var buffer    = Number(a.profitBuffer || 0);
+  var bufPct    = buffer > 0 ? Math.min(100, Math.round(eligible / buffer * 100)) : 100;
 
-  $("valWithdrawable").textContent = money(withdrawable);
-  $("subWithdrawable").textContent = bufPct >= 100 ? "Buffer met ✓" : `Buffer ${bufPct}% reached`;
-  $("valCap").textContent          = money(capLeft);
-  $("subCap").textContent          = `of ${money(a.payoutCap || 0)} weekly`;
-  $("valTotal").textContent        = money(totalPaid);
-  $("bufPct").textContent          = bufPct + "%";
-  $("bufPct").style.color          = bufPct >= 100 ? "var(--term-green)" : "var(--amber)";
-  $("bufFill").style.width         = bufPct + "%";
-  $("bufFill").style.background    = bufPct >= 100 ? "var(--term-green)" : "var(--amber)";
-  $("bufSub").textContent          = bufPct >= 100
-    ? "Buffer met — withdrawals unlocked."
-    : `${money(eligible)} of ${money(buffer)} — need ${money(Math.max(0, buffer - eligible))} more.`;
+  g('vWith').textContent  = money(_withdrawable);
+  g('hWith').textContent  = bufPct >= 100 ? 'Buffer met ✓' : 'Buffer ' + bufPct + '% reached';
+  g('vCap').textContent   = money(_capLeft);
+  g('hCap').textContent   = 'of ' + money(a.payoutCap || 0) + ' weekly';
+  g('vTotal').textContent = money(totalPaid);
+  g('bPct').textContent   = bufPct + '%';
+  g('bPct').style.color   = bufPct >= 100 ? 'var(--green)' : 'var(--amber)';
+  g('bFill').style.width  = bufPct + '%';
+  g('bFill').style.background = bufPct >= 100 ? 'var(--green)' : 'var(--amber)';
+  g('bSub').textContent   = bufPct >= 100
+    ? 'Buffer met — withdrawals unlocked.'
+    : money(eligible) + ' of ' + money(buffer) + ' — need ' + money(Math.max(0, buffer - eligible)) + ' more.';
 
-  const subBtn = $("subBtn");
-  const eligAt = a.payoutEligibleAt ? new Date(a.payoutEligibleAt).getTime() : 0;
-  const now    = Date.now();
-  let blocked  = false;
+  var btn = g('subBtn');
+  var eligAt = a.payoutEligibleAt ? new Date(a.payoutEligibleAt).getTime() : 0;
+  var now = Date.now();
 
   if (now < eligAt) {
-    const days = Math.ceil((eligAt - now) / 86400000);
-    $("alertArea").innerHTML = `<div class="notice amber">⏳ &nbsp;Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong> (14-day wait after funded activation).</div>`;
-    blocked = true;
+    var days = Math.ceil((eligAt - now) / 86400000);
+    g('alertBox').innerHTML = '<div class="alert amber">⏳ &nbsp;Payouts unlock in <strong>' + days + ' day' + (days!==1?'s':'') + '</strong> — 14-day wait after funded activation.</div>';
+    btn.disabled = true;
   } else if (bufPct < 100) {
-    $("alertArea").innerHTML = `<div class="notice amber">ℹ️ &nbsp;Reach the 3% profit buffer first before withdrawing.</div>`;
-    blocked = true;
-  } else if (capLeft <= 0) {
-    $("alertArea").innerHTML = `<div class="notice amber">⏳ &nbsp;Weekly cap reached — resets every 7 days.</div>`;
-    blocked = true;
-  } else if (withdrawable <= 0) {
-    $("alertArea").innerHTML = `<div class="notice amber">ℹ️ &nbsp;No withdrawable balance yet. Keep trading.</div>`;
-    blocked = true;
+    g('alertBox').innerHTML = '<div class="alert amber">ℹ️ &nbsp;Reach the 3% profit buffer before withdrawing.</div>';
+    btn.disabled = true;
+  } else if (_capLeft <= 0) {
+    g('alertBox').innerHTML = '<div class="alert amber">⏳ &nbsp;Weekly cap reached — resets in 7 days.</div>';
+    btn.disabled = true;
+  } else if (_withdrawable <= 0) {
+    g('alertBox').innerHTML = '<div class="alert amber">ℹ️ &nbsp;No withdrawable balance yet. Keep trading.</div>';
+    btn.disabled = true;
   }
-  if (blocked) subBtn.disabled = true;
 
-  $("maxBtn").addEventListener("click", () => {
-    $("amt").value = Math.min(withdrawable, capLeft).toFixed(2);
-  });
+  loadHistory();
+}
 
-  subBtn.addEventListener("click", async () => {
-    const amount = Number($("amt").value);
-    const msg    = $("fmsg");
-    if (!amount || amount <= 0)    { msg.className="fmsg err"; msg.textContent="Enter a valid amount."; return; }
-    if (amount > withdrawable)     { msg.className="fmsg err"; msg.textContent=`Max withdrawable: ${money(withdrawable)}`; return; }
-    if (amount > capLeft)          { msg.className="fmsg err"; msg.textContent=`Weekly cap remaining: ${money(capLeft)}`; return; }
-
-    subBtn.disabled = true;
-    subBtn.textContent = "Submitting…";
-    msg.className = "fmsg";
-    msg.textContent = "";
-
-    try {
-      const res = await apiFetch("/api/payout/request", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({amount})
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Request failed");
-      msg.className = "fmsg ok";
-      msg.textContent = `✅ Request for ${money(amount)} submitted.`;
-      $("amt").value = "";
-      subBtn.textContent = "Submitted ✓";
-      refreshHistory();
-    } catch (e) {
-      msg.className = "fmsg err";
-      msg.textContent = e.message;
-      subBtn.disabled = false;
-      subBtn.textContent = "Request Payout";
-    }
-  });
-
-  async function refreshHistory() {
-    try {
-      const res = await apiFetch("/api/account");
-      const acc = await res.json();
-      const rows = [...(acc.payoutRequests||[]), ...(acc.payouts||[])]
-        .sort((x,y) => new Date(y.time||y.requestedAt) - new Date(x.time||x.requestedAt));
-      const body = $("hbody");
-      if (!rows.length) { body.innerHTML=`<tr><td class="hempty" colspan="3">No payouts yet.</td></tr>`; return; }
-      body.innerHTML = rows.map(p => `<tr>
-        <td>${fmtD(p.time||p.requestedAt)}</td>
-        <td style="color:var(--term-green)">${money(p.amount)}</td>
-        <td><span class="pill ${p.status||'pending'}">${p.status||'pending'}</span></td>
-      </tr>`).join("");
-    } catch(e) {}
-  }
-  refreshHistory();
+init();
 </script>
 </body>
 </html>
