@@ -198,16 +198,23 @@ document.getElementById("logoutBtn").addEventListener("click", logout);
 const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
 
-const res = await apiFetch("/api/account");
-const acct = await res.json();
-
+let acct;
+try {
+  const res = await apiFetch("/api/account");
+  acct = await res.json();
+} catch(e) {
+  console.error("[payout] account fetch failed:", e);
+  document.getElementById("notFundedPage").style.display = "";
+  return;
+}
 console.log("[payout] challengePhase:", acct?.challengePhase, "planId:", acct?.planId);
-  if(!acct || acct.challengePhase !== "funded") {
+if(!acct || acct.challengePhase !== "funded") {
   document.getElementById("notFundedPage").style.display = "";
   return;
 }
 document.getElementById("mainPage").style.display = "";
 
+try {
 const withdrawable = Math.max(0, Number(acct.withdrawable || 0));
 const capRemaining = Math.max(0, Number(acct.payoutCapRemaining || 0));
 const totalPaid = Number(acct.payoutsPaidTotal || 0);
@@ -291,6 +298,7 @@ async function loadHistory() {
   } catch(e){}
 }
 loadHistory();
+} catch(e) { console.error("[payout] render error:", e); }
 </script>
 </body>
 </html>
