@@ -156,7 +156,7 @@ details summary:hover{color:#9098c0}
       <div class="card">
         <div class="card-hd">All Accounts</div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Frozen</th><th></th></tr></thead>
+          <thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>KYC</th><th>Frozen</th><th></th></tr></thead>
           <tbody id="t-accts"></tbody>
         </table></div>
       </div>
@@ -168,7 +168,7 @@ details summary:hover{color:#9098c0}
       <div class="pg-sub">All trader accounts</div>
       <div class="card">
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>Frozen</th><th></th></tr></thead>
+          <thead><tr><th>Email</th><th>Phase</th><th>Equity</th><th>Daily DD</th><th>Trailing DD</th><th>Withdrawable</th><th>Pending</th><th>KYC</th><th>Frozen</th><th></th></tr></thead>
           <tbody id="t-accts2"></tbody>
         </table></div>
       </div>
@@ -204,7 +204,7 @@ details summary:hover{color:#9098c0}
       <div class="pg-sub">Identity verification submissions</div>
       <div class="card">
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Submitted</th><th>Email</th><th>Name</th><th>DOB</th><th>Address</th><th>Doc</th><th></th></tr></thead>
+          <thead><tr><th>Submitted</th><th>Email</th><th>Status</th><th>Name</th><th>DOB</th><th>Stripe Session</th><th>Actions</th></tr></thead>
           <tbody id="t-kyc"></tbody>
         </table></div>
       </div>
@@ -234,6 +234,8 @@ details summary:hover{color:#9098c0}
               <button class="btn s" onclick="opsAction('freeze',false)">🔓 Unfreeze</button>
               <button class="btn s" onclick="opsAction('unlock-daily')">↻ Unlock daily</button>
               <button class="btn s" onclick="opsAction('verify-email')">✉️ Verify email</button>
+              <button class="btn s" onclick="opsAction('kyc-approve')" style="background:rgba(0,229,160,0.15);color:#00e5a0;border-color:rgba(0,229,160,0.3)">✅ Approve KYC</button>
+              <button class="btn s" onclick="opsAction('kyc-revoke')" style="background:rgba(255,77,106,0.1);color:#ff4d6a;border-color:rgba(255,77,106,0.3)">❌ Revoke KYC</button>
             </div>
           </div>
           <div class="ops-card">
@@ -504,8 +506,10 @@ async function loadAccounts(){
     parseStats(d);
     var rows = d.accounts || [];
     var html = rows.length ? rows.map(function(a){
-      return '<tr><td class="hi">'+a.email+'</td><td>'+a.phase+(a.failed?' <span style="color:#ff6b6b">(FAILED)</span>':'')+'</td><td>'+money(a.equity)+'</td><td>'+pct(a.dayDD)+'</td><td>'+pct(a.totalDD)+'</td><td>'+money(a.withdrawable)+'</td><td>'+(a.frozen?'<span class="tag r">Yes</span>':'<span class="tag g">No</span>')+'</td><td><button class="btn s" data-frz="'+a.email+'" data-st="'+(a.frozen?'0':'1')+'">'+(a.frozen?'Unfreeze':'Freeze')+'</button></td></tr>';
-    }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:#404870">No accounts yet</td></tr>';
+      var kycColor = a.kycStatus==='approved'?'#00e5a0':a.kycStatus==='pending'?'#f59e0b':a.kycStatus==='failed'?'#ff4d6a':'#404870';
+      var kycLabel = (a.kycStatus||'none').toUpperCase();
+      return '<tr><td class="hi">'+a.email+'</td><td>'+a.phase+(a.failed?' <span style="color:#ff6b6b">(FAILED)</span>':'')+'</td><td>'+money(a.equity)+'</td><td>'+pct(a.dayDD)+'</td><td>'+pct(a.totalDD)+'</td><td>'+money(a.withdrawable)+'</td><td>'+(a.pendingPayouts||0)+'</td><td><span style="color:'+kycColor+';font-weight:700;font-size:11px">'+kycLabel+'</span></td><td>'+(a.frozen?'<span class="tag r">Yes</span>':'<span class="tag g">No</span>')+'</td><td><button class="btn s" data-frz="'+a.email+'" data-st="'+(a.frozen?'0':'1')+'">'+(a.frozen?'Unfreeze':'Freeze')+'</button></td></tr>';
+    }).join('') : '<tr><td colspan="10" style="text-align:center;padding:20px;color:#404870">No accounts yet</td></tr>';
     if(g('t-accts'))  g('t-accts').innerHTML  = html;
     if(g('t-accts2')) g('t-accts2').innerHTML = html;
   }catch(e){ console.error(e); }
@@ -538,10 +542,25 @@ async function loadKyc(){
     var d = await api('/api/admin/kyc/pending');
     var rows = d.pending || [];
     if(!g('t-kyc')) return;
+    var kycC = {approved:'#00e5a0', pending:'#f59e0b', failed:'#ff4d6a', not_started:'#5a6a80', rejected:'#ff4d6a'};
     g('t-kyc').innerHTML = rows.length ? rows.map(function(r){
-      var p = r.profile||{};
-      return '<tr><td>'+(r.submittedAt?new Date(r.submittedAt).toLocaleString():'—')+'</td><td class="hi">'+r.email+'</td><td>'+(p.name||'—')+'</td><td>'+(p.dob||'—')+'</td><td>'+(p.address||'—')+'</td><td>'+(p.docType||'—')+'</td><td style="white-space:nowrap"><button class="btn s p" data-kyc="'+r.email+'" data-ks="approved">Approve</button> <button class="btn s" data-kyc="'+r.email+'" data-ks="rejected">Reject</button></td></tr>';
-    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#404870">No pending KYC</td></tr>';
+      var st = r.kycStatus||'pending';
+      var col = kycC[st]||'#5a6a80';
+      var sid = r.stripeSessionId ? '<code style="font-size:10px">'+r.stripeSessionId.slice(0,20)+'…</code>' : '—';
+      return '<tr>'
+        +'<td style="white-space:nowrap">'+(r.submittedAt?new Date(r.submittedAt).toLocaleString():'—')+'</td>'
+        +'<td class="hi">'+r.email+'</td>'
+        +'<td><span style="color:'+col+';font-weight:700;font-size:11px">'+st.toUpperCase()+'</span></td>'
+        +'<td>'+(r.profile&&r.profile.name||'—')+'</td>'
+        +'<td>'+(r.profile&&r.profile.dob||'—')+'</td>'
+        +'<td>'+sid+'</td>'
+        +'<td style="white-space:nowrap">'
+          +'<button class="btn s p" data-kyc="'+r.email+'" data-ks="approved">✅ Approve</button> '
+          +'<button class="btn s" data-kyc="'+r.email+'" data-ks="not_started" style="color:#f59e0b;border-color:rgba(245,158,11,0.3)">↩ Reset</button> '
+          +'<button class="btn s d" data-kyc="'+r.email+'" data-ks="failed">❌ Reject</button>'
+        +'</td>'
+        +'</tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#404870">No KYC submissions</td></tr>';
   }catch(e){}
 }
 
@@ -624,7 +643,9 @@ async function opsLoad(){
     var d = await api('/api/admin/account?email='+encodeURIComponent(email));
     var a = d.account;
     g('ops-cards').style.display = '';
-    g('ops-status').textContent = (a.challengePhase||'challenge').toUpperCase()+' • '+money(a.equity)+(a.challengeFailed?' • FAILED':'')+(a.frozen?' • FROZEN':'');
+    var kycC = a.kycStatus==='approved'?'#00e5a0':a.kycStatus==='pending'?'#f59e0b':a.kycStatus==='failed'?'#ff4d6a':'#5a6a80';
+    var kycL = (a.kycStatus||'none').toUpperCase();
+    g('ops-status').innerHTML = (a.challengePhase||'challenge').toUpperCase()+' • '+money(a.equity)+(a.challengeFailed?' • <span style="color:#ff6b6b">FAILED</span>':'')+(a.frozen?' • <span style="color:#f59e0b">FROZEN</span>':'')+' • <span style="color:'+kycC+';font-weight:700">KYC: '+kycL+'</span>';
     g('ops-detail').textContent = 'DD day '+pct(a.dayDD)+' • trailing '+pct(a.totalDD)+' • withdrawable '+money(a.withdrawable||0);
     g('ops-json').textContent = JSON.stringify(a, null, 2);
   }catch(e){ alert(e.message); }
@@ -642,8 +663,10 @@ async function opsAction(action, param){
   if(action==='freeze') body.frozen = param;
   if(action==='flatten') body.reason = g('ops-reason').value.trim();
   if(action==='set-phase') body.phase = g('ops-phase').value;
+  if(action==='kyc-approve') body.status = 'approved';
+  if(action==='kyc-revoke') body.status = 'not_started';
   if(action==='reset' && !confirm('Reset this account?')) return;
-  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase','verify-email':'/api/admin/user/verify-email'};
+  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase','verify-email':'/api/admin/user/verify-email','kyc-approve':'/api/admin/kyc/set-status','kyc-revoke':'/api/admin/kyc/set-status'};
   try{
     await api(urlMap[action],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     await opsLoad();
