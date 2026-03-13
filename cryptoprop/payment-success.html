@@ -80,30 +80,16 @@
 
 <script>
 const statusMsg = document.getElementById('statusMsg');
-const ctaBtn = document.getElementById('ctaBtn');
 
-async function checkSession() {
-  try {
-    const res = await fetch('/api/auth/me');
-    const data = await res.json();
-    if (data.user) {
-      // Logged in — wait briefly for webhook to fire then go to paper
-      statusMsg.textContent = 'Setting up your account…';
-      statusMsg.classList.add('dots');
-      await new Promise(r => setTimeout(r, 2000));
-      window.location.href = '/paper.html';
-    } else {
-      // Session expired during Stripe redirect — send to login, then back here
-      statusMsg.textContent = 'Session expired — please log in to access your account';
-      ctaBtn.textContent = 'Log In →';
-      ctaBtn.href = '/auth.html?next=/payment-success.html';
-    }
-  } catch(e) {
-    statusMsg.textContent = 'Could not reach server — try refreshing';
-  }
+async function init() {
+  statusMsg.textContent = 'Setting up your account…';
+  statusMsg.classList.add('dots');
+  // Give webhook a moment to fire then redirect
+  await new Promise(r => setTimeout(r, 2500));
+  window.location.href = '/paper.html';
 }
 
-checkSession();
+init();
 </script>
 </body>
 </html>
