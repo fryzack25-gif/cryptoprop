@@ -78,7 +78,7 @@ window.buyFailPlan = async function(planId) {
     const res = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ planId }) });
     if(res.status === 401){
       if(msgEl){ msgEl.style.color="#ff4d6a"; msgEl.textContent = "Session expired — please log in again to complete your purchase."; }
-      setTimeout(() => { window.location.href = "/auth.html"; }, 2500);
+      setTimeout(() => { window.location.href = "/auth.html?force=true"; }, 2500);
       return;
     }
     const data = await res.json();
