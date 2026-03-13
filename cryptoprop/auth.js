@@ -97,11 +97,16 @@ document.getElementById("adminBtn")?.addEventListener("click", async () => {
   try{ await post("/api/auth/admin-elevate", { adminKey }); if(msg) msg.textContent = "Admin enabled ✅ Redirecting…"; window.location.href = "/admin.html"; }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
+// Only auto-redirect if user didn't explicitly navigate to login page
 (async function(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get("force") === "true") return; // user clicked Login intentionally, show the form
   try{
     const res = await fetch("/api/auth/me");
     const data = await res.json();
     if(data.user){
+      const next = params.get("next");
+      if(next && next.startsWith("/")) { window.location.href = next; return; }
       const acctRes = await fetch("/api/account");
       const acct = acctRes.ok ? await acctRes.json() : {};
       window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
