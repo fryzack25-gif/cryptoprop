@@ -188,35 +188,34 @@
 </div>
 
 <script type="module">
-import { apiFetch, requireAuth, logout } from "/app.js";
+import { apiFetch, requireAuth, logout } from "./app.js";
 
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
+document.body.innerHTML += '<div id="dbg" style="color:lime;padding:20px;font-size:14px">Step 1: script started</div>';
 
-// Auth
 const me = await requireAuth();
+document.getElementById("dbg").textContent = "Step 2: auth done, user=" + (me ? me.email : "null");
 if(!me) return;
+
 document.getElementById("who").textContent = me.email;
 document.getElementById("logoutBtn").addEventListener("click", logout);
 
-// Load account
-let acct;
-try {
-  const r = await apiFetch("/api/account");
-  acct = await r.json();
-} catch(e) {
-  document.body.innerHTML += `<div style="color:#ff4d6a;padding:40px;font-family:monospace">Error loading account: ${e.message}</div>`;
-  return;
-}
+document.getElementById("dbg").textContent = "Step 3: fetching account...";
+const r = await apiFetch("/api/account");
+document.getElementById("dbg").textContent = "Step 4: got response status=" + r.status;
+const acct = await r.json();
+document.getElementById("dbg").textContent = "Step 5: phase=" + acct.challengePhase + " planId=" + acct.planId;
 
-console.log("[payout] phase:", acct.challengePhase);
-
-if(!acct || acct.challengePhase !== "funded") {
+if(acct.challengePhase !== "funded") {
   document.getElementById("notFundedPage").style.display = "";
+  document.getElementById("dbg").textContent = "Not funded: phase=" + acct.challengePhase;
   return;
 }
 
 document.getElementById("mainPage").style.display = "";
+document.getElementById("dbg").textContent = "Step 6: funded! rendering...";
+
+const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
 
 const withdrawable = Math.max(0, Number(acct.withdrawable || 0));
 const capRemaining = Math.max(0, Number(acct.payoutCapRemaining || 0));
@@ -239,7 +238,6 @@ document.getElementById("bufferSub").textContent = bufferPct >= 100
   ? "Profit buffer requirement met — you can withdraw."
   : `${money(eligible)} of ${money(buffer)} reached. Need ${money(Math.max(0,buffer-eligible))} more.`;
 
-// Eligibility alert
 const alertBox = document.getElementById("alertBox");
 const submitBtn = document.getElementById("submitBtn");
 const eligibleAt = acct.payoutEligibleAt ? new Date(acct.payoutEligibleAt).getTime() : 0;
@@ -273,9 +271,9 @@ submitBtn.addEventListener("click", async () => {
   submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
   msgEl.className="form-msg"; msgEl.textContent="";
   try {
-    const r = await apiFetch("/api/payout/request", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({amount}) });
-    const d = await r.json();
-    if(!r.ok) throw new Error(d.error||"Request failed");
+    const r2 = await apiFetch("/api/payout/request", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({amount}) });
+    const d = await r2.json();
+    if(!r2.ok) throw new Error(d.error||"Request failed");
     msgEl.className="form-msg ok";
     msgEl.textContent=`✅ Payout request for ${money(amount)} submitted.`;
     document.getElementById("amountInput").value="";
@@ -289,8 +287,8 @@ submitBtn.addEventListener("click", async () => {
 
 async function loadHistory() {
   try {
-    const r = await apiFetch("/api/account");
-    const a = await r.json();
+    const r2 = await apiFetch("/api/account");
+    const a = await r2.json();
     const items = [...(a.payoutRequests||[]),...(a.payouts||[])].sort((x,y)=>new Date(y.time||y.requestedAt)-new Date(x.time||x.requestedAt));
     const body = document.getElementById("historyBody");
     if(!items.length) { body.innerHTML=`<tr><td class="empty" colspan="3">No payouts yet.</td></tr>`; return; }
@@ -302,6 +300,7 @@ async function loadHistory() {
   } catch(e) { console.error("loadHistory error:", e); }
 }
 loadHistory();
+document.getElementById("dbg").textContent = "Step 7: done";
 </script>
 </body>
 </html>
