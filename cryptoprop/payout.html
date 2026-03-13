@@ -1,135 +1,397 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Payout Policy — CryptoProp</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>CryptoProp — Rules</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
   <style>
-    .legal-wrap { max-width: 780px; margin: 60px auto; padding: 0 24px 60px; }
-    .legal-wrap h1 { font-size: 2rem; margin-bottom: 8px; }
-    .legal-wrap h2 { font-size: 1.1rem; margin-top: 32px; margin-bottom: 6px; color: var(--accent, #7c5cff); }
-    .legal-wrap p { line-height: 1.75; color: var(--muted, #aaa); margin: 0 0 12px; }
-    .legal-wrap ul { color: var(--muted, #aaa); line-height: 1.75; margin: 0 0 12px; padding-left: 20px; }
-    .legal-wrap ul li { margin-bottom: 4px; }
-    .legal-wrap a.back { display: inline-block; margin-bottom: 32px; font-size: 0.9rem; color: var(--accent, #7c5cff); text-decoration: none; }
-    .legal-wrap a.back:hover { text-decoration: underline; }
-    .last-updated { font-size: 0.8rem; color: var(--muted, #aaa); margin-bottom: 32px; }
-    .highlight-box { background: rgba(124,92,255,0.08); border: 1px solid rgba(124,92,255,0.2); border-radius: 8px; padding: 16px 20px; margin: 12px 0; color: var(--muted, #aaa); font-size: 0.95rem; line-height: 1.7; }
+    :root {
+      --term-bg:#080b10; --term-panel:#0d1117; --term-border:rgba(255,255,255,0.07);
+      --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80; --term-label:#7a8fa8;
+      --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0; --term-red:#ff4d6a;
+      --term-yellow:#f5c842; --term-blue:#3d9eff; --term-mono:'JetBrains Mono',monospace;
+      --term-sans:'Syne',sans-serif; --amber:#f59e0b; --amber-dim:rgba(245,158,11,0.1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{background:var(--term-bg);color:var(--term-text);font-family:var(--term-mono);font-size:13px;}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--term-panel);border-bottom:1px solid var(--term-border);position:sticky;top:0;z-index:100;}
+    .topbar-left{display:flex;align-items:center;gap:20px;}
+    .topbar-brand{font-family:var(--term-sans);font-weight:800;font-size:15px;color:var(--term-bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
+    .brand-dot{width:8px;height:8px;border-radius:50%;background:var(--term-green);box-shadow:0 0 8px var(--term-green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .topbar-nav{display:flex;gap:2px;}
+    .topbar-nav a{padding:6px 12px;border-radius:6px;color:var(--term-muted);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;transition:color .15s,background .15s;}
+    .topbar-nav a:hover{color:var(--term-text);background:rgba(255,255,255,0.05);}
+    .topbar-nav a.active{color:var(--term-bright);background:rgba(255,255,255,0.08);}
+    .topbar-right{display:flex;align-items:center;gap:12px;}
+    .topbar-pill{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--term-green);font-weight:600;}
+    .topbar-user{font-size:11px;color:var(--term-muted);}
+    .btn-ghost-sm{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:6px;padding:5px 12px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;transition:all .15s;}
+    .btn-ghost-sm:hover{color:var(--term-text);border-color:var(--term-border-bright);}
+
+    .rules-wrap{max-width:860px;margin:0 auto;padding:40px 24px 80px;}
+    .rules-hero{margin-bottom:48px;}
+    .rules-hero h1{font-size:32px;font-weight:800;letter-spacing:-0.02em;margin-bottom:10px;font-family:var(--term-sans);color:var(--term-bright);}
+    .rules-hero h1 span{color:var(--term-green);}
+    .rules-hero p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:520px;}
+    .rules-section{margin-bottom:40px;}
+    .section-label{font-family:var(--term-mono);font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--term-muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+    .section-label::after{content:'';flex:1;height:1px;background:var(--term-border);}
+
+    .risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .risk-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:20px;text-align:center;transition:border-color .15s;}
+    .risk-card:hover{border-color:var(--term-border-bright);}
+    .risk-icon{font-size:20px;margin-bottom:10px;}
+    .risk-number{font-size:26px;font-weight:700;font-family:var(--term-mono);margin-bottom:4px;}
+    .risk-number.red{color:var(--term-red);}
+    .risk-number.amber{color:var(--amber);}
+    .risk-label{font-size:11px;color:var(--term-muted);line-height:1.5;}
+
+    .phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+    .phase-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;position:relative;overflow:hidden;transition:border-color .15s;}
+    .phase-card:hover{border-color:var(--term-border-bright);}
+    .phase-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+    .phase-card.phase1::before{background:var(--term-green);}
+    .phase-card.phase2::before{background:var(--term-blue);}
+    .phase-badge{font-family:var(--term-mono);font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:14px;display:inline-block;}
+    .phase1 .phase-badge{background:rgba(0,229,160,0.1);color:var(--term-green);}
+    .phase2 .phase-badge{background:rgba(61,158,255,0.1);color:var(--term-blue);}
+    .phase-title{font-size:15px;font-weight:700;margin-bottom:16px;font-family:var(--term-sans);color:var(--term-bright);}
+    .rule-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--term-border);font-size:12px;}
+    .rule-row:last-child{border-bottom:none;padding-bottom:0;}
+    .rule-key{color:var(--term-muted);}
+    .rule-val{font-family:var(--term-mono);font-size:11px;font-weight:500;color:var(--term-text);}
+    .rule-val.good{color:var(--term-green);}
+    .rule-val.warn{color:var(--amber);}
+    .rule-val.danger{color:var(--term-red);}
+
+    .callout{border-radius:10px;padding:14px 18px;font-size:12px;line-height:1.7;display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+    .callout.green{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.15);color:var(--term-text);}
+    .callout.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.15);color:var(--term-text);}
+    .callout.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:var(--term-text);}
+    .callout-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+
+    .payout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+    .payout-stat{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;text-align:center;}
+    .payout-stat-num{font-size:22px;font-weight:700;font-family:var(--term-mono);color:var(--term-green);margin-bottom:5px;}
+    .payout-stat-label{font-size:10px;color:var(--term-muted);line-height:1.4;}
+
+    .rules-table-wrap{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
+    .plan-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .plan-table th{text-align:left;padding:10px 16px;font-family:var(--term-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);background:rgba(255,255,255,0.02);}
+    .plan-table th:not(:first-child){text-align:center;}
+    .plan-table td{padding:11px 16px;border-bottom:1px solid var(--term-border);color:var(--term-text);}
+    .plan-table td:not(:first-child){text-align:center;font-family:var(--term-mono);font-size:11px;}
+    .plan-table tr:last-child td{border-bottom:none;}
+    .plan-table tr:hover td{background:rgba(255,255,255,0.02);}
+    .row-label{color:var(--term-muted);font-size:12px;}
+
+    @media(max-width:600px){
+      .phase-grid,.risk-grid{grid-template-columns:1fr;}
+      .payout-grid{grid-template-columns:1fr 1fr;}
+      .rules-hero h1{font-size:24px;}
+    }
   </style>
 </head>
 <body>
-  <div class="legal-wrap">
-    <a class="back" href="/">← Back to CryptoProp</a>
-    <h1>Payout Policy</h1>
-    <p class="last-updated">Effective Date: 2026 &nbsp;•&nbsp; CryptoProp LLC &nbsp;•&nbsp; Indiana, United States</p>
 
-    <h2>1. Overview</h2>
-    <p>This Payout Policy describes the rules and procedures governing profit payouts from simulated funded accounts on the CryptoProp platform. By participating in the CryptoProp challenge program and requesting payouts, users agree to comply with the terms outlined in this policy.</p>
-
-    <h2>2. Nature of Payouts</h2>
-    <p>CryptoProp provides a simulated trading evaluation platform. Any payouts issued by CryptoProp are discretionary payments made at the sole discretion of the Company based on simulated trading performance and compliance with platform rules.</p>
-    <p>Payouts do not represent investment returns, brokerage profits, or management of client funds.</p>
-
-    <h2>3. Eligibility for Payouts</h2>
-    <p>To become eligible for payouts, users must:</p>
-    <ul>
-      <li>Successfully complete all challenge evaluation steps</li>
-      <li>Maintain compliance with all trading rules</li>
-      <li>Complete required identity verification (KYC)</li>
-      <li>Satisfy the minimum profit buffer requirement</li>
-    </ul>
-
-    <h2>4. Profit Split</h2>
-    <p>For accounts that qualify for payouts, profits are split as follows:</p>
-    <div class="highlight-box">
-      Trader: <strong>80%</strong> &nbsp;•&nbsp; CryptoProp: <strong>20%</strong>
-    </div>
-    <p>The profit split applies to eligible profits generated within the simulated funded account.</p>
-
-    <h2>5. Profit Buffer Requirement</h2>
-    <p>Before a trader becomes eligible to request payouts, the account must reach a minimum profit buffer.</p>
-    <div class="highlight-box">
-      Minimum profit buffer: <strong>8% of starting account balance</strong><br/>
-      Example: $100,000 account → $8,000 profit buffer required before payout eligibility.
-    </div>
-
-    <h2>6. Daily Profit Cap for Payout Eligibility</h2>
-    <p>To promote consistent trading behavior, the amount of profit that counts toward payout eligibility from any single trading day is limited.</p>
-    <div class="highlight-box">
-      Maximum counted profit per day: <strong>4% of account balance</strong>
-    </div>
-    <p>Profits above this level may still exist in the account balance but may not count toward payout eligibility calculations.</p>
-
-    <h2>7. Consistency Rule</h2>
-    <p>CryptoProp enforces a consistency rule designed to prevent excessive reliance on a single trading day.</p>
-    <div class="highlight-box">
-      Maximum profit from a single day may not exceed <strong>40% of total accumulated profits</strong>.
-    </div>
-    <p>If a single trading day exceeds this threshold, additional trading activity may be required before a payout becomes eligible.</p>
-
-    <h2>8. Minimum Trading Days</h2>
-    <p>Before requesting a payout, the trader must satisfy the minimum trading day requirements defined within the challenge rules.</p>
-    <ul>
-      <li>Step 1 minimum trading days: 5</li>
-      <li>Step 2 minimum trading days: 7</li>
-    </ul>
-    <p>Funded accounts may also require a minimum number of active trading days prior to payout requests.</p>
-
-    <h2>9. Payout Request Review</h2>
-    <p>All payout requests are subject to internal review by CryptoProp. The review process may include:</p>
-    <ul>
-      <li>Verification of account compliance</li>
-      <li>Review of trading activity</li>
-      <li>Confirmation of identity verification</li>
-      <li>Detection of system abuse or manipulation</li>
-    </ul>
-    <p>CryptoProp reserves the right to delay, deny, or adjust payouts if irregular or abusive activity is detected.</p>
-
-    <h2>10. Verification Requirements</h2>
-    <p>Prior to issuing any payout, CryptoProp may require identity verification. This may include:</p>
-    <ul>
-      <li>Government-issued identification</li>
-      <li>Proof of address</li>
-      <li>Selfie or biometric verification</li>
-      <li>Additional documentation as necessary</li>
-    </ul>
-    <p>Failure to complete verification may result in delayed or denied payouts.</p>
-
-    <h2>11. Prohibited Trading Behavior</h2>
-    <p>Certain trading behaviors may invalidate payout eligibility, including but not limited to:</p>
-    <ul>
-      <li>Exploiting system errors</li>
-      <li>Coordinated multi-account trading</li>
-      <li>Arbitrage against simulated pricing</li>
-      <li>Automated strategies designed to exploit platform mechanics</li>
-      <li>Manipulation of execution systems</li>
-    </ul>
-    <p>Accounts found engaging in such behavior may have payouts denied.</p>
-
-    <h2>12. Payment Methods</h2>
-    <p>Approved payouts may be issued using one or more of the following methods, depending on availability:</p>
-    <ul>
-      <li>Bank transfer</li>
-      <li>Digital payment providers</li>
-      <li>Other payment methods determined by CryptoProp</li>
-    </ul>
-    <p>Payment methods may change at the discretion of the Company.</p>
-
-    <h2>13. Processing Time</h2>
-    <p>Payout requests may take a reasonable period to review and process. Processing time may vary depending on verification status, payout volume, and payment provider processing times. CryptoProp does not guarantee immediate payout processing.</p>
-
-    <h2>14. Taxes and Financial Responsibility</h2>
-    <p>Users are solely responsible for determining and complying with any tax obligations associated with payouts received from CryptoProp. CryptoProp does not provide tax advice.</p>
-
-    <h2>15. Right to Modify or Deny Payouts</h2>
-    <p>CryptoProp reserves the right to modify, delay, or deny any payout request if trading rules were violated, platform abuse is suspected, fraudulent activity is detected, or identity verification cannot be completed. The Company's determination regarding payout eligibility shall be final.</p>
-
-    <h2>16. Policy Updates</h2>
-    <p>CryptoProp reserves the right to modify this Payout Policy at any time. Updated versions will be published on the CryptoProp website with a revised effective date.</p>
-    <p>Continued use of the platform constitutes acceptance of any updated policies.</p>
-
-    <p style="margin-top: 40px; font-size: 0.85rem;">CryptoProp LLC &nbsp;•&nbsp; Indiana, United States</p>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="topbar-brand" href="index.html">
+      <div class="brand-dot"></div>
+      CryptoProp
+    </a>
+    <nav class="topbar-nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="paper.html">Trading</a>
+      <a href="rules.html" class="active">Rules</a>
+    </nav>
   </div>
+  <div class="topbar-right">
+    <div class="topbar-pill">LIVE DATA</div>
+    <span class="topbar-user" id="who"></span>
+    <button class="btn-ghost-sm" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="rules-wrap">
+
+  <div class="rules-hero">
+    <h1>Trader <span>Rules.</span></h1>
+    <p>Every rule is enforced in real time. Breaching any risk limit fails your challenge immediately. Read carefully before you start trading.</p>
+  </div>
+
+  <!-- ── RISK LIMITS ── -->
+  <div class="rules-section">
+    <div class="section-label">Risk Limits — Apply at All Times</div>
+
+    <div class="risk-grid" style="margin-bottom:14px;">
+      <div class="risk-card">
+        <div class="risk-icon">📉</div>
+        <div class="risk-number red">2%</div>
+        <div class="risk-label">Max daily drawdown from day-start equity</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-icon">🔻</div>
+        <div class="risk-number red">5%</div>
+        <div class="risk-label">Max trailing drawdown from peak equity (ever)</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-icon">📦</div>
+        <div class="risk-number amber">2.5%</div>
+        <div class="risk-label">Max position size per asset (of starting equity)</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <span class="callout-icon">⚠️</span>
+      <span>Breaching either drawdown limit — daily or trailing — results in <strong>immediate challenge failure</strong>. There is no grace period. Your account is locked and you will need to purchase a new challenge to continue.</span>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">ℹ️</span>
+      <span>The trailing drawdown follows your <strong>peak equity ever reached</strong>, not your starting equity. If you grow your account to $55K on a $50K challenge, your floor moves to $52,250 (5% below $55K) and never drops back down.</span>
+    </div>
+  </div>
+
+  <!-- ── CHALLENGE PHASES ── -->
+  <div class="rules-section">
+    <div class="section-label">Challenge Phases</div>
+
+    <div class="phase-grid">
+      <div class="phase-card phase1">
+        <div class="phase-badge">Phase 1</div>
+        <div class="phase-title">Challenge</div>
+        <div class="rule-row">
+          <span class="rule-key">Profit target</span>
+          <span class="rule-val good">8%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Time limit</span>
+          <span class="rule-val">30 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Min trading days</span>
+          <span class="rule-val">5 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max trailing drawdown</span>
+          <span class="rule-val danger">5%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max daily drawdown</span>
+          <span class="rule-val danger">2%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Consistency rule</span>
+          <span class="rule-val warn">Max 40% in one day</span>
+        </div>
+      </div>
+
+      <div class="phase-card phase2">
+        <div class="phase-badge">Phase 2</div>
+        <div class="phase-title">Verification</div>
+        <div class="rule-row">
+          <span class="rule-key">Profit target</span>
+          <span class="rule-val good">5%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Time limit</span>
+          <span class="rule-val">45 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Min trading days</span>
+          <span class="rule-val">7 days</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max trailing drawdown</span>
+          <span class="rule-val danger">4%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Max daily drawdown</span>
+          <span class="rule-val danger">2%</span>
+        </div>
+        <div class="rule-row">
+          <span class="rule-key">Consistency rule</span>
+          <span class="rule-val warn">Max 40% in one day</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✅</span>
+      <span>Pass both phases while respecting all risk rules and you move to <strong>Funded status</strong>. The consistency rule means no single trading day can account for more than 40% of your total profits — sustained, disciplined trading is rewarded.</span>
+    </div>
+  </div>
+
+  <!-- ── TRADING RULES ── -->
+  <div class="rules-section">
+    <div class="section-label">Trading Rules</div>
+    <div class="rules-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>Value</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Markets allowed</td>
+            <td><span style="color:var(--term-green);font-family:var(--mono);font-size:12px">Spot only</span></td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">BTC, ETH and major altcoins. No leverage, no perpetuals.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Trading fee</td>
+            <td>2%</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Applied per trade to simulate real execution costs.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Max position size</td>
+            <td>2.5%</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Of your starting account equity, per asset.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Holding period</td>
+            <td><span style="color:var(--term-green);font-family:var(--mono);font-size:12px">None</span></td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">No minimum hold time. Open and close freely.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Prohibited strategies</td>
+            <td><span style="color:var(--term-red);font-family:var(--mono);font-size:12px">Banned</span></td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Exploitative strategies, API abuse, or any form of manipulation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAYOUT RULES ── -->
+  <div class="rules-section">
+    <div class="section-label">Funded Account &amp; Payouts</div>
+
+    <div class="payout-grid" style="margin-bottom:14px;">
+      <div class="payout-stat">
+        <div class="payout-stat-num">80%</div>
+        <div class="payout-stat-label">Profit split to trader</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">2%</div>
+        <div class="payout-stat-label">Max payout per 7-day period</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">3%</div>
+        <div class="payout-stat-label">Profit buffer before first payout</div>
+      </div>
+      <div class="payout-stat">
+        <div class="payout-stat-num">14d</div>
+        <div class="payout-stat-label">Waiting period after funded activation</div>
+      </div>
+    </div>
+
+    <div class="rules-table-wrap" style="margin-bottom:14px;">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Payout Rule</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Profit split</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">You keep 80% of net profits. CryptoProp retains 20%.</td>
+          </tr>
+          <tr>
+            <td class="row-label">First payout delay</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">14 days after funded account activation before any payout request.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Payout cadence</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Weekly — once every 7 days after the first payout becomes available.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Weekly cap</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Max 2% of starting equity per 7-day period. ($500 on $25K, $1,000 on $50K, $2,000 on $100K)</td>
+          </tr>
+          <tr>
+            <td class="row-label">Profit buffer</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Must earn 3% above starting equity before withdrawing anything. This buffer stays in the account at all times.</td>
+          </tr>
+          <tr>
+            <td class="row-label">Daily profit cap</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Daily gains counted toward payouts are capped at 4% of starting equity. Losses count in full.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">ℹ️</span>
+      <span>Payouts are <strong>performance-based discretionary payments</strong> from CryptoProp. They are not guaranteed. CryptoProp reserves the right to withhold payouts if account behaviour violates the trader agreement.</span>
+    </div>
+  </div>
+
+  <!-- ── PLAN SIZES ── -->
+  <div class="rules-section">
+    <div class="section-label">Account Sizes</div>
+    <div class="rules-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Starting Equity</th>
+            <th>Evaluation Fee</th>
+            <th>Phase 1 Target</th>
+            <th>Phase 2 Target</th>
+            <th>Weekly Payout Cap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:700">Starter</td>
+            <td>$25,000</td>
+            <td>$149</td>
+            <td style="color:var(--term-green)">$2,000</td>
+            <td style="color:var(--term-blue)">$1,250</td>
+            <td>$500</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">Standard</td>
+            <td>$50,000</td>
+            <td>$279</td>
+            <td style="color:var(--term-green)">$4,000</td>
+            <td style="color:var(--term-blue)">$2,500</td>
+            <td>$1,000</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">Pro</td>
+            <td>$100,000</td>
+            <td>$499</td>
+            <td style="color:var(--term-green)">$8,000</td>
+            <td style="color:var(--term-blue)">$5,000</td>
+            <td>$2,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { apiFetch, requireAuth, logout } from "/app.js";
+  const me = await requireAuth();
+  if(!me) return;
+  const whoEl = document.getElementById("who");
+  if(whoEl) whoEl.textContent = me.email;
+  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+</script>
 </body>
 </html>
