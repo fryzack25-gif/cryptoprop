@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Payment Successful</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080a0f; --surface: #0e1118; --border: rgba(255,255,255,0.07);
+      --green: #00e5a0; --green-dim: rgba(0,229,160,0.12); --green-glow: rgba(0,229,160,0.3);
+      --text: #e8eaed; --muted: rgba(255,255,255,0.45);
+      --mono: 'DM Mono', monospace; --display: 'Syne', sans-serif;
+    }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--display);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(0,229,160,0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; text-align: center;
+      max-width: 480px; width: 100%;
+      animation: fadeUp 0.4s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--green-dim); border: 2px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 32px var(--green-glow);
+      font-size: 32px;
+      animation: pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.2s both;
+    }
+    @keyframes pop {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    h1 span { color: var(--green); }
+    .sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
+    .btn {
+      display: block; width: 100%; padding: 14px;
+      background: var(--green); color: #000;
+      border: none; border-radius: 10px;
+      font-family: var(--display); font-size: 14px; font-weight: 800;
+      letter-spacing: 0.04em; cursor: pointer;
+      transition: all 0.15s; text-decoration: none;
+    }
+    .btn:hover { background: #00ffb3; transform: translateY(-1px); box-shadow: 0 8px 24px var(--green-glow); }
+    .status { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-top: 16px; min-height: 18px; }
+    .dots::after { content: ''; animation: dots 1.2s infinite; }
+    @keyframes dots {
+      0%   { content: '.'; }
+      33%  { content: '..'; }
+      66%  { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">✓</div>
+  <h1>Payment <span>confirmed.</span></h1>
+  <p class="sub">Your challenge account is being set up. You'll be redirected to your trading dashboard in a moment.</p>
+  <a href="/paper.html" class="btn" id="ctaBtn">Go to Dashboard →</a>
+  <div class="status" id="statusMsg"></div>
+</div>
+
+<script>
+const statusMsg = document.getElementById('statusMsg');
+const ctaBtn = document.getElementById('ctaBtn');
+
+async function checkSession() {
+  try {
+    const res = await fetch('/api/auth/me');
+    const data = await res.json();
+    if (data.user) {
+      // Logged in — wait briefly for webhook to fire then go to paper
+      statusMsg.textContent = 'Setting up your account…';
+      statusMsg.classList.add('dots');
+      await new Promise(r => setTimeout(r, 2000));
+      window.location.href = '/paper.html';
+    } else {
+      // Session expired during Stripe redirect — send to login, then back here
+      statusMsg.textContent = 'Session expired — please log in to access your account';
+      ctaBtn.textContent = 'Log In →';
+      ctaBtn.href = '/auth.html?next=/payment-success.html';
+    }
+  } catch(e) {
+    statusMsg.textContent = 'Could not reach server — try refreshing';
+  }
+}
+
+checkSession();
+</script>
+</body>
+</html>
