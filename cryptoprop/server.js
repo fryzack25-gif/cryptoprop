@@ -2466,7 +2466,7 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
     payment_method_types: ["card"],
     line_items: lineItems,
     customer_email: email,
-    success_url: `${baseUrl}/paper.html?payment=success`,
+    success_url: `${baseUrl}/payment-success.html`,
     cancel_url: `${baseUrl}/onboard.html`,
     metadata: {
       userEmail: email,
@@ -2715,7 +2715,7 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
       discounts: [{ coupon: coupon.id }],
-      success_url: `${baseUrl}/paper.html?payment=success`,
+      success_url: `${baseUrl}/payment-success.html`,
       cancel_url: `${baseUrl}/paper.html`,
       metadata: { userEmail: email, planId, retryType: "retry" },
     });
