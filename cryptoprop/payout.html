@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CryptoProp — Request Payout</title>
+  <title>CryptoProp — Payout</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
@@ -12,11 +12,12 @@
       --term-bg:#080b10; --term-panel:#0d1117; --term-border:rgba(255,255,255,0.07);
       --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80;
       --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0;
-      --term-red:#ff4d6a; --term-blue:#3d9eff; --term-mono:'JetBrains Mono',monospace;
+      --term-red:#ff4d6a; --term-mono:'JetBrains Mono',monospace;
       --term-sans:'Syne',sans-serif; --amber:#f59e0b;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     html,body{background:var(--term-bg);color:var(--term-text);font-family:var(--term-mono);font-size:13px;}
+
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--term-panel);border-bottom:1px solid var(--term-border);position:sticky;top:0;z-index:100;}
     .topbar-left{display:flex;align-items:center;gap:20px;}
     .topbar-brand{font-family:var(--term-sans);font-weight:800;font-size:15px;color:var(--term-bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
@@ -32,80 +33,73 @@
     .btn-ghost-sm{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:6px;padding:5px 12px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;transition:all .15s;}
     .btn-ghost-sm:hover{color:var(--term-text);border-color:var(--term-border-bright);}
 
-    .page{max-width:680px;margin:0 auto;padding:40px 24px 80px;}
-    .funded-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--term-green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
-    .funded-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--term-green);box-shadow:0 0 6px var(--term-green);}
+    .wrap{max-width:660px;margin:0 auto;padding:40px 24px 80px;}
+
+    .page-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--term-green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
+    .page-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--term-green);box-shadow:0 0 6px var(--term-green);}
     .page-title{font-family:var(--term-sans);font-size:28px;font-weight:800;color:var(--term-bright);letter-spacing:-0.02em;margin-bottom:6px;}
     .page-sub{font-size:12px;color:var(--term-muted);line-height:1.6;margin-bottom:32px;}
 
-    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-    .stat-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px 18px;}
-    .stat-label{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
-    .stat-value{font-size:20px;font-weight:700;font-family:var(--term-mono);color:var(--term-bright);}
-    .stat-value.green{color:var(--term-green);}
-    .stat-value.amber{color:var(--amber);}
-    .stat-sub{font-size:10px;color:var(--term-muted);margin-top:4px;}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+    .scard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;}
+    .slabel{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+    .sval{font-size:20px;font-weight:700;color:var(--term-bright);}
+    .sval.g{color:var(--term-green);}
+    .sval.a{color:var(--amber);}
+    .ssub{font-size:10px;color:var(--term-muted);margin-top:4px;}
 
-    .progress-wrap{margin-bottom:20px;background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px 18px;}
-    .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-    .progress-label{font-size:11px;color:var(--term-muted);text-transform:uppercase;letter-spacing:0.08em;}
-    .progress-pct{font-size:12px;font-weight:700;color:var(--term-green);font-family:var(--term-mono);}
-    .progress-track{height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;}
-    .progress-bar{height:8px;border-radius:999px;transition:width 0.6s ease;}
-    .progress-sub{font-size:11px;color:var(--term-muted);margin-top:8px;}
+    .pbar-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;margin-bottom:16px;}
+    .pbar-head{display:flex;justify-content:space-between;margin-bottom:10px;}
+    .pbar-label{font-size:11px;color:var(--term-muted);text-transform:uppercase;letter-spacing:0.08em;}
+    .pbar-pct{font-size:12px;font-weight:700;font-family:var(--term-mono);}
+    .pbar-track{height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;}
+    .pbar-fill{height:8px;border-radius:999px;transition:width .6s ease;}
+    .pbar-sub{font-size:11px;color:var(--term-muted);margin-top:8px;}
 
-    .callout{border-radius:10px;padding:13px 16px;font-size:12px;line-height:1.7;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
-    .callout.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
-    .callout.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);}
-    .callout.green{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);}
-    .callout-icon{flex-shrink:0;margin-top:1px;}
+    .notice{border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:16px;display:flex;gap:10px;}
+    .notice.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
+    .notice.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);}
 
-    .form-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;margin-bottom:24px;}
-    .form-title{font-family:var(--term-sans);font-size:15px;font-weight:700;color:var(--term-bright);margin-bottom:16px;}
-    .form-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
-    .form-group{flex:1;}
-    .form-label{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
-    .form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-bright);font-family:var(--term-mono);font-size:13px;outline:none;transition:border-color .15s;}
-    .form-input:focus{border-color:var(--term-green);}
-    .form-input:disabled{opacity:0.4;cursor:not-allowed;}
-    .max-btn{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;white-space:nowrap;transition:all .15s;}
-    .max-btn:hover{color:var(--term-text);border-color:var(--term-border-bright);}
-    .submit-btn{width:100%;padding:13px;background:var(--term-green);color:#000;border:none;border-radius:8px;font-family:var(--term-sans);font-size:14px;font-weight:800;letter-spacing:0.04em;cursor:pointer;transition:all .15s;}
-    .submit-btn:hover{background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.25);}
-    .submit-btn:disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
-    .form-msg{font-size:12px;margin-top:10px;min-height:16px;}
-    .form-msg.ok{color:var(--term-green);}
-    .form-msg.err{color:var(--term-red);}
+    .fcard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;margin-bottom:20px;}
+    .fcard-title{font-family:var(--term-sans);font-size:15px;font-weight:700;color:var(--term-bright);margin-bottom:16px;}
+    .frow{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+    .fgroup{flex:1;}
+    .flabel{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
+    .finput{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-bright);font-family:var(--term-mono);font-size:13px;outline:none;transition:border-color .15s;}
+    .finput:focus{border-color:var(--term-green);}
+    .finput:disabled{opacity:0.4;}
+    .maxbtn{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;white-space:nowrap;transition:all .15s;}
+    .maxbtn:hover{color:var(--term-text);border-color:var(--term-border-bright);}
+    .subbtn{width:100%;padding:13px;background:var(--term-green);color:#000;border:none;border-radius:8px;font-family:var(--term-sans);font-size:14px;font-weight:800;cursor:pointer;transition:all .15s;}
+    .subbtn:hover:not(:disabled){background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.25);}
+    .subbtn:disabled{opacity:0.4;cursor:not-allowed;}
+    .fmsg{font-size:12px;margin-top:10px;min-height:16px;}
+    .fmsg.ok{color:var(--term-green);}
+    .fmsg.err{color:var(--term-red);}
 
-    .history-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
-    .history-title{font-family:var(--term-sans);font-size:14px;font-weight:700;color:var(--term-bright);padding:14px 18px;border-bottom:1px solid var(--term-border);}
-    .history-table{width:100%;border-collapse:collapse;font-size:12px;}
-    .history-table th{text-align:left;padding:9px 18px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);}
-    .history-table td{padding:11px 18px;border-bottom:1px solid var(--term-border);}
-    .history-table tr:last-child td{border-bottom:none;}
-    .history-table tr:hover td{background:rgba(255,255,255,0.02);}
-    .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+    .hcard{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
+    .htitle{font-family:var(--term-sans);font-size:14px;font-weight:700;color:var(--term-bright);padding:14px 18px;border-bottom:1px solid var(--term-border);}
+    .htable{width:100%;border-collapse:collapse;font-size:12px;}
+    .htable th{text-align:left;padding:9px 18px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);}
+    .htable td{padding:11px 18px;border-bottom:1px solid var(--term-border);}
+    .htable tr:last-child td{border-bottom:none;}
+    .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;}
     .pill.pending{background:rgba(245,158,11,0.1);color:var(--amber);}
     .pill.paid{background:rgba(0,229,160,0.1);color:var(--term-green);}
     .pill.rejected{background:rgba(255,77,106,0.1);color:var(--term-red);}
-    .empty{text-align:center;color:var(--term-muted);padding:28px!important;}
+    .hempty{text-align:center;color:var(--term-muted);padding:28px!important;}
 
-    .not-funded{text-align:center;padding:80px 24px;}
-    .not-funded-icon{font-size:40px;margin-bottom:16px;}
-    .not-funded h2{font-family:var(--term-sans);font-size:20px;font-weight:800;color:var(--term-bright);margin-bottom:8px;}
-    .not-funded p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:380px;margin:0 auto 20px;}
-    .back-link{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.06);border:1px solid var(--term-border);border-radius:8px;color:var(--term-text);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;}
-    .back-link:hover{border-color:var(--term-border-bright);}
+    .locked{text-align:center;padding:80px 24px;}
+    .locked h2{font-family:var(--term-sans);font-size:20px;font-weight:800;color:var(--term-bright);margin-bottom:10px;}
+    .locked p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:360px;margin:0 auto 20px;}
+    .locked a{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.06);border:1px solid var(--term-border);border-radius:8px;color:var(--term-text);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;}
   </style>
 </head>
 <body>
 
 <header class="topbar">
   <div class="topbar-left">
-    <a class="topbar-brand" href="index.html">
-      <div class="brand-dot"></div>
-      CryptoProp
-    </a>
+    <a class="topbar-brand" href="index.html"><div class="brand-dot"></div>CryptoProp</a>
     <nav class="topbar-nav">
       <a href="dashboard.html">Dashboard</a>
       <a href="paper.html">Trading</a>
@@ -114,193 +108,193 @@
     </nav>
   </div>
   <div class="topbar-right">
-    <div class="topbar-pill">LIVE DATA</div>
+    <div class="topbar-pill">FUNDED</div>
     <span class="topbar-user" id="who"></span>
     <button class="btn-ghost-sm" id="logoutBtn">Logout</button>
   </div>
 </header>
 
-<div class="page" id="mainPage" style="display:none">
-  <div class="funded-badge">Funded Account</div>
+<div class="wrap" id="lockedView" style="display:none">
+  <div class="locked">
+    <div style="font-size:40px;margin-bottom:16px">🔒</div>
+    <h2>Funded accounts only</h2>
+    <p>Pass both challenge phases to unlock payouts. Keep trading to hit your targets.</p>
+    <a href="paper.html">← Back to Trading</a>
+  </div>
+</div>
+
+<div class="wrap" id="fundedView" style="display:none">
+  <div class="page-badge">Funded Account</div>
   <div class="page-title">Request Payout</div>
-  <div class="page-sub">Withdraw your earned profits. All requests are reviewed and processed manually within 5 business days.</div>
+  <div class="page-sub">Withdraw your earned profits. Requests are reviewed within 5 business days.</div>
 
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-label">Available to withdraw</div>
-      <div class="stat-value green" id="statWithdrawable">—</div>
-      <div class="stat-sub" id="statBufferSub">—</div>
+  <div class="stats">
+    <div class="scard">
+      <div class="slabel">Available</div>
+      <div class="sval g" id="valWithdrawable">—</div>
+      <div class="ssub" id="subWithdrawable">—</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Weekly cap remaining</div>
-      <div class="stat-value" id="statCapRemaining">—</div>
-      <div class="stat-sub" id="statCapSub">—</div>
+    <div class="scard">
+      <div class="slabel">Weekly cap left</div>
+      <div class="sval" id="valCap">—</div>
+      <div class="ssub" id="subCap">—</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Total paid out</div>
-      <div class="stat-value amber" id="statTotalPaid">—</div>
-      <div class="stat-sub">All time</div>
+    <div class="scard">
+      <div class="slabel">Total paid out</div>
+      <div class="sval a" id="valTotal">—</div>
+      <div class="ssub">All time</div>
     </div>
   </div>
 
-  <div class="progress-wrap">
-    <div class="progress-header">
-      <span class="progress-label">Profit buffer (3% required)</span>
-      <span class="progress-pct" id="bufferPct">—</span>
+  <div class="pbar-card">
+    <div class="pbar-head">
+      <span class="pbar-label">3% profit buffer</span>
+      <span class="pbar-pct" id="bufPct">—</span>
     </div>
-    <div class="progress-track">
-      <div class="progress-bar" id="bufferBar" style="width:0%"></div>
-    </div>
-    <div class="progress-sub" id="bufferSub">—</div>
+    <div class="pbar-track"><div class="pbar-fill" id="bufFill" style="width:0%"></div></div>
+    <div class="pbar-sub" id="bufSub">—</div>
   </div>
 
-  <div id="alertBox"></div>
+  <div id="alertArea"></div>
 
-  <div class="form-card">
-    <div class="form-title">New Payout Request</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label" for="amountInput">Amount (USD)</label>
-        <input class="form-input" id="amountInput" type="number" step="0.01" min="1" placeholder="0.00" />
+  <div class="fcard">
+    <div class="fcard-title">New Request</div>
+    <div class="frow">
+      <div class="fgroup">
+        <label class="flabel" for="amt">Amount (USD)</label>
+        <input class="finput" id="amt" type="number" step="0.01" min="1" placeholder="0.00" />
       </div>
-      <button class="max-btn" id="maxBtn">Max</button>
+      <button class="maxbtn" id="maxBtn">Max</button>
     </div>
-    <button class="submit-btn" id="submitBtn">Request Payout</button>
-    <div class="form-msg" id="formMsg"></div>
+    <button class="subbtn" id="subBtn">Request Payout</button>
+    <div class="fmsg" id="fmsg"></div>
   </div>
 
-  <div class="history-card">
-    <div class="history-title">Payout History</div>
-    <table class="history-table">
+  <div class="hcard">
+    <div class="htitle">Payout History</div>
+    <table class="htable">
       <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
-      <tbody id="historyBody"><tr><td class="empty" colspan="3">No payouts yet.</td></tr></tbody>
+      <tbody id="hbody"><tr><td class="hempty" colspan="3">No payouts yet.</td></tr></tbody>
     </table>
   </div>
 </div>
 
-<div class="page" id="notFundedPage" style="display:none">
-  <div class="not-funded">
-    <div class="not-funded-icon">🔒</div>
-    <h2>Payouts are for funded accounts only</h2>
-    <p>Pass both challenge phases to unlock payout access. Keep trading and hit your targets.</p>
-    <a href="paper.html" class="back-link">← Back to Trading</a>
-  </div>
-</div>
-
 <script type="module">
-import { apiFetch, requireAuth, logout } from "./app.js";
+  import { apiFetch, requireAuth, logout } from "/app.js";
 
-document.body.innerHTML += '<div id="dbg" style="color:lime;padding:20px;font-size:14px">Step 1: script started</div>';
+  const $ = id => document.getElementById(id);
+  const money = n => "$" + Number(n||0).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtD = s => s ? new Date(s).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"}) : "—";
 
-const me = await requireAuth();
-document.getElementById("dbg").textContent = "Step 2: auth done, user=" + (me ? me.email : "null");
-if(!me) return;
+  const me = await requireAuth();
+  if (!me) return;
+  $("who").textContent = me.email;
+  $("logoutBtn").addEventListener("click", logout);
 
-document.getElementById("who").textContent = me.email;
-document.getElementById("logoutBtn").addEventListener("click", logout);
+  const r = await apiFetch("/api/account");
+  const a = await r.json();
 
-document.getElementById("dbg").textContent = "Step 3: fetching account...";
-const r = await apiFetch("/api/account");
-document.getElementById("dbg").textContent = "Step 4: got response status=" + r.status;
-const acct = await r.json();
-document.getElementById("dbg").textContent = "Step 5: phase=" + acct.challengePhase + " planId=" + acct.planId;
-
-if(acct.challengePhase !== "funded") {
-  document.getElementById("notFundedPage").style.display = "";
-  document.getElementById("dbg").textContent = "Not funded: phase=" + acct.challengePhase;
-  return;
-}
-
-document.getElementById("mainPage").style.display = "";
-document.getElementById("dbg").textContent = "Step 6: funded! rendering...";
-
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
-
-const withdrawable = Math.max(0, Number(acct.withdrawable || 0));
-const capRemaining = Math.max(0, Number(acct.payoutCapRemaining || 0));
-const totalPaid = Number(acct.payoutsPaidTotal || 0);
-const eligible = Number(acct.payoutEligiblePnL || 0);
-const buffer = Number(acct.profitBuffer || 0);
-const bufferPct = buffer > 0 ? Math.min(100, Math.round((eligible / buffer) * 100)) : 100;
-
-document.getElementById("statWithdrawable").textContent = money(withdrawable);
-document.getElementById("statCapRemaining").textContent = money(capRemaining);
-document.getElementById("statTotalPaid").textContent = money(totalPaid);
-document.getElementById("statCapSub").textContent = `of ${money(acct.payoutCap || 0)} weekly cap`;
-document.getElementById("statBufferSub").textContent = bufferPct >= 100 ? "Buffer met ✓" : `Buffer ${bufferPct}% reached`;
-document.getElementById("bufferPct").textContent = bufferPct + "%";
-
-const bar = document.getElementById("bufferBar");
-bar.style.width = Math.min(100, bufferPct) + "%";
-bar.style.background = bufferPct >= 100 ? "var(--term-green)" : "var(--amber)";
-document.getElementById("bufferSub").textContent = bufferPct >= 100
-  ? "Profit buffer requirement met — you can withdraw."
-  : `${money(eligible)} of ${money(buffer)} reached. Need ${money(Math.max(0,buffer-eligible))} more.`;
-
-const alertBox = document.getElementById("alertBox");
-const submitBtn = document.getElementById("submitBtn");
-const eligibleAt = acct.payoutEligibleAt ? new Date(acct.payoutEligibleAt).getTime() : 0;
-const now = Date.now();
-
-if(now < eligibleAt) {
-  const days = Math.ceil((eligibleAt - now) / 86400000);
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong> — 14-day waiting period after funded activation.</span></div>`;
-  submitBtn.disabled = true;
-} else if(bufferPct < 100) {
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>Must reach the 3% profit buffer before withdrawing.</span></div>`;
-  submitBtn.disabled = true;
-} else if(capRemaining <= 0) {
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Weekly cap reached. Resets every 7 days.</span></div>`;
-  submitBtn.disabled = true;
-} else if(withdrawable <= 0) {
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>No withdrawable balance yet.</span></div>`;
-  submitBtn.disabled = true;
-}
-
-document.getElementById("maxBtn").addEventListener("click", () => {
-  document.getElementById("amountInput").value = Math.min(withdrawable, capRemaining).toFixed(2);
-});
-
-submitBtn.addEventListener("click", async () => {
-  const amount = Number(document.getElementById("amountInput").value);
-  const msgEl = document.getElementById("formMsg");
-  if(!amount || amount <= 0) { msgEl.className="form-msg err"; msgEl.textContent="Enter a valid amount."; return; }
-  if(amount > withdrawable) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds withdrawable (${money(withdrawable)}).`; return; }
-  if(amount > capRemaining) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds weekly cap (${money(capRemaining)}).`; return; }
-  submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
-  msgEl.className="form-msg"; msgEl.textContent="";
-  try {
-    const r2 = await apiFetch("/api/payout/request", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({amount}) });
-    const d = await r2.json();
-    if(!r2.ok) throw new Error(d.error||"Request failed");
-    msgEl.className="form-msg ok";
-    msgEl.textContent=`✅ Payout request for ${money(amount)} submitted.`;
-    document.getElementById("amountInput").value="";
-    submitBtn.textContent="Submitted ✓";
-    loadHistory();
-  } catch(e) {
-    msgEl.className="form-msg err"; msgEl.textContent=e.message;
-    submitBtn.disabled=false; submitBtn.textContent="Request Payout";
+  if (a.challengePhase !== "funded") {
+    $("lockedView").style.display = "";
+    return;
   }
-});
 
-async function loadHistory() {
-  try {
-    const r2 = await apiFetch("/api/account");
-    const a = await r2.json();
-    const items = [...(a.payoutRequests||[]),...(a.payouts||[])].sort((x,y)=>new Date(y.time||y.requestedAt)-new Date(x.time||x.requestedAt));
-    const body = document.getElementById("historyBody");
-    if(!items.length) { body.innerHTML=`<tr><td class="empty" colspan="3">No payouts yet.</td></tr>`; return; }
-    body.innerHTML = items.map(p=>`<tr>
-      <td>${fmtDate(p.time||p.requestedAt)}</td>
-      <td style="font-family:var(--term-mono);color:var(--term-green)">${money(p.amount)}</td>
-      <td><span class="pill ${p.status||'pending'}">${p.status||'pending'}</span></td>
-    </tr>`).join("");
-  } catch(e) { console.error("loadHistory error:", e); }
-}
-loadHistory();
-document.getElementById("dbg").textContent = "Step 7: done";
+  $("fundedView").style.display = "";
+
+  const withdrawable = Math.max(0, Number(a.withdrawable || 0));
+  const capLeft      = Math.max(0, Number(a.payoutCapRemaining || 0));
+  const totalPaid    = Number(a.payoutsPaidTotal || 0);
+  const eligible     = Number(a.payoutEligiblePnL || 0);
+  const buffer       = Number(a.profitBuffer || 0);
+  const bufPct       = buffer > 0 ? Math.min(100, Math.round(eligible / buffer * 100)) : 100;
+
+  $("valWithdrawable").textContent = money(withdrawable);
+  $("subWithdrawable").textContent = bufPct >= 100 ? "Buffer met ✓" : `Buffer ${bufPct}% reached`;
+  $("valCap").textContent          = money(capLeft);
+  $("subCap").textContent          = `of ${money(a.payoutCap || 0)} weekly`;
+  $("valTotal").textContent        = money(totalPaid);
+  $("bufPct").textContent          = bufPct + "%";
+  $("bufPct").style.color          = bufPct >= 100 ? "var(--term-green)" : "var(--amber)";
+  $("bufFill").style.width         = bufPct + "%";
+  $("bufFill").style.background    = bufPct >= 100 ? "var(--term-green)" : "var(--amber)";
+  $("bufSub").textContent          = bufPct >= 100
+    ? "Buffer met — withdrawals unlocked."
+    : `${money(eligible)} of ${money(buffer)} — need ${money(Math.max(0, buffer - eligible))} more.`;
+
+  const subBtn = $("subBtn");
+  const eligAt = a.payoutEligibleAt ? new Date(a.payoutEligibleAt).getTime() : 0;
+  const now    = Date.now();
+  let blocked  = false;
+
+  if (now < eligAt) {
+    const days = Math.ceil((eligAt - now) / 86400000);
+    $("alertArea").innerHTML = `<div class="notice amber">⏳ &nbsp;Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong> (14-day wait after funded activation).</div>`;
+    blocked = true;
+  } else if (bufPct < 100) {
+    $("alertArea").innerHTML = `<div class="notice amber">ℹ️ &nbsp;Reach the 3% profit buffer first before withdrawing.</div>`;
+    blocked = true;
+  } else if (capLeft <= 0) {
+    $("alertArea").innerHTML = `<div class="notice amber">⏳ &nbsp;Weekly cap reached — resets every 7 days.</div>`;
+    blocked = true;
+  } else if (withdrawable <= 0) {
+    $("alertArea").innerHTML = `<div class="notice amber">ℹ️ &nbsp;No withdrawable balance yet. Keep trading.</div>`;
+    blocked = true;
+  }
+  if (blocked) subBtn.disabled = true;
+
+  $("maxBtn").addEventListener("click", () => {
+    $("amt").value = Math.min(withdrawable, capLeft).toFixed(2);
+  });
+
+  subBtn.addEventListener("click", async () => {
+    const amount = Number($("amt").value);
+    const msg    = $("fmsg");
+    if (!amount || amount <= 0)    { msg.className="fmsg err"; msg.textContent="Enter a valid amount."; return; }
+    if (amount > withdrawable)     { msg.className="fmsg err"; msg.textContent=`Max withdrawable: ${money(withdrawable)}`; return; }
+    if (amount > capLeft)          { msg.className="fmsg err"; msg.textContent=`Weekly cap remaining: ${money(capLeft)}`; return; }
+
+    subBtn.disabled = true;
+    subBtn.textContent = "Submitting…";
+    msg.className = "fmsg";
+    msg.textContent = "";
+
+    try {
+      const res = await apiFetch("/api/payout/request", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({amount})
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Request failed");
+      msg.className = "fmsg ok";
+      msg.textContent = `✅ Request for ${money(amount)} submitted.`;
+      $("amt").value = "";
+      subBtn.textContent = "Submitted ✓";
+      refreshHistory();
+    } catch (e) {
+      msg.className = "fmsg err";
+      msg.textContent = e.message;
+      subBtn.disabled = false;
+      subBtn.textContent = "Request Payout";
+    }
+  });
+
+  async function refreshHistory() {
+    try {
+      const res = await apiFetch("/api/account");
+      const acc = await res.json();
+      const rows = [...(acc.payoutRequests||[]), ...(acc.payouts||[])]
+        .sort((x,y) => new Date(y.time||y.requestedAt) - new Date(x.time||x.requestedAt));
+      const body = $("hbody");
+      if (!rows.length) { body.innerHTML=`<tr><td class="hempty" colspan="3">No payouts yet.</td></tr>`; return; }
+      body.innerHTML = rows.map(p => `<tr>
+        <td>${fmtD(p.time||p.requestedAt)}</td>
+        <td style="color:var(--term-green)">${money(p.amount)}</td>
+        <td><span class="pill ${p.status||'pending'}">${p.status||'pending'}</span></td>
+      </tr>`).join("");
+    } catch(e) {}
+  }
+  refreshHistory();
 </script>
 </body>
 </html>
