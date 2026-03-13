@@ -2083,6 +2083,7 @@ async function requireTermsAccepted(req, res, next){
 // ------------------- Authentication -------------------
 app.get("/api/auth/me", async (req, res) => {
   const u = getSessionUser(req);
+  console.log("[/api/auth/me] sessionID:", req.sessionID, "user:", u ? u.email : "null", "cookie:", req.headers.cookie ? "present" : "missing");
   if(!u) return res.json({ ok:true, user:null });
   return res.json({ ok:true, user:{ email:u.email, isAdmin:!!u.isAdmin } });
 });
