@@ -60,7 +60,7 @@ document.addEventListener("click", async (e) => {
   const btn = e.target.closest("#logoutBtn");
   if(!btn) return;
   try{ await fetch("/api/auth/logout", { method:"POST" }); }catch(e){}
-  window.location.href = "/auth.html";
+  window.location.href = "/auth.html?force=true";
 });
 
 
@@ -102,7 +102,7 @@ document.addEventListener("click", async (e) => {
 
 export async function apiFetch(url, opts){
   const res = await fetch(url, opts || {});
-  if(res.status === 401){ window.location.href = "/auth.html"; throw new Error("Not authenticated"); }
+  if(res.status === 401){ window.location.href = "/auth.html?force=true"; throw new Error("Not authenticated"); }
   return res;
 }
 
@@ -118,11 +118,11 @@ export async function requireAuth(){
   try{
     const res = await fetch("/api/auth/me");
     const data = await res.json().catch(()=>({}));
-    if(!res.ok || !data.user){ window.location.href = "/auth.html"; return null; }
+    if(!res.ok || !data.user){ window.location.href = "/auth.html?force=true"; return null; }
     setSession(data.user);
     return data.user;
   }catch{
-    window.location.href = "/auth.html";
+    window.location.href = "/auth.html?force=true";
     return null;
   }
 }
@@ -130,7 +130,7 @@ export async function requireAuth(){
 export async function logout(){
   try{ await fetch("/api/auth/logout", { method:"POST" }); }catch(e){}
   sessionStorage.removeItem("cp_session");
-  window.location.href = "/auth.html";
+  window.location.href = "/auth.html?force=true";
 }
 
 // Auth guard removed from app.js - handled per-page in dashboard.html
