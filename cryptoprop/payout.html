@@ -3,21 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CryptoProp — Rules</title>
+  <title>CryptoProp — Request Payout</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
   <style>
     :root {
       --term-bg:#080b10; --term-panel:#0d1117; --term-border:rgba(255,255,255,0.07);
-      --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80; --term-label:#7a8fa8;
-      --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0; --term-red:#ff4d6a;
-      --term-yellow:#f5c842; --term-blue:#3d9eff; --term-mono:'JetBrains Mono',monospace;
-      --term-sans:'Syne',sans-serif; --amber:#f59e0b; --amber-dim:rgba(245,158,11,0.1);
+      --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80;
+      --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0;
+      --term-red:#ff4d6a; --term-blue:#3d9eff; --term-mono:'JetBrains Mono',monospace;
+      --term-sans:'Syne',sans-serif; --amber:#f59e0b;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     html,body{background:var(--term-bg);color:var(--term-text);font-family:var(--term-mono);font-size:13px;}
-
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--term-panel);border-bottom:1px solid var(--term-border);position:sticky;top:0;z-index:100;}
     .topbar-left{display:flex;align-items:center;gap:20px;}
     .topbar-brand{font-family:var(--term-sans);font-weight:800;font-size:15px;color:var(--term-bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
@@ -33,73 +32,74 @@
     .btn-ghost-sm{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:6px;padding:5px 12px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;transition:all .15s;}
     .btn-ghost-sm:hover{color:var(--term-text);border-color:var(--term-border-bright);}
 
-    .rules-wrap{max-width:860px;margin:0 auto;padding:40px 24px 80px;}
-    .rules-hero{margin-bottom:48px;}
-    .rules-hero h1{font-size:32px;font-weight:800;letter-spacing:-0.02em;margin-bottom:10px;font-family:var(--term-sans);color:var(--term-bright);}
-    .rules-hero h1 span{color:var(--term-green);}
-    .rules-hero p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:520px;}
-    .rules-section{margin-bottom:40px;}
-    .section-label{font-family:var(--term-mono);font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--term-muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-    .section-label::after{content:'';flex:1;height:1px;background:var(--term-border);}
+    .page{max-width:680px;margin:0 auto;padding:40px 24px 80px;}
+    .funded-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--term-green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
+    .funded-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--term-green);box-shadow:0 0 6px var(--term-green);}
+    .page-title{font-family:var(--term-sans);font-size:28px;font-weight:800;color:var(--term-bright);letter-spacing:-0.02em;margin-bottom:6px;}
+    .page-sub{font-size:12px;color:var(--term-muted);line-height:1.6;margin-bottom:32px;}
 
-    .risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-    .risk-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:20px;text-align:center;transition:border-color .15s;}
-    .risk-card:hover{border-color:var(--term-border-bright);}
-    .risk-icon{font-size:20px;margin-bottom:10px;}
-    .risk-number{font-size:26px;font-weight:700;font-family:var(--term-mono);margin-bottom:4px;}
-    .risk-number.red{color:var(--term-red);}
-    .risk-number.amber{color:var(--amber);}
-    .risk-label{font-size:11px;color:var(--term-muted);line-height:1.5;}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+    .stat-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px 18px;}
+    .stat-label{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+    .stat-value{font-size:20px;font-weight:700;font-family:var(--term-mono);color:var(--term-bright);}
+    .stat-value.green{color:var(--term-green);}
+    .stat-value.amber{color:var(--amber);}
+    .stat-sub{font-size:10px;color:var(--term-muted);margin-top:4px;}
 
-    .phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-    .phase-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;position:relative;overflow:hidden;transition:border-color .15s;}
-    .phase-card:hover{border-color:var(--term-border-bright);}
-    .phase-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-    .phase-card.phase1::before{background:var(--term-green);}
-    .phase-card.phase2::before{background:var(--term-blue);}
-    .phase-badge{font-family:var(--term-mono);font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:14px;display:inline-block;}
-    .phase1 .phase-badge{background:rgba(0,229,160,0.1);color:var(--term-green);}
-    .phase2 .phase-badge{background:rgba(61,158,255,0.1);color:var(--term-blue);}
-    .phase-title{font-size:15px;font-weight:700;margin-bottom:16px;font-family:var(--term-sans);color:var(--term-bright);}
-    .rule-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--term-border);font-size:12px;}
-    .rule-row:last-child{border-bottom:none;padding-bottom:0;}
-    .rule-key{color:var(--term-muted);}
-    .rule-val{font-family:var(--term-mono);font-size:11px;font-weight:500;color:var(--term-text);}
-    .rule-val.good{color:var(--term-green);}
-    .rule-val.warn{color:var(--amber);}
-    .rule-val.danger{color:var(--term-red);}
+    .progress-wrap{margin-bottom:20px;background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px 18px;}
+    .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+    .progress-label{font-size:11px;color:var(--term-muted);text-transform:uppercase;letter-spacing:0.08em;}
+    .progress-pct{font-size:12px;font-weight:700;color:var(--term-green);font-family:var(--term-mono);}
+    .progress-track{height:8px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;}
+    .progress-bar{height:8px;border-radius:999px;transition:width 0.6s ease;}
+    .progress-sub{font-size:11px;color:var(--term-muted);margin-top:8px;}
 
-    .callout{border-radius:10px;padding:14px 18px;font-size:12px;line-height:1.7;display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
-    .callout.green{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.15);color:var(--term-text);}
-    .callout.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.15);color:var(--term-text);}
-    .callout.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:var(--term-text);}
-    .callout-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+    .callout{border-radius:10px;padding:13px 16px;font-size:12px;line-height:1.7;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
+    .callout.amber{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
+    .callout.red{background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.2);}
+    .callout.green{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);}
+    .callout-icon{flex-shrink:0;margin-top:1px;}
 
-    .payout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-    .payout-stat{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:16px;text-align:center;}
-    .payout-stat-num{font-size:22px;font-weight:700;font-family:var(--term-mono);color:var(--term-green);margin-bottom:5px;}
-    .payout-stat-label{font-size:10px;color:var(--term-muted);line-height:1.4;}
+    .form-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;padding:22px;margin-bottom:24px;}
+    .form-title{font-family:var(--term-sans);font-size:15px;font-weight:700;color:var(--term-bright);margin-bottom:16px;}
+    .form-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;}
+    .form-group{flex:1;}
+    .form-label{font-size:10px;color:var(--term-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
+    .form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-bright);font-family:var(--term-mono);font-size:13px;outline:none;transition:border-color .15s;}
+    .form-input:focus{border-color:var(--term-green);}
+    .form-input:disabled{opacity:0.4;cursor:not-allowed;}
+    .max-btn{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:7px;padding:10px 14px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;white-space:nowrap;transition:all .15s;}
+    .max-btn:hover{color:var(--term-text);border-color:var(--term-border-bright);}
+    .submit-btn{width:100%;padding:13px;background:var(--term-green);color:#000;border:none;border-radius:8px;font-family:var(--term-sans);font-size:14px;font-weight:800;letter-spacing:0.04em;cursor:pointer;transition:all .15s;}
+    .submit-btn:hover{background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.25);}
+    .submit-btn:disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
+    .form-msg{font-size:12px;margin-top:10px;min-height:16px;}
+    .form-msg.ok{color:var(--term-green);}
+    .form-msg.err{color:var(--term-red);}
 
-    .rules-table-wrap{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
-    .plan-table{width:100%;border-collapse:collapse;font-size:12px;}
-    .plan-table th{text-align:left;padding:10px 16px;font-family:var(--term-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);background:rgba(255,255,255,0.02);}
-    .plan-table th:not(:first-child){text-align:center;}
-    .plan-table td{padding:11px 16px;border-bottom:1px solid var(--term-border);color:var(--term-text);}
-    .plan-table td:not(:first-child){text-align:center;font-family:var(--term-mono);font-size:11px;}
-    .plan-table tr:last-child td{border-bottom:none;}
-    .plan-table tr:hover td{background:rgba(255,255,255,0.02);}
-    .row-label{color:var(--term-muted);font-size:12px;}
+    .history-card{background:rgba(255,255,255,0.02);border:1px solid var(--term-border);border-radius:10px;overflow:hidden;}
+    .history-title{font-family:var(--term-sans);font-size:14px;font-weight:700;color:var(--term-bright);padding:14px 18px;border-bottom:1px solid var(--term-border);}
+    .history-table{width:100%;border-collapse:collapse;font-size:12px;}
+    .history-table th{text-align:left;padding:9px 18px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--term-muted);border-bottom:1px solid var(--term-border);}
+    .history-table td{padding:11px 18px;border-bottom:1px solid var(--term-border);}
+    .history-table tr:last-child td{border-bottom:none;}
+    .history-table tr:hover td{background:rgba(255,255,255,0.02);}
+    .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+    .pill.pending{background:rgba(245,158,11,0.1);color:var(--amber);}
+    .pill.paid{background:rgba(0,229,160,0.1);color:var(--term-green);}
+    .pill.rejected{background:rgba(255,77,106,0.1);color:var(--term-red);}
+    .empty{text-align:center;color:var(--term-muted);padding:28px!important;}
 
-    @media(max-width:600px){
-      .phase-grid,.risk-grid{grid-template-columns:1fr;}
-      .payout-grid{grid-template-columns:1fr 1fr;}
-      .rules-hero h1{font-size:24px;}
-    }
+    .not-funded{text-align:center;padding:80px 24px;}
+    .not-funded-icon{font-size:40px;margin-bottom:16px;}
+    .not-funded h2{font-family:var(--term-sans);font-size:20px;font-weight:800;color:var(--term-bright);margin-bottom:8px;}
+    .not-funded p{font-size:13px;color:var(--term-muted);line-height:1.7;max-width:380px;margin:0 auto 20px;}
+    .back-link{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.06);border:1px solid var(--term-border);border-radius:8px;color:var(--term-text);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;}
+    .back-link:hover{border-color:var(--term-border-bright);}
   </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
 <header class="topbar">
   <div class="topbar-left">
     <a class="topbar-brand" href="index.html">
@@ -109,7 +109,8 @@
     <nav class="topbar-nav">
       <a href="dashboard.html">Dashboard</a>
       <a href="paper.html">Trading</a>
-      <a href="rules.html" class="active">Rules</a>
+      <a href="rules.html">Rules</a>
+      <a href="payout.html" class="active">Payout</a>
     </nav>
   </div>
   <div class="topbar-right">
@@ -119,279 +120,177 @@
   </div>
 </header>
 
-<div class="rules-wrap">
+<div class="page" id="mainPage" style="display:none">
+  <div class="funded-badge">Funded Account</div>
+  <div class="page-title">Request Payout</div>
+  <div class="page-sub">Withdraw your earned profits. All requests are reviewed and processed manually within 5 business days.</div>
 
-  <div class="rules-hero">
-    <h1>Trader <span>Rules.</span></h1>
-    <p>Every rule is enforced in real time. Breaching any risk limit fails your challenge immediately. Read carefully before you start trading.</p>
-  </div>
-
-  <!-- ── RISK LIMITS ── -->
-  <div class="rules-section">
-    <div class="section-label">Risk Limits — Apply at All Times</div>
-
-    <div class="risk-grid" style="margin-bottom:14px;">
-      <div class="risk-card">
-        <div class="risk-icon">📉</div>
-        <div class="risk-number red">2%</div>
-        <div class="risk-label">Max daily drawdown from day-start equity</div>
-      </div>
-      <div class="risk-card">
-        <div class="risk-icon">🔻</div>
-        <div class="risk-number red">5%</div>
-        <div class="risk-label">Max trailing drawdown from peak equity (ever)</div>
-      </div>
-      <div class="risk-card">
-        <div class="risk-icon">📦</div>
-        <div class="risk-number amber">2.5%</div>
-        <div class="risk-label">Max position size per asset (of starting equity)</div>
-      </div>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Available to withdraw</div>
+      <div class="stat-value green" id="statWithdrawable">—</div>
+      <div class="stat-sub" id="statBufferSub">—</div>
     </div>
-
-    <div class="callout red">
-      <span class="callout-icon">⚠️</span>
-      <span>Breaching either drawdown limit — daily or trailing — results in <strong>immediate challenge failure</strong>. There is no grace period. Your account is locked and you will need to purchase a new challenge to continue.</span>
+    <div class="stat-card">
+      <div class="stat-label">Weekly cap remaining</div>
+      <div class="stat-value" id="statCapRemaining">—</div>
+      <div class="stat-sub" id="statCapSub">—</div>
     </div>
-
-    <div class="callout amber">
-      <span class="callout-icon">ℹ️</span>
-      <span>The trailing drawdown follows your <strong>peak equity ever reached</strong>, not your starting equity. If you grow your account to $55K on a $50K challenge, your floor moves to $52,250 (5% below $55K) and never drops back down.</span>
+    <div class="stat-card">
+      <div class="stat-label">Total paid out</div>
+      <div class="stat-value amber" id="statTotalPaid">—</div>
+      <div class="stat-sub">All time</div>
     </div>
   </div>
 
-  <!-- ── CHALLENGE PHASES ── -->
-  <div class="rules-section">
-    <div class="section-label">Challenge Phases</div>
-
-    <div class="phase-grid">
-      <div class="phase-card phase1">
-        <div class="phase-badge">Phase 1</div>
-        <div class="phase-title">Challenge</div>
-        <div class="rule-row">
-          <span class="rule-key">Profit target</span>
-          <span class="rule-val good">8%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Time limit</span>
-          <span class="rule-val">30 days</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Min trading days</span>
-          <span class="rule-val">5 days</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Max trailing drawdown</span>
-          <span class="rule-val danger">5%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Max daily drawdown</span>
-          <span class="rule-val danger">2%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Consistency rule</span>
-          <span class="rule-val warn">Max 40% in one day</span>
-        </div>
-      </div>
-
-      <div class="phase-card phase2">
-        <div class="phase-badge">Phase 2</div>
-        <div class="phase-title">Verification</div>
-        <div class="rule-row">
-          <span class="rule-key">Profit target</span>
-          <span class="rule-val good">5%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Time limit</span>
-          <span class="rule-val">45 days</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Min trading days</span>
-          <span class="rule-val">7 days</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Max trailing drawdown</span>
-          <span class="rule-val danger">4%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Max daily drawdown</span>
-          <span class="rule-val danger">2%</span>
-        </div>
-        <div class="rule-row">
-          <span class="rule-key">Consistency rule</span>
-          <span class="rule-val warn">Max 40% in one day</span>
-        </div>
-      </div>
+  <div class="progress-wrap">
+    <div class="progress-header">
+      <span class="progress-label">Profit buffer (3% required)</span>
+      <span class="progress-pct" id="bufferPct">—</span>
     </div>
-
-    <div class="callout green">
-      <span class="callout-icon">✅</span>
-      <span>Pass both phases while respecting all risk rules and you move to <strong>Funded status</strong>. The consistency rule means no single trading day can account for more than 40% of your total profits — sustained, disciplined trading is rewarded.</span>
+    <div class="progress-track">
+      <div class="progress-bar" id="bufferBar" style="width:0%"></div>
     </div>
+    <div class="progress-sub" id="bufferSub">—</div>
   </div>
 
-  <!-- ── TRADING RULES ── -->
-  <div class="rules-section">
-    <div class="section-label">Trading Rules</div>
-    <div class="rules-table-wrap">
-      <table class="plan-table">
-        <thead>
-          <tr>
-            <th>Rule</th>
-            <th>Value</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="row-label">Markets allowed</td>
-            <td><span style="color:var(--term-green);font-family:var(--mono);font-size:12px">Spot only</span></td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">BTC, ETH and major altcoins. No leverage, no perpetuals.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Trading fee</td>
-            <td>2%</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Applied per trade to simulate real execution costs.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Max position size</td>
-            <td>2.5%</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Of your starting account equity, per asset.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Holding period</td>
-            <td><span style="color:var(--term-green);font-family:var(--mono);font-size:12px">None</span></td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">No minimum hold time. Open and close freely.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Prohibited strategies</td>
-            <td><span style="color:var(--term-red);font-family:var(--mono);font-size:12px">Banned</span></td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Exploitative strategies, API abuse, or any form of manipulation.</td>
-          </tr>
-        </tbody>
-      </table>
+  <div id="alertBox"></div>
+
+  <div class="form-card">
+    <div class="form-title">New Payout Request</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="amountInput">Amount (USD)</label>
+        <input class="form-input" id="amountInput" type="number" step="0.01" min="1" placeholder="0.00" />
+      </div>
+      <button class="max-btn" id="maxBtn">Max</button>
     </div>
+    <button class="submit-btn" id="submitBtn">Request Payout</button>
+    <div class="form-msg" id="formMsg"></div>
   </div>
 
-  <!-- ── PAYOUT RULES ── -->
-  <div class="rules-section">
-    <div class="section-label">Funded Account &amp; Payouts</div>
-
-    <div class="payout-grid" style="margin-bottom:14px;">
-      <div class="payout-stat">
-        <div class="payout-stat-num">80%</div>
-        <div class="payout-stat-label">Profit split to trader</div>
-      </div>
-      <div class="payout-stat">
-        <div class="payout-stat-num">2%</div>
-        <div class="payout-stat-label">Max payout per 7-day period</div>
-      </div>
-      <div class="payout-stat">
-        <div class="payout-stat-num">3%</div>
-        <div class="payout-stat-label">Profit buffer before first payout</div>
-      </div>
-      <div class="payout-stat">
-        <div class="payout-stat-num">14d</div>
-        <div class="payout-stat-label">Waiting period after funded activation</div>
-      </div>
-    </div>
-
-    <div class="rules-table-wrap" style="margin-bottom:14px;">
-      <table class="plan-table">
-        <thead>
-          <tr>
-            <th>Payout Rule</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="row-label">Profit split</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">You keep 80% of net profits. CryptoProp retains 20%.</td>
-          </tr>
-          <tr>
-            <td class="row-label">First payout delay</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">14 days after funded account activation before any payout request.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Payout cadence</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Weekly — once every 7 days after the first payout becomes available.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Weekly cap</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Max 2% of starting equity per 7-day period. ($500 on $25K, $1,000 on $50K, $2,000 on $100K)</td>
-          </tr>
-          <tr>
-            <td class="row-label">Profit buffer</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Must earn 3% above starting equity before withdrawing anything. This buffer stays in the account at all times.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Daily profit cap</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Daily gains counted toward payouts are capped at 4% of starting equity. Losses count in full.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="callout amber">
-      <span class="callout-icon">ℹ️</span>
-      <span>Payouts are <strong>performance-based discretionary payments</strong> from CryptoProp. They are not guaranteed. CryptoProp reserves the right to withhold payouts if account behaviour violates the trader agreement.</span>
-    </div>
+  <div class="history-card">
+    <div class="history-title">Payout History</div>
+    <table class="history-table">
+      <thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody id="historyBody"><tr><td class="empty" colspan="3">No payouts yet.</td></tr></tbody>
+    </table>
   </div>
+</div>
 
-  <!-- ── PLAN SIZES ── -->
-  <div class="rules-section">
-    <div class="section-label">Account Sizes</div>
-    <div class="rules-table-wrap">
-      <table class="plan-table">
-        <thead>
-          <tr>
-            <th>Plan</th>
-            <th>Starting Equity</th>
-            <th>Evaluation Fee</th>
-            <th>Phase 1 Target</th>
-            <th>Phase 2 Target</th>
-            <th>Weekly Payout Cap</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="font-weight:700">Starter</td>
-            <td>$25,000</td>
-            <td>$149</td>
-            <td style="color:var(--term-green)">$2,000</td>
-            <td style="color:var(--term-blue)">$1,250</td>
-            <td>$500</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700">Standard</td>
-            <td>$50,000</td>
-            <td>$279</td>
-            <td style="color:var(--term-green)">$4,000</td>
-            <td style="color:var(--term-blue)">$2,500</td>
-            <td>$1,000</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700">Pro</td>
-            <td>$100,000</td>
-            <td>$499</td>
-            <td style="color:var(--term-green)">$8,000</td>
-            <td style="color:var(--term-blue)">$5,000</td>
-            <td>$2,000</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<div class="page" id="notFundedPage" style="display:none">
+  <div class="not-funded">
+    <div class="not-funded-icon">🔒</div>
+    <h2>Payouts are for funded accounts only</h2>
+    <p>Pass both challenge phases to unlock payout access. Keep trading and hit your targets.</p>
+    <a href="paper.html" class="back-link">← Back to Trading</a>
   </div>
-
 </div>
 
 <script type="module">
-  import { apiFetch, requireAuth, logout } from "/app.js";
-  const me = await requireAuth();
-  if(!me) return;
-  const whoEl = document.getElementById("who");
-  if(whoEl) whoEl.textContent = me.email;
-  document.getElementById("logoutBtn")?.addEventListener("click", logout);
+import { apiFetch, requireAuth, logout } from "/app.js";
+
+const me = await requireAuth();
+if(!me) return;
+document.getElementById("who").textContent = me.email;
+document.getElementById("logoutBtn").addEventListener("click", logout);
+
+const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
+
+const res = await apiFetch("/api/account");
+const acct = await res.json();
+
+console.log("[payout] challengePhase:", acct?.challengePhase, "planId:", acct?.planId);
+  if(!acct || acct.challengePhase !== "funded") {
+  document.getElementById("notFundedPage").style.display = "";
+  return;
+}
+document.getElementById("mainPage").style.display = "";
+
+const withdrawable = Math.max(0, Number(acct.withdrawable || 0));
+const capRemaining = Math.max(0, Number(acct.payoutCapRemaining || 0));
+const totalPaid = Number(acct.payoutsPaidTotal || 0);
+const eligible = Number(acct.payoutEligiblePnL || 0);
+const buffer = Number(acct.profitBuffer || 0);
+const bufferPct = buffer > 0 ? Math.min(100, Math.round((eligible / buffer) * 100)) : 100;
+
+document.getElementById("statWithdrawable").textContent = money(withdrawable);
+document.getElementById("statCapRemaining").textContent = money(capRemaining);
+document.getElementById("statTotalPaid").textContent = money(totalPaid);
+document.getElementById("statCapSub").textContent = `of ${money(acct.payoutCap || 0)} weekly cap`;
+document.getElementById("statBufferSub").textContent = bufferPct >= 100 ? "Buffer met ✓" : `Buffer ${bufferPct}% reached`;
+document.getElementById("bufferPct").textContent = bufferPct + "%";
+const bar = document.getElementById("bufferBar");
+bar.style.width = bufferPct + "%";
+bar.style.background = bufferPct >= 100 ? "var(--term-green)" : "var(--amber)";
+document.getElementById("bufferSub").textContent = bufferPct >= 100
+  ? "Profit buffer requirement met — you can withdraw."
+  : `${money(eligible)} of ${money(buffer)} reached. Need ${money(Math.max(0,buffer-eligible))} more.`;
+
+// Eligibility alerts
+const alertBox = document.getElementById("alertBox");
+const submitBtn = document.getElementById("submitBtn");
+const eligibleAt = acct.payoutEligibleAt ? new Date(acct.payoutEligibleAt).getTime() : 0;
+const now = Date.now();
+
+if(now < eligibleAt) {
+  const days = Math.ceil((eligibleAt - now) / 86400000);
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong>. This is the 14-day waiting period after funded activation.</span></div>`;
+  submitBtn.disabled = true;
+} else if(bufferPct < 100) {
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>Must reach the 3% profit buffer before withdrawing. Keep trading to unlock payouts.</span></div>`;
+  submitBtn.disabled = true;
+} else if(capRemaining <= 0) {
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Weekly cap reached. Resets every 7 days.</span></div>`;
+  submitBtn.disabled = true;
+} else if(withdrawable <= 0) {
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>No withdrawable balance yet. Keep trading to build profits above the buffer.</span></div>`;
+  submitBtn.disabled = true;
+}
+
+document.getElementById("maxBtn").addEventListener("click", () => {
+  document.getElementById("amountInput").value = Math.min(withdrawable, capRemaining).toFixed(2);
+});
+
+submitBtn.addEventListener("click", async () => {
+  const amount = Number(document.getElementById("amountInput").value);
+  const msgEl = document.getElementById("formMsg");
+  if(!amount || amount <= 0) { msgEl.className="form-msg err"; msgEl.textContent="Enter a valid amount."; return; }
+  if(amount > withdrawable) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds withdrawable balance (${money(withdrawable)}).`; return; }
+  if(amount > capRemaining) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds weekly cap remaining (${money(capRemaining)}).`; return; }
+  submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
+  msgEl.className="form-msg"; msgEl.textContent="";
+  try {
+    const r = await apiFetch("/api/payout/request", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({amount}) });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error||"Request failed");
+    msgEl.className="form-msg ok";
+    msgEl.textContent=`✅ Payout request for ${money(amount)} submitted successfully.`;
+    document.getElementById("amountInput").value="";
+    submitBtn.textContent="Submitted ✓";
+    loadHistory();
+  } catch(e) {
+    msgEl.className="form-msg err"; msgEl.textContent=e.message;
+    submitBtn.disabled=false; submitBtn.textContent="Request Payout";
+  }
+});
+
+async function loadHistory() {
+  try {
+    const r = await apiFetch("/api/account");
+    const a = await r.json();
+    const items = [...(a.payoutRequests||[]),...(a.payouts||[])].sort((x,y)=>new Date(y.time||y.requestedAt)-new Date(x.time||x.requestedAt));
+    const body = document.getElementById("historyBody");
+    if(!items.length) { body.innerHTML=`<tr><td class="empty" colspan="3">No payouts yet.</td></tr>`; return; }
+    body.innerHTML = items.map(p => `<tr>
+      <td>${fmtDate(p.time||p.requestedAt)}</td>
+      <td style="font-family:var(--term-mono);color:var(--term-green)">${money(p.amount)}</td>
+      <td><span class="pill ${p.status||'pending'}">${p.status||'pending'}</span></td>
+    </tr>`).join("");
+  } catch(e){}
+}
+loadHistory();
 </script>
 </body>
 </html>
