@@ -1935,8 +1935,7 @@ app.post("/api/admin/validate-key", async (req, res) => {
 });
 
 app.get("/api/admin/overview", requireAdmin, async (req, res) => {
-  const db = await readData();
-  const accounts = db.accounts || {};
+  const accounts = await getAllAccounts();
   const list = Object.keys(accounts).map(email => {
     const a = accounts[email];
     return {
@@ -1956,14 +1955,12 @@ app.get("/api/admin/overview", requireAdmin, async (req, res) => {
     };
   });
   return res.json({ ok:true, accounts:list });
-}); // close /api/admin/overview
+});
 
 app.get("/api/admin/payout/pending", requireAdmin, async (req, res) => {
-  const db = await readData();
-  const accounts = db.accounts || {};
+  const accounts = await getAllAccounts();
   const pending = [];
-  for(const email of Object.keys(accounts)){
-    const a = accounts[email];
+  for(const [email, a] of Object.entries(accounts)){
     const reqs = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
     for(const r of reqs){
       if(r.status === "pending"){
@@ -1971,7 +1968,6 @@ app.get("/api/admin/payout/pending", requireAdmin, async (req, res) => {
       }
     }
   }
-  // newest first
   pending.sort((x,y)=> (new Date(y.time).getTime() - new Date(x.time).getTime()));
   return res.json({ ok:true, pending });
 });
@@ -2589,10 +2585,8 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
 
 app.get("/api/admin/account", requireAdmin, async (req, res) => {
   const email = (req.query.email || "").toString();
-  const db = await readData();
-  const a = (db.accounts||{})[email];
+  const a = await getAccount(email);
   if(!a) return res.status(404).json({ error:"Not found" });
-  // attach derived payout fields
   a.payoutEligiblePnL = eligibleProfitForPayout(a);
   a.profitBuffer = profitBufferDollar(a);
   a.dailyPayoutCap = dailyProfitCapDollar(a);
