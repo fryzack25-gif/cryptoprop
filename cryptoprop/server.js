@@ -2009,35 +2009,32 @@ app.get("/api/admin/risk/flags", requireAdmin, async (req, res) => {
 
 app.post("/api/admin/account/freeze", requireAdmin, async (req, res) => {
   const { email, frozen } = req.body || {};
-  const db = await readData();
-  db.accounts = db.accounts || {};
-  if(!db.accounts[email]) return res.status(404).json({ error:"Not found" });
-  db.accounts[email].frozen = !!frozen;
-  await writeData(db);
+  if(!email) return res.status(400).json({ error:"Email required" });
+  const a = await getAccount(email);
+  if(!a) return res.status(404).json({ error:"Not found" });
+  a.frozen = !!frozen;
+  await saveAccount(email, a);
   await auditLog(req, frozen ? "freeze" : "unfreeze", email, {});
   return res.json({ ok:true });
 });
 
 app.post("/api/admin/account/fail", requireAdmin, async (req, res) => {
   const { email, reason } = req.body || {};
-  const db = await readData();
-  db.accounts = db.accounts || {};
-  const a = db.accounts[email];
+  if(!email) return res.status(400).json({ error:"Email required" });
+  const a = await getAccount(email);
   if(!a) return res.status(404).json({ error:"Not found" });
   a.challengeFailed = true;
   a.failedAt = new Date().toISOString();
   a.failReason = reason || "Failed by admin";
-  db.accounts[email] = a;
-  await writeData(db);
+  await saveAccount(email, a);
   await auditLog(req, "fail", email, { reason: a.failReason });
   return res.json({ ok:true });
 });
 
 app.post("/api/admin/payout/approve", requireAdmin, async (req, res) => {
   const { email, id } = req.body || {};
-  const db = await readData();
-  db.accounts = db.accounts || {};
-  const a = db.accounts[email];
+  if(!email) return res.status(400).json({ error:"Email required" });
+  const a = await getAccount(email);
   if(!a) return res.status(404).json({ error:"Not found" });
 
   a.payoutRequests = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
@@ -2053,18 +2050,15 @@ app.post("/api/admin/payout/approve", requireAdmin, async (req, res) => {
   a.payouts = Array.isArray(a.payouts) ? a.payouts : [];
   a.payouts.unshift({ id: pr.id, time: new Date().toISOString(), amount, period: pr.period, status:"paid" });
   pr.approvedAt = new Date().toISOString();
-  db.accounts[email] = a;
-  await writeData(db);
+  await saveAccount(email, a);
   await auditLog(req, "approve_payout", email, { id });
   return res.json({ ok:true });
 });
 
 app.get("/api/admin/kyc/pending", requireAdmin, async (req, res) => {
-  const db = await readData();
-  const accounts = db.accounts || {};
+  const accounts = await getAllAccounts();
   const pending = [];
-  for(const email of Object.keys(accounts)){
-    const a = accounts[email];
+  for(const [email, a] of Object.entries(accounts)){
     if(a.kycStatus && a.kycStatus !== "not_started"){
       pending.push({
         email,
@@ -2083,14 +2077,14 @@ app.get("/api/admin/kyc/pending", requireAdmin, async (req, res) => {
 
 app.post("/api/admin/kyc/set-status", requireAdmin, async (req, res) => {
   const { email, status } = req.body || {};
-  const db = await readData();
-  db.accounts = db.accounts || {};
-  const a = db.accounts[email];
-  if(!a) return res.status(404).json({ error:"Not found" });
+  if(!email) return res.status(400).json({ error:"Email required" });
   if(!["approved","rejected","pending","not_started","failed"].includes(status)) return res.status(400).json({ error:"Invalid status" });
+  const a = await getAccount(email);
+  if(!a) return res.status(404).json({ error:"Not found" });
   a.kycStatus = status;
-  db.accounts[email] = a;
-  await writeData(db);
+  if(status === "approved") a.kycApprovedAt = new Date().toISOString();
+  if(status === "not_started") { a.kycApprovedAt = null; a.kycSubmittedAt = null; a.kycStripeSessionId = null; }
+  await saveAccount(email, a);
   await auditLog(req, "kyc_set_status", email, { status });
   return res.json({ ok:true });
 });
