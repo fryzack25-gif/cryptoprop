@@ -86,7 +86,7 @@ document.getElementById("loginBtn")?.addEventListener("click", async () => {
     if(next && next.startsWith("/")) { window.location.href = next; return; }
     const acctRes = await fetch("/api/account");
     const acct = acctRes.ok ? await acctRes.json() : {};
-    window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
+    window.location.href = acct.planId ? "/paper.html" : "/onboard.html";
   }
   catch(e){ if(msg) msg.textContent = e.message; }
 });
@@ -109,7 +109,7 @@ document.getElementById("adminBtn")?.addEventListener("click", async () => {
       if(next && next.startsWith("/")) { window.location.href = next; return; }
       const acctRes = await fetch("/api/account");
       const acct = acctRes.ok ? await acctRes.json() : {};
-      window.location.href = acct.planId ? "/dashboard.html" : "/onboard.html";
+      window.location.href = acct.planId ? "/paper.html" : "/onboard.html";
     }
   }catch(e){}
 })();
