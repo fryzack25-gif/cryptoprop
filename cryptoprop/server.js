@@ -678,6 +678,76 @@ app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   return res.json({ ok:true, status: acct.kycStatus });
 });
 
+// Stripe Identity — create verification session
+app.post("/api/kyc/stripe/start", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  if(acct.kycStatus === "approved") return res.json({ ok:true, alreadyApproved:true });
+  if(!stripe) {
+    // fallback: mark pending without Stripe
+    acct.kycStatus = "pending";
+    acct.kycSubmittedAt = new Date().toISOString();
+    await saveAccount(email, acct);
+    return res.json({ ok:true, fallback:true });
+  }
+  try {
+    const session = await stripe.identity.verificationSessions.create({
+      type: "document",
+      metadata: { email },
+      options: { document: { require_matching_selfie: true } },
+      return_url: `${process.env.BASE_URL || "https://thecryptoprop.com"}/kyc.html?session_id={VERIFICATION_SESSION_ID}`,
+    });
+    acct.kycStripeSessionId = session.id;
+    acct.kycStatus = "pending";
+    acct.kycSubmittedAt = new Date().toISOString();
+    await saveAccount(email, acct);
+    return res.json({ ok:true, url: session.url, sessionId: session.id });
+  } catch(e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// Stripe Identity webhook — identity.verification_session.verified / requires_input
+app.post("/api/stripe/identity-webhook", express.raw({ type:"application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const secret = process.env.STRIPE_IDENTITY_WEBHOOK_SECRET;
+  let event;
+  try {
+    event = secret
+      ? stripe.webhooks.constructEvent(req.body, sig, secret)
+      : JSON.parse(req.body.toString());
+  } catch(e) {
+    return res.status(400).send("Webhook error: " + e.message);
+  }
+  const obj = event.data?.object;
+  const email = obj?.metadata?.email;
+  if(email) {
+    const acct = await getOrCreateAccount(email);
+    if(event.type === "identity.verification_session.verified") {
+      acct.kycStatus = "approved";
+      acct.kycApprovedAt = new Date().toISOString();
+    } else if(event.type === "identity.verification_session.requires_input") {
+      acct.kycStatus = "failed";
+      acct.kycFailReason = obj?.last_error?.reason || "Verification failed";
+    }
+    await saveAccount(email, acct);
+  }
+  res.json({ received:true });
+});
+
+// Check KYC status
+app.get("/api/kyc/status", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  return res.json({
+    status: acct.kycStatus || "not_started",
+    submittedAt: acct.kycSubmittedAt || null,
+    approvedAt: acct.kycApprovedAt || null,
+    failReason: acct.kycFailReason || null,
+    sessionId: acct.kycStripeSessionId || null,
+  });
+});
+
 
 // Seed liquidity (auth required)
 app.post("/api/account/seed", requireAuth, async (req, res) => {
