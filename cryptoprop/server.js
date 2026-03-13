@@ -16,9 +16,9 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || null;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
 
 const STRIPE_PRICE_IDS = {
-  "25k": "price_1TAILWR6m1wPvtFMHNZu4gSE",
-  "50k": "price_1TAIM5R6m1wPvtFM6nDD2tYd",
-  "100k": "price_1TAIMkR6m1wPvtFMN2mtav38",
+  "25k": process.env.STRIPE_PRICE_25K,
+  "50k": process.env.STRIPE_PRICE_50K,
+  "100k": process.env.STRIPE_PRICE_100K,
 };
 
 // ---- EMAIL via Resend ----
