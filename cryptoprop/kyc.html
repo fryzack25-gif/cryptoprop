@@ -1,97 +1,269 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KYC / AML Policy — CryptoProp</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>CryptoProp — Identity Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    .legal-wrap { max-width: 780px; margin: 60px auto; padding: 0 24px 60px; }
-    .legal-wrap h1 { font-size: 2rem; margin-bottom: 8px; }
-    .legal-wrap h2 { font-size: 1.1rem; margin-top: 32px; margin-bottom: 6px; color: var(--accent, #7c5cff); }
-    .legal-wrap p { line-height: 1.75; color: var(--muted, #aaa); margin: 0 0 12px; }
-    .legal-wrap ul { color: var(--muted, #aaa); line-height: 1.75; margin: 0 0 12px; padding-left: 20px; }
-    .legal-wrap ul li { margin-bottom: 4px; }
-    .legal-wrap a.back { display: inline-block; margin-bottom: 32px; font-size: 0.9rem; color: var(--accent, #7c5cff); text-decoration: none; }
-    .legal-wrap a.back:hover { text-decoration: underline; }
-    .last-updated { font-size: 0.8rem; color: var(--muted, #aaa); margin-bottom: 32px; }
+    :root {
+      --bg:#080b10; --panel:#0d1117; --border:rgba(255,255,255,0.07);
+      --border2:rgba(255,255,255,0.14); --muted:#5a6a80; --text:#c8d8e8;
+      --bright:#e8f0f8; --green:#00e5a0; --red:#ff4d6a;
+      --mono:'JetBrains Mono',monospace; --sans:'Syne',sans-serif; --amber:#f59e0b;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+    .topbar-left{display:flex;align-items:center;gap:20px;}
+    .brand{font-family:var(--sans);font-weight:800;font-size:15px;color:var(--bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    nav a{padding:6px 12px;border-radius:6px;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;text-decoration:none;transition:.15s;}
+    nav a:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+    nav a.on{color:var(--bright);background:rgba(255,255,255,0.08);}
+    .topbar-right{display:flex;align-items:center;gap:12px;}
+    #whoEl{font-size:11px;color:var(--muted);}
+    .ghostbtn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--muted);font-size:11px;font-family:var(--mono);cursor:pointer;transition:.15s;}
+    .ghostbtn:hover{color:var(--text);border-color:var(--border2);}
+
+    .wrap{max-width:600px;margin:0 auto;padding:48px 24px 80px;}
+
+    .page-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(61,158,255,0.1);border:1px solid rgba(61,158,255,0.2);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:#3d9eff;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;}
+    .page-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#3d9eff;}
+    h1{font-family:var(--sans);font-size:28px;font-weight:800;color:var(--bright);letter-spacing:-0.02em;margin-bottom:8px;}
+    .sub{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:36px;}
+
+    /* Status card */
+    .status-card{border-radius:12px;padding:24px;margin-bottom:28px;display:flex;align-items:center;gap:20px;}
+    .status-card.not_started{background:rgba(255,255,255,0.02);border:1px solid var(--border);}
+    .status-card.pending{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);}
+    .status-card.approved{background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);}
+    .status-card.failed{background:rgba(255,77,106,0.07);border:1px solid rgba(255,77,106,0.2);}
+    .status-icon{font-size:36px;flex-shrink:0;}
+    .status-title{font-family:var(--sans);font-size:17px;font-weight:800;color:var(--bright);margin-bottom:4px;}
+    .status-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+    .status-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-top:8px;}
+    .status-chip.not_started{background:rgba(255,255,255,0.06);color:var(--muted);}
+    .status-chip.pending{background:rgba(245,158,11,0.15);color:var(--amber);}
+    .status-chip.approved{background:rgba(0,229,160,0.15);color:var(--green);}
+    .status-chip.failed{background:rgba(255,77,106,0.15);color:var(--red);}
+
+    /* Steps */
+    .steps{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+    .step{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;padding:16px;}
+    .step-num{width:28px;height:28px;border-radius:50%;background:rgba(61,158,255,0.15);border:1px solid rgba(61,158,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#3d9eff;flex-shrink:0;}
+    .step-body{flex:1;}
+    .step-title{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--bright);margin-bottom:3px;}
+    .step-desc{font-size:11px;color:var(--muted);line-height:1.6;}
+
+    /* CTA */
+    .cta-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;}
+    .cta-card h2{font-family:var(--sans);font-size:16px;font-weight:800;color:var(--bright);margin-bottom:6px;}
+    .cta-card p{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:20px;max-width:400px;margin-left:auto;margin-right:auto;}
+    .start-btn{display:inline-block;padding:14px 36px;background:var(--green);color:#000;border:none;border-radius:9px;font-family:var(--sans);font-size:14px;font-weight:800;cursor:pointer;transition:.15s;letter-spacing:0.02em;}
+    .start-btn:hover:not([disabled]){background:#00ffb3;box-shadow:0 6px 24px rgba(0,229,160,0.25);transform:translateY(-1px);}
+    .start-btn[disabled]{opacity:0.4;cursor:not-allowed;transform:none;}
+    .cta-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;}
+
+    /* Info box */
+    .infobox{background:rgba(61,158,255,0.06);border:1px solid rgba(61,158,255,0.15);border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;color:var(--text);margin-bottom:20px;}
+    .infobox strong{color:#3d9eff;}
+
+    .errbox{background:rgba(255,77,106,0.07);border:1px solid rgba(255,77,106,0.2);border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.7;color:var(--text);margin-bottom:20px;display:none;}
+
+    .retry-btn{display:inline-block;padding:10px 24px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;margin-top:12px;}
+    .retry-btn:hover{border-color:var(--border2);}
   </style>
 </head>
 <body>
-  <div class="legal-wrap">
-    <a class="back" href="/">← Back to CryptoProp</a>
-    <h1>KYC / AML Policy</h1>
-    <p class="last-updated">Effective Date: 2026 &nbsp;•&nbsp; CryptoProp LLC &nbsp;•&nbsp; Indiana, United States</p>
 
-    <h2>1. Purpose</h2>
-    <p>This Know Your Customer (KYC) and Anti-Money Laundering (AML) Policy describes the procedures used by CryptoProp LLC ("CryptoProp", "Company") to prevent fraud, financial crime, and misuse of the platform. The policy is designed to ensure that all users are properly identified and that the platform is not used for illegal activities.</p>
-
-    <h2>2. Nature of the Platform</h2>
-    <p>CryptoProp operates a simulated trading evaluation platform. No real trading accounts are provided and no user deposits are traded in financial markets. Users pay fees for access to simulated trading challenges designed to evaluate trading performance.</p>
-
-    <h2>3. Identity Verification (KYC)</h2>
-    <p>CryptoProp may require identity verification before allowing certain platform activities, including but not limited to:</p>
-    <ul>
-      <li>Payout requests</li>
-      <li>Account upgrades</li>
-      <li>Suspicious account activity</li>
-      <li>Compliance checks</li>
-    </ul>
-    <p>Users may be required to submit the following information:</p>
-    <ul>
-      <li>Full legal name</li>
-      <li>Date of birth</li>
-      <li>Residential address</li>
-      <li>Government-issued photo identification</li>
-      <li>Selfie or biometric verification</li>
-      <li>Additional documents if requested</li>
-    </ul>
-    <p>CryptoProp reserves the right to request additional documentation where necessary to verify identity.</p>
-
-    <h2>4. Verification Process</h2>
-    <p>Submitted identification documents may be reviewed using automated verification tools and manual review procedures. Accounts may be restricted until verification is successfully completed.</p>
-    <p>If identity verification cannot be completed or documentation appears fraudulent, CryptoProp may suspend or terminate the account.</p>
-
-    <h2>5. AML Monitoring</h2>
-    <p>CryptoProp monitors platform activity to detect suspicious behavior including:</p>
-    <ul>
-      <li>Multiple account creation</li>
-      <li>Identity inconsistencies</li>
-      <li>Fraudulent payment activity</li>
-      <li>Attempts to circumvent platform rules</li>
-      <li>Coordinated activity between accounts</li>
-    </ul>
-    <p>Accounts identified as high risk may be subject to enhanced review.</p>
-
-    <h2>6. Suspicious Activity Review</h2>
-    <p>If suspicious activity is detected, CryptoProp may:</p>
-    <ul>
-      <li>Temporarily restrict account activity</li>
-      <li>Request additional verification documents</li>
-      <li>Delay or deny payouts</li>
-      <li>Permanently terminate the account</li>
-      <li>Report suspicious activity to appropriate authorities when required by law</li>
-    </ul>
-
-    <h2>7. Sanctions and Prohibited Jurisdictions</h2>
-    <p>CryptoProp may restrict or prohibit access to users located in jurisdictions subject to international sanctions or regulatory restrictions. Users may not access the platform from regions where participation would violate applicable law.</p>
-
-    <h2>8. Record Keeping</h2>
-    <p>CryptoProp may retain KYC documentation and related records for compliance and security purposes. Records may be stored for a reasonable period consistent with fraud prevention and regulatory best practices.</p>
-
-    <h2>9. Privacy and Data Protection</h2>
-    <p>All personal information collected during the verification process is handled in accordance with the CryptoProp Privacy Policy. CryptoProp takes reasonable measures to protect user data and prevent unauthorized access.</p>
-
-    <h2>10. Cooperation with Authorities</h2>
-    <p>CryptoProp may cooperate with law enforcement or regulatory authorities where legally required, including the disclosure of information related to suspected financial crime.</p>
-
-    <h2>11. Policy Updates</h2>
-    <p>CryptoProp reserves the right to update this KYC and AML Policy at any time. Updated policies will be published on the CryptoProp website and may require user acknowledgment.</p>
-
-    <h2>12. Contact</h2>
-    <p>For questions regarding this policy or identity verification requirements, users may contact CryptoProp support through the official website.</p>
-
-    <p style="margin-top: 40px; font-size: 0.85rem;">CryptoProp LLC &nbsp;•&nbsp; Indiana, United States</p>
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="brand" href="index.html"><div class="dot"></div>CryptoProp</a>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="paper.html">Trading</a>
+      <a href="rules.html">Rules</a>
+      <a href="payout.html">Payout</a>
+      <a href="kyc.html" class="on">KYC</a>
+    </nav>
   </div>
+  <div class="topbar-right">
+    <span id="whoEl"></span>
+    <button class="ghostbtn" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-badge">Identity Verification</div>
+  <h1>KYC Verification</h1>
+  <div class="sub">Required before your first payout. Powered by Stripe Identity — takes about 2 minutes. Your documents are handled securely and never stored on our servers.</div>
+
+  <!-- Dynamic status card -->
+  <div class="status-card not_started" id="statusCard">
+    <div class="status-icon" id="statusIcon">🪪</div>
+    <div>
+      <div class="status-title" id="statusTitle">Not started</div>
+      <div class="status-desc" id="statusDesc">Complete identity verification to unlock payouts.</div>
+      <div class="status-chip not_started" id="statusChip">NOT STARTED</div>
+    </div>
+  </div>
+
+  <div class="errbox" id="errBox"></div>
+
+  <!-- Steps (shown when not approved) -->
+  <div id="stepsArea">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Prepare your ID</div>
+          <div class="step-desc">Have a government-issued photo ID ready — passport, driver's license, or national ID card.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Verify with Stripe</div>
+          <div class="step-desc">Click the button below. You'll be taken to Stripe's secure verification flow to upload your ID and take a selfie.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Wait for approval</div>
+          <div class="step-desc">Stripe verifies your identity automatically. Most verifications complete within minutes.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="infobox">
+      <strong>Why do we need this?</strong> KYC (Know Your Customer) is required by financial regulations before processing any payouts. Your information is encrypted and processed securely by Stripe.
+    </div>
+
+    <div class="cta-card" id="ctaCard">
+      <h2>Start Verification</h2>
+      <p>You'll be redirected to Stripe's secure identity verification page. The process takes about 2 minutes.</p>
+      <button class="start-btn" id="startBtn" onclick="startKYC()">Verify with Stripe →</button>
+      <div class="cta-note" id="ctaNote">By proceeding you agree to Stripe's <a href="https://stripe.com/privacy" target="_blank" style="color:#3d9eff">privacy policy</a>.</div>
+    </div>
+  </div>
+
+  <!-- Approved state (shown when approved) -->
+  <div id="approvedArea" style="display:none">
+    <div class="infobox">
+      <strong>✅ Verified.</strong> Your identity has been confirmed. You're cleared for payouts — head to the <a href="payout.html" style="color:#3d9eff">Payout page</a> to request a withdrawal.
+    </div>
+  </div>
+</div>
+
+<script>
+function doLogout() {
+  fetch('/api/auth/logout', {method:'POST'}).catch(function(){});
+  sessionStorage.removeItem('cp_session');
+  window.location.href = '/auth.html?force=true';
+}
+
+var STATUS_META = {
+  not_started: { icon:'🪪', title:'Not started',        desc:'Complete identity verification to unlock payouts.',              chip:'NOT STARTED' },
+  pending:     { icon:'⏳', title:'Verification pending', desc:'Your documents are being reviewed. This usually takes minutes.', chip:'PENDING' },
+  approved:    { icon:'✅', title:'Identity verified',   desc:'You are fully verified and cleared for payouts.',               chip:'APPROVED' },
+  failed:      { icon:'❌', title:'Verification failed', desc:'There was an issue with your submission. Please try again.',     chip:'FAILED' },
+};
+
+function renderStatus(status, failReason) {
+  var m = STATUS_META[status] || STATUS_META['not_started'];
+  var card  = document.getElementById('statusCard');
+  var icon  = document.getElementById('statusIcon');
+  var title = document.getElementById('statusTitle');
+  var desc  = document.getElementById('statusDesc');
+  var chip  = document.getElementById('statusChip');
+  card.className  = 'status-card ' + status;
+  icon.textContent = m.icon;
+  title.textContent = m.title;
+  desc.textContent  = failReason ? 'Reason: ' + failReason : m.desc;
+  chip.className  = 'status-chip ' + status;
+  chip.textContent = m.chip;
+
+  if (status === 'approved') {
+    document.getElementById('stepsArea').style.display = 'none';
+    document.getElementById('approvedArea').style.display = '';
+  } else if (status === 'pending') {
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('startBtn').textContent = 'Verification submitted ✓';
+    document.getElementById('ctaNote').textContent = 'Stripe is reviewing your documents. Check back soon.';
+  } else if (status === 'failed') {
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = 'Retry Verification →';
+    document.getElementById('ctaNote').textContent = 'Please try again with a clear, valid government ID.';
+  }
+}
+
+async function startKYC() {
+  var btn = document.getElementById('startBtn');
+  var err = document.getElementById('errBox');
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  err.style.display = 'none';
+  try {
+    var r = await fetch('/api/kyc/stripe/start', {method:'POST', headers:{'Content-Type':'application/json'}});
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed to start verification');
+    if (d.alreadyApproved) { renderStatus('approved'); return; }
+    if (d.fallback) {
+      // Stripe not configured — mark pending and inform user
+      renderStatus('pending');
+      err.style.display = '';
+      err.innerHTML = 'ℹ️ Live verification unavailable — your request has been queued for manual review.';
+      err.style.background = 'rgba(61,158,255,0.07)';
+      err.style.borderColor = 'rgba(61,158,255,0.2)';
+      return;
+    }
+    // Redirect to Stripe Identity
+    window.location.href = d.url;
+  } catch(e) {
+    err.style.display = '';
+    err.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Verify with Stripe →';
+  }
+}
+
+async function init() {
+  // Auth check
+  var r = await fetch('/api/auth/me');
+  if (!r.ok) { window.location.href = '/auth.html?force=true'; return; }
+  var me = await r.json();
+  document.getElementById('whoEl').textContent = me.user ? me.user.email : '';
+
+  // Check if returning from Stripe (session_id in URL)
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('session_id');
+  if (sessionId) {
+    // Poll status after return
+    renderStatus('pending');
+    document.getElementById('ctaNote').textContent = 'Checking your verification result…';
+    // give webhook a moment then re-check
+    setTimeout(checkStatus, 2000);
+    return;
+  }
+
+  checkStatus();
+}
+
+async function checkStatus() {
+  try {
+    var r = await fetch('/api/kyc/status');
+    if (!r.ok) return;
+    var d = await r.json();
+    renderStatus(d.status || 'not_started', d.failReason);
+  } catch(e) {}
+}
+
+init();
+</script>
 </body>
 </html>
