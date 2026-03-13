@@ -137,7 +137,7 @@ function archiveChallengeStep(acct, result){
 }
 
 // Profit buffer before payouts + daily profit cap for payout eligibility
-const PAYOUT_PROFIT_BUFFER_PCT = 0.08; // must earn 8% before any payout
+const PAYOUT_PROFIT_BUFFER_PCT = 0.03; // must earn 3% before any payout
 const PAYOUT_DAILY_PROFIT_CAP_PCT = 0.04; // per-day profit counted toward payout capped at 4%
 
 
