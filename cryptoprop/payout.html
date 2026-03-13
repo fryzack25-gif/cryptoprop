@@ -190,31 +190,34 @@
 <script type="module">
 import { apiFetch, requireAuth, logout } from "/app.js";
 
+const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
+
+// Auth
 const me = await requireAuth();
 if(!me) return;
 document.getElementById("who").textContent = me.email;
 document.getElementById("logoutBtn").addEventListener("click", logout);
 
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtDate = iso => iso ? new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "—";
-
+// Load account
 let acct;
 try {
-  const res = await apiFetch("/api/account");
-  acct = await res.json();
+  const r = await apiFetch("/api/account");
+  acct = await r.json();
 } catch(e) {
-  console.error("[payout] account fetch failed:", e);
-  document.getElementById("notFundedPage").style.display = "";
+  document.body.innerHTML += `<div style="color:#ff4d6a;padding:40px;font-family:monospace">Error loading account: ${e.message}</div>`;
   return;
 }
-console.log("[payout] challengePhase:", acct?.challengePhase, "planId:", acct?.planId);
+
+console.log("[payout] phase:", acct.challengePhase);
+
 if(!acct || acct.challengePhase !== "funded") {
   document.getElementById("notFundedPage").style.display = "";
   return;
 }
+
 document.getElementById("mainPage").style.display = "";
 
-try {
 const withdrawable = Math.max(0, Number(acct.withdrawable || 0));
 const capRemaining = Math.max(0, Number(acct.payoutCapRemaining || 0));
 const totalPaid = Number(acct.payoutsPaidTotal || 0);
@@ -228,14 +231,15 @@ document.getElementById("statTotalPaid").textContent = money(totalPaid);
 document.getElementById("statCapSub").textContent = `of ${money(acct.payoutCap || 0)} weekly cap`;
 document.getElementById("statBufferSub").textContent = bufferPct >= 100 ? "Buffer met ✓" : `Buffer ${bufferPct}% reached`;
 document.getElementById("bufferPct").textContent = bufferPct + "%";
+
 const bar = document.getElementById("bufferBar");
-bar.style.width = bufferPct + "%";
+bar.style.width = Math.min(100, bufferPct) + "%";
 bar.style.background = bufferPct >= 100 ? "var(--term-green)" : "var(--amber)";
 document.getElementById("bufferSub").textContent = bufferPct >= 100
   ? "Profit buffer requirement met — you can withdraw."
   : `${money(eligible)} of ${money(buffer)} reached. Need ${money(Math.max(0,buffer-eligible))} more.`;
 
-// Eligibility alerts
+// Eligibility alert
 const alertBox = document.getElementById("alertBox");
 const submitBtn = document.getElementById("submitBtn");
 const eligibleAt = acct.payoutEligibleAt ? new Date(acct.payoutEligibleAt).getTime() : 0;
@@ -243,16 +247,16 @@ const now = Date.now();
 
 if(now < eligibleAt) {
   const days = Math.ceil((eligibleAt - now) / 86400000);
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong>. This is the 14-day waiting period after funded activation.</span></div>`;
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Payouts unlock in <strong>${days} day${days!==1?"s":""}</strong> — 14-day waiting period after funded activation.</span></div>`;
   submitBtn.disabled = true;
 } else if(bufferPct < 100) {
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>Must reach the 3% profit buffer before withdrawing. Keep trading to unlock payouts.</span></div>`;
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>Must reach the 3% profit buffer before withdrawing.</span></div>`;
   submitBtn.disabled = true;
 } else if(capRemaining <= 0) {
   alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">⏳</span><span>Weekly cap reached. Resets every 7 days.</span></div>`;
   submitBtn.disabled = true;
 } else if(withdrawable <= 0) {
-  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>No withdrawable balance yet. Keep trading to build profits above the buffer.</span></div>`;
+  alertBox.innerHTML = `<div class="callout amber"><span class="callout-icon">ℹ️</span><span>No withdrawable balance yet.</span></div>`;
   submitBtn.disabled = true;
 }
 
@@ -264,8 +268,8 @@ submitBtn.addEventListener("click", async () => {
   const amount = Number(document.getElementById("amountInput").value);
   const msgEl = document.getElementById("formMsg");
   if(!amount || amount <= 0) { msgEl.className="form-msg err"; msgEl.textContent="Enter a valid amount."; return; }
-  if(amount > withdrawable) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds withdrawable balance (${money(withdrawable)}).`; return; }
-  if(amount > capRemaining) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds weekly cap remaining (${money(capRemaining)}).`; return; }
+  if(amount > withdrawable) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds withdrawable (${money(withdrawable)}).`; return; }
+  if(amount > capRemaining) { msgEl.className="form-msg err"; msgEl.textContent=`Exceeds weekly cap (${money(capRemaining)}).`; return; }
   submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
   msgEl.className="form-msg"; msgEl.textContent="";
   try {
@@ -273,7 +277,7 @@ submitBtn.addEventListener("click", async () => {
     const d = await r.json();
     if(!r.ok) throw new Error(d.error||"Request failed");
     msgEl.className="form-msg ok";
-    msgEl.textContent=`✅ Payout request for ${money(amount)} submitted successfully.`;
+    msgEl.textContent=`✅ Payout request for ${money(amount)} submitted.`;
     document.getElementById("amountInput").value="";
     submitBtn.textContent="Submitted ✓";
     loadHistory();
@@ -290,15 +294,14 @@ async function loadHistory() {
     const items = [...(a.payoutRequests||[]),...(a.payouts||[])].sort((x,y)=>new Date(y.time||y.requestedAt)-new Date(x.time||x.requestedAt));
     const body = document.getElementById("historyBody");
     if(!items.length) { body.innerHTML=`<tr><td class="empty" colspan="3">No payouts yet.</td></tr>`; return; }
-    body.innerHTML = items.map(p => `<tr>
+    body.innerHTML = items.map(p=>`<tr>
       <td>${fmtDate(p.time||p.requestedAt)}</td>
       <td style="font-family:var(--term-mono);color:var(--term-green)">${money(p.amount)}</td>
       <td><span class="pill ${p.status||'pending'}">${p.status||'pending'}</span></td>
     </tr>`).join("");
-  } catch(e){}
+  } catch(e) { console.error("loadHistory error:", e); }
 }
 loadHistory();
-} catch(e) { console.error("[payout] render error:", e); }
 </script>
 </body>
 </html>
