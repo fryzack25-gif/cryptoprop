@@ -2551,6 +2551,7 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
     payment_method_types: ["card"],
     line_items: lineItems,
     customer_email: email,
+    allow_promotion_codes: true,
     success_url: `${baseUrl}/payment-success.html`,
     cancel_url: `${baseUrl}/onboard.html`,
     metadata: {
