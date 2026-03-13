@@ -166,15 +166,17 @@ app.use(session({
     pool,
     tableName: "sessions",
     createTableIfMissing: true,
+    pruneSessionInterval: 60 * 15,
   }),
   name: "cp.sid",
   secret: SESSION_SECRET,
-  resave: false,
+  resave: true,
+  rolling: true,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    secure: (process.env.NODE_ENV === "production"),
+    sameSite: "none",
+    secure: true,
     maxAge: 1000 * 60 * 60 * 24 * 14
   }
 }));
@@ -2130,7 +2132,10 @@ app.post("/api/auth/login", async (req, res) => {
   if(!ok) return res.status(400).json({ error:"Invalid credentials" });
   if(!u.emailVerified) return res.status(403).json({ error:"Email not verified" });
   req.session.user = { email: u.email, isAdmin: !!u.isAdmin };
-  return res.json({ ok:true });
+  req.session.save((err) => {
+    if(err) { console.error("[Login] Session save error:", err); return res.status(500).json({ error:"Session error" }); }
+    return res.json({ ok:true });
+  });
 });
 
 app.post("/api/auth/logout", async (req, res) => {
@@ -2494,7 +2499,9 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
 
   try {
     const session = await stripe.checkout.sessions.create(sessionParams);
-    return res.json({ ok: true, checkoutUrl: session.url });
+    const checkoutUrl = session.url;
+    await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
+    return res.json({ ok: true, checkoutUrl });
   } catch(e) {
     console.error("Stripe session error:", e.message);
     return res.status(500).json({ error: "Failed to create checkout session" });
@@ -2726,7 +2733,9 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
       cancel_url: `${baseUrl}/paper.html`,
       metadata: { userEmail: email, planId, retryType: "retry" },
     });
-    return res.json({ ok: true, checkoutUrl: session.url });
+    const checkoutUrl = session.url;
+    await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
+    return res.json({ ok: true, checkoutUrl });
   } catch(e) {
     console.error("Stripe retry session error:", e.message);
     return res.status(500).json({ error: "Failed to create checkout session" });
