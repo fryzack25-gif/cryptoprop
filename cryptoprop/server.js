@@ -7,6 +7,7 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import { initDb, readData, writeData, getUser, saveUser, getAccount, saveAccount, getAllAccounts, pool } from "./db.js";
+import connectPgSimple from "connect-pg-simple";
 
 // ---- STRIPE ----
 import Stripe from "stripe";
@@ -159,11 +160,17 @@ if(process.env.NODE_ENV === "production"){
   if(!process.env.ADMIN_KEY) throw new Error("ADMIN_KEY environment variable must be set in production.");
 }
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-session-secret-DO-NOT-USE-IN-PRODUCTION-" + Math.random();
+const PgSession = connectPgSimple(session);
 app.use(session({
+  store: new PgSession({
+    pool,
+    tableName: "sessions",
+    createTableIfMissing: true,
+  }),
   name: "cp.sid",
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
