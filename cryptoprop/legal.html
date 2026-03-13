@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoProp — Legal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    :root {
+      --term-bg:#080b10; --term-panel:#0d1117; --term-border:rgba(255,255,255,0.07);
+      --term-border-bright:rgba(255,255,255,0.14); --term-muted:#5a6a80; --term-label:#7a8fa8;
+      --term-text:#c8d8e8; --term-bright:#e8f0f8; --term-green:#00e5a0; --term-red:#ff4d6a;
+      --term-yellow:#f5c842; --term-blue:#3d9eff; --term-mono:'JetBrains Mono',monospace;
+      --term-sans:'Syne',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{background:var(--term-bg);color:var(--term-text);font-family:var(--term-mono);font-size:13px;}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--term-panel);border-bottom:1px solid var(--term-border);position:sticky;top:0;z-index:100;}
+    .topbar-left{display:flex;align-items:center;gap:20px;}
+    .topbar-brand{font-family:var(--term-sans);font-weight:800;font-size:15px;color:var(--term-bright);letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;text-decoration:none;}
+    .brand-dot{width:8px;height:8px;border-radius:50%;background:var(--term-green);box-shadow:0 0 8px var(--term-green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .topbar-nav{display:flex;gap:2px;}
+    .topbar-nav a{padding:6px 12px;border-radius:6px;color:var(--term-muted);font-family:var(--term-sans);font-size:13px;font-weight:600;text-decoration:none;transition:color .15s,background .15s;}
+    .topbar-nav a:hover{color:var(--term-text);background:rgba(255,255,255,0.05);}
+    .topbar-nav a.active{color:var(--term-bright);background:rgba(255,255,255,0.08);}
+    .topbar-right{display:flex;align-items:center;gap:12px;}
+    .topbar-user{font-size:11px;color:var(--term-muted);}
+    .btn-ghost-sm{background:rgba(255,255,255,0.05);border:1px solid var(--term-border);border-radius:6px;padding:5px 12px;color:var(--term-muted);font-size:11px;font-family:var(--term-mono);cursor:pointer;transition:all .15s;}
+    .btn-ghost-sm:hover{color:var(--term-text);border-color:var(--term-border-bright);}
+
+    /* Layout */
+    .legal-layout{display:flex;max-width:1100px;margin:0 auto;padding:40px 24px 80px;gap:40px;}
+
+    /* Sidebar tabs */
+    .legal-sidebar{width:200px;flex-shrink:0;}
+    .legal-sidebar-sticky{position:sticky;top:68px;}
+    .legal-sidebar h3{font-family:var(--term-sans);font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--term-muted);text-transform:uppercase;margin-bottom:12px;}
+    .sidebar-nav{display:flex;flex-direction:column;gap:2px;}
+    .sidebar-nav a{display:block;padding:8px 12px;border-radius:6px;color:var(--term-muted);font-size:11px;font-weight:500;text-decoration:none;transition:all .15s;border:1px solid transparent;}
+    .sidebar-nav a:hover{color:var(--term-text);background:rgba(255,255,255,0.04);}
+    .sidebar-nav a.active{color:var(--term-green);background:rgba(0,229,160,0.06);border-color:rgba(0,229,160,0.15);}
+
+    /* Content */
+    .legal-content{flex:1;min-width:0;}
+    .legal-doc{display:none;}
+    .legal-doc.active{display:block;}
+
+    .doc-header{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--term-border);}
+    .doc-header h1{font-family:var(--term-sans);font-size:28px;font-weight:800;color:var(--term-bright);letter-spacing:-0.02em;margin-bottom:8px;}
+    .doc-header h1 span{color:var(--term-green);}
+    .doc-meta{display:flex;gap:16px;flex-wrap:wrap;}
+    .doc-meta span{font-size:11px;color:var(--term-muted);}
+    .doc-meta span strong{color:var(--term-label);}
+
+    /* Policy sections */
+    .policy-section{margin-bottom:32px;}
+    .policy-section h2{font-family:var(--term-sans);font-size:13px;font-weight:700;color:var(--term-bright);margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--term-green);border-radius:0 4px 4px 0;}
+    .policy-section p{color:var(--term-text);line-height:1.8;margin-bottom:10px;font-size:12.5px;}
+    .policy-section ul{list-style:none;padding:0;margin:8px 0;}
+    .policy-section ul li{color:var(--term-text);line-height:1.8;font-size:12.5px;padding:3px 0 3px 16px;position:relative;}
+    .policy-section ul li::before{content:'›';position:absolute;left:0;color:var(--term-green);}
+    .policy-section .highlight-box{background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);border-radius:8px;padding:14px 16px;margin:12px 0;}
+    .policy-section .highlight-box p{margin:0;color:var(--term-bright);}
+    .policy-section .split-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;}
+    .policy-section .split-card{background:rgba(255,255,255,0.03);border:1px solid var(--term-border);border-radius:8px;padding:12px 16px;text-align:center;}
+    .policy-section .split-card .pct{font-family:var(--term-sans);font-size:28px;font-weight:800;color:var(--term-green);}
+    .policy-section .split-card .label{font-size:11px;color:var(--term-muted);margin-top:4px;}
+
+    /* Effective date footer */
+    .doc-footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--term-border);font-size:11px;color:var(--term-muted);}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="topbar-brand"><span class="brand-dot"></span>CryptoProp</a>
+    <nav class="topbar-nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/paper.html">Trading</a>
+      <a href="/rules.html">Rules</a>
+      <a href="/payout.html">Payouts</a>
+      <a href="/kyc.html">KYC</a>
+      <a href="/legal.html" class="active">Legal</a>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-user" id="topbarEmail"></span>
+    <button class="btn-ghost-sm" onclick="doLogout()">Logout</button>
+  </div>
+</div>
+
+<div class="legal-layout">
+  <!-- Sidebar -->
+  <aside class="legal-sidebar">
+    <div class="legal-sidebar-sticky">
+      <h3>Documents</h3>
+      <nav class="sidebar-nav">
+        <a href="#terms" class="active" onclick="showDoc('terms',this)">Terms &amp; Conditions</a>
+        <a href="#privacy" onclick="showDoc('privacy',this)">Privacy Policy</a>
+        <a href="#risk" onclick="showDoc('risk',this)">Risk Disclosure</a>
+        <a href="#kyc" onclick="showDoc('kyc',this)">KYC / AML Policy</a>
+        <a href="#payout" onclick="showDoc('payout',this)">Payout Policy</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="legal-content">
+
+    <!-- Terms & Conditions -->
+    <div class="legal-doc active" id="doc-terms">
+      <div class="doc-header">
+        <h1>Terms &amp; <span>Conditions</span></h1>
+        <div class="doc-meta">
+          <span><strong>Company:</strong> CryptoProp LLC</span>
+          <span><strong>Effective:</strong> 2026-02-25</span>
+          <span><strong>Jurisdiction:</strong> Indiana, United States</span>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>1. Acceptance of Terms</h2>
+        <p>By creating an account or using the CryptoProp platform, users agree to the Terms &amp; Conditions, Risk Disclosure, Privacy Policy, KYC / AML Policy, and Payout Policy. Acceptance is logged with timestamp, IP address, Terms version, and user agent.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>2. Nature of the Service</h2>
+        <p>CryptoProp provides a simulated trading evaluation platform used to assess trading skill. All trading activity is simulated. No real assets are traded and CryptoProp does not act as a broker, exchange, or investment advisor.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>3. Challenge Program Rules</h2>
+        <ul>
+          <li><strong>Step 1:</strong> Profit target 8%, time limit 30 days, trailing drawdown 5%, minimum 5 trading days</li>
+          <li><strong>Step 2:</strong> Profit target 5%, time limit 60 days, trailing drawdown 4%, minimum 7 trading days</li>
+          <li>Failure occurs if drawdown is breached, time expires, or rules are violated</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>4. Funded Accounts</h2>
+        <p>After passing both steps, users may qualify for a simulated funded account with an 80% trader / 20% firm profit split. Payout eligibility requires an 8% profit buffer and daily profit counted toward payouts is capped at 4%.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>5. Simulated Environment</h2>
+        <p>All trading is conducted in a simulated environment and may include simulated slippage, delays, or execution differences.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>6. Fees and Purchases</h2>
+        <p>Users may pay fees for challenge attempts, retry offers, account resets, or extensions. These are fees for digital evaluation services and are generally non-refundable.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>7. Payout Policy</h2>
+        <p>Payouts are discretionary and subject to review. KYC verification may be required before payouts.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>8. Account Termination</h2>
+        <p>CryptoProp reserves the right to terminate accounts at its sole discretion for rule violations, fraud, or abuse.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>9. Prohibited Activities</h2>
+        <p>Users may not exploit bugs, coordinate accounts, manipulate simulated pricing, or abuse the system.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>10. Risk Disclosure</h2>
+        <p>Trading involves risk. CryptoProp provides no financial advice and does not guarantee profits.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>11. Limitation of Liability</h2>
+        <p>CryptoProp is not liable for outages, data inaccuracies, or lost profits.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>12. Arbitration Agreement</h2>
+        <p>All disputes must be resolved through binding arbitration. Users waive class action and jury trial rights.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>13. Governing Law</h2>
+        <p>These terms are governed by the laws of the State of Indiana, United States.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>14. Privacy Policy</h2>
+        <p>User data may be collected for security, platform operations, and compliance.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>15. Modifications</h2>
+        <p>CryptoProp may modify these terms at any time.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>16. Digital Services Disclaimer</h2>
+        <p>CryptoProp provides digital evaluation services only. Participation does not involve real trading or investment.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>17. Chargeback Policy</h2>
+        <p>Users agree to contact support before initiating payment disputes. Chargebacks may result in account suspension.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>18. Platform Integrity &amp; Abuse Detection</h2>
+        <p>CryptoProp may investigate suspicious trading behavior and terminate accounts if abuse is detected.</p>
+      </div>
+
+      <div class="doc-footer">CryptoProp LLC · Indiana, United States · Effective 2026-02-25</div>
+    </div>
+
+    <!-- Privacy Policy -->
+    <div class="legal-doc" id="doc-privacy">
+      <div class="doc-header">
+        <h1>Privacy <span>Policy</span></h1>
+        <div class="doc-meta">
+          <span><strong>Company:</strong> CryptoProp LLC</span>
+          <span><strong>Effective:</strong> 2026</span>
+          <span><strong>Location:</strong> Indiana, United States</span>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>1. Introduction</h2>
+        <p>CryptoProp LLC respects your privacy and is committed to protecting the personal information you provide when using the CryptoProp platform. This Privacy Policy explains how we collect, use, store, and protect user information.</p>
+        <p>By accessing or using the CryptoProp platform, you agree to the collection and use of information in accordance with this policy.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>2. Information We Collect</h2>
+        <p><strong>Personal Information</strong></p>
+        <ul>
+          <li>Full name</li>
+          <li>Email address</li>
+          <li>Date of birth</li>
+          <li>Residential address</li>
+          <li>Government-issued identification (for verification)</li>
+          <li>Payment-related information</li>
+          <li>Account login credentials</li>
+        </ul>
+        <p style="margin-top:12px"><strong>Technical Information</strong></p>
+        <ul>
+          <li>IP address</li>
+          <li>Browser type and device information</li>
+          <li>Operating system and user agent data</li>
+          <li>Platform usage activity</li>
+        </ul>
+        <p style="margin-top:12px"><strong>Trading and Platform Data</strong></p>
+        <ul>
+          <li>Simulated trading activity and order history</li>
+          <li>Account performance metrics</li>
+          <li>Platform interactions</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>3. How We Use Information</h2>
+        <ul>
+          <li>Creating and managing user accounts</li>
+          <li>Processing platform purchases and payments</li>
+          <li>Verifying user identity for compliance purposes</li>
+          <li>Monitoring platform activity for fraud or abuse</li>
+          <li>Providing customer support</li>
+          <li>Improving platform functionality and security</li>
+          <li>Enforcing platform rules and policies</li>
+          <li>Complying with legal obligations</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>4. Identity Verification and Compliance</h2>
+        <p>In certain situations, CryptoProp may request identity verification information to comply with fraud prevention procedures or regulatory requirements. Verification may include submission of identification documents and proof of address.</p>
+        <p>Failure to complete verification when requested may result in restricted access to platform features including payouts.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>5. Payment Processing</h2>
+        <p>Payments for platform services may be processed by third-party payment processors. CryptoProp does not store full payment card details. Payment information is handled by secure payment providers in accordance with their own privacy policies.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>6. Cookies and Tracking Technologies</h2>
+        <p>CryptoProp may use cookies and similar technologies to maintain user sessions, improve website performance, analyze platform usage, and enhance user experience. Users may configure browser settings to refuse cookies; however, certain platform features may not function properly if cookies are disabled.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>7. Data Storage and Security</h2>
+        <p>CryptoProp takes reasonable measures to protect user information from unauthorized access, loss, misuse, or alteration. Security measures may include encrypted connections (HTTPS), secure server infrastructure, access controls, and monitoring systems for suspicious activity. Despite these safeguards, no system can guarantee absolute security.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>8. Sharing of Information</h2>
+        <p>CryptoProp does not sell personal information to third parties. Information may be shared with:</p>
+        <ul>
+          <li>Payment processors for transaction processing</li>
+          <li>Identity verification providers</li>
+          <li>Cloud hosting or infrastructure providers</li>
+          <li>Legal authorities if required by law</li>
+          <li>Professional advisors such as legal or accounting services</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>9. Data Retention</h2>
+        <p>CryptoProp may retain user information for a reasonable period necessary to maintain account history, prevent fraud and abuse, resolve disputes, and comply with legal requirements.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>10. User Rights</h2>
+        <p>Depending on applicable law, users may have the right to request access to their personal information, request correction of inaccurate data, request deletion of certain personal data, or request information about how their data is used. Requests may be submitted through CryptoProp support.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>11. Third-Party Links</h2>
+        <p>The CryptoProp platform may contain links to external websites or services. CryptoProp is not responsible for the privacy practices or content of third-party sites.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>12. Children's Privacy</h2>
+        <p>The CryptoProp platform is not intended for individuals under the age of 18. CryptoProp does not knowingly collect personal information from minors.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>13. Changes to This Privacy Policy</h2>
+        <p>CryptoProp reserves the right to modify this Privacy Policy at any time. Updated versions will be posted on the CryptoProp website with a revised effective date. Continued use of the platform after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>14. Contact Information</h2>
+        <p>Questions regarding this Privacy Policy may be directed to CryptoProp support through the official website.</p>
+      </div>
+
+      <div class="doc-footer">CryptoProp LLC · Indiana, United States</div>
+    </div>
+
+    <!-- Risk Disclosure -->
+    <div class="legal-doc" id="doc-risk">
+      <div class="doc-header">
+        <h1>Risk <span>Disclosure</span></h1>
+        <div class="doc-meta">
+          <span><strong>Company:</strong> CryptoProp LLC</span>
+          <span><strong>Effective:</strong> 2026</span>
+          <span><strong>Location:</strong> Indiana, United States</span>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>1. Introduction</h2>
+        <p>This Risk Disclosure Statement is provided by CryptoProp LLC. It is intended to inform users of the risks associated with participating in simulated trading evaluations offered through the CryptoProp platform. By using the CryptoProp platform, users acknowledge that they have read, understood, and accepted the risks described in this document.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>2. Simulated Trading Environment</h2>
+        <p>CryptoProp operates a simulated trading environment designed to evaluate trading skill. All trading activity on the platform is conducted in a simulated environment and does not involve real financial markets or the execution of real trades.</p>
+        <p>Simulated trading may differ significantly from real-world trading conditions. Factors such as order execution, liquidity, pricing, latency, and market conditions may not reflect actual market behavior.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>3. No Investment Services</h2>
+        <p>CryptoProp does not provide investment services, brokerage services, asset management, or financial advisory services. Users do not deposit funds for the purpose of trading financial instruments. Payments made to CryptoProp are fees for access to a simulated trading evaluation service. Participation in the CryptoProp platform does not represent an investment opportunity.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>4. No Guarantee of Profit</h2>
+        <p>CryptoProp makes no guarantees regarding profitability or financial success. Performance in a simulated trading environment does not guarantee future performance in real financial markets.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>5. Market Risk</h2>
+        <p>Financial markets are inherently volatile and unpredictable. Even experienced traders may experience substantial losses when trading real financial instruments. The simulated environment provided by CryptoProp cannot fully replicate the risks, stress, and conditions present in live financial markets.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>6. Execution Differences</h2>
+        <p>The simulated trading system may include features designed to approximate real-world trading conditions, including but not limited to:</p>
+        <ul>
+          <li>Simulated slippage</li>
+          <li>Order execution delays</li>
+          <li>Pricing differences</li>
+          <li>Liquidity limitations</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>7. Platform and Technical Risks</h2>
+        <p>Use of the CryptoProp platform involves technological systems that may be subject to software errors, network interruptions, system outages, data inaccuracies, or delayed market data. CryptoProp does not guarantee uninterrupted platform availability.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>8. Psychological and Behavioral Risks</h2>
+        <p>Trading—whether simulated or real—can involve emotional and psychological pressures that may affect decision-making. Users should be aware that trading behavior influenced by stress, overconfidence, or emotional reactions may lead to poor performance.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>9. Evaluation Rules</h2>
+        <p>Users participating in challenge programs must comply with platform rules including drawdown limits, trading requirements, and consistency rules. Failure to comply may result in challenge failure, account reset, or termination of participation.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>10. Payouts and Eligibility</h2>
+        <p>Eligibility for payouts from simulated funded accounts is subject to platform rules, verification procedures, and internal review processes. CryptoProp reserves the right to deny payouts in cases of rule violations, fraudulent behavior, system abuse, or manipulation of the simulated environment.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>11. Independent Decision Making</h2>
+        <p>Users are solely responsible for their trading decisions and actions taken within the platform. CryptoProp does not provide trading advice or recommendations.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>12. Acknowledgment of Risk</h2>
+        <p>By using the CryptoProp platform, users acknowledge that they understand the risks associated with trading and trading simulations, they are responsible for their own decisions, and they understand that simulated performance is not indicative of real trading performance.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>13. Policy Updates</h2>
+        <p>CryptoProp reserves the right to update this Risk Disclosure at any time. Continued use of the platform constitutes acceptance of any updated disclosures.</p>
+      </div>
+
+      <div class="doc-footer">CryptoProp LLC · Indiana, United States</div>
+    </div>
+
+    <!-- KYC / AML -->
+    <div class="legal-doc" id="doc-kyc">
+      <div class="doc-header">
+        <h1>KYC / <span>AML Policy</span></h1>
+        <div class="doc-meta">
+          <span><strong>Company:</strong> CryptoProp LLC</span>
+          <span><strong>Effective:</strong> 2026</span>
+          <span><strong>Jurisdiction:</strong> Indiana, United States</span>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>1. Purpose</h2>
+        <p>This Know Your Customer (KYC) and Anti-Money Laundering (AML) Policy describes the procedures used by CryptoProp LLC to prevent fraud, financial crime, and misuse of the platform. The policy is designed to ensure that all users are properly identified and that the platform is not used for illegal activities.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>2. Nature of the Platform</h2>
+        <p>CryptoProp operates a simulated trading evaluation platform. No real trading accounts are provided and no user deposits are traded in financial markets. Users pay fees for access to simulated trading challenges designed to evaluate trading performance.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>3. Identity Verification (KYC)</h2>
+        <p>CryptoProp may require identity verification before allowing certain platform activities, including payout requests, account upgrades, suspicious account activity, and compliance checks. Users may be required to submit:</p>
+        <ul>
+          <li>Full legal name</li>
+          <li>Date of birth</li>
+          <li>Residential address</li>
+          <li>Government-issued photo identification</li>
+          <li>Selfie or biometric verification</li>
+          <li>Additional documents if requested</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>4. Verification Process</h2>
+        <p>Submitted identification documents may be reviewed using automated verification tools and manual review procedures. Accounts may be restricted until verification is successfully completed. If identity verification cannot be completed or documentation appears fraudulent, CryptoProp may suspend or terminate the account.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>5. AML Monitoring</h2>
+        <p>CryptoProp monitors platform activity to detect suspicious behavior including:</p>
+        <ul>
+          <li>Multiple account creation</li>
+          <li>Identity inconsistencies</li>
+          <li>Fraudulent payment activity</li>
+          <li>Attempts to circumvent platform rules</li>
+          <li>Coordinated activity between accounts</li>
+        </ul>
+        <p>Accounts identified as high risk may be subject to enhanced review.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>6. Suspicious Activity Review</h2>
+        <p>If suspicious activity is detected, CryptoProp may temporarily restrict account activity, request additional verification documents, delay or deny payouts, permanently terminate the account, or report suspicious activity to appropriate authorities when required by law.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>7. Sanctions and Prohibited Jurisdictions</h2>
+        <p>CryptoProp may restrict or prohibit access to users located in jurisdictions subject to international sanctions or regulatory restrictions. Users may not access the platform from regions where participation would violate applicable law.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>8. Record Keeping</h2>
+        <p>CryptoProp may retain KYC documentation and related records for compliance and security purposes. Records may be stored for a reasonable period consistent with fraud prevention and regulatory best practices.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>9. Privacy and Data Protection</h2>
+        <p>All personal information collected during the verification process is handled in accordance with the CryptoProp Privacy Policy. CryptoProp takes reasonable measures to protect user data and prevent unauthorized access.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>10. Cooperation with Authorities</h2>
+        <p>CryptoProp may cooperate with law enforcement or regulatory authorities where legally required, including the disclosure of information related to suspected financial crime.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>11. Policy Updates</h2>
+        <p>CryptoProp reserves the right to update this KYC and AML Policy at any time. Updated policies will be published on the CryptoProp website and may require user acknowledgment.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>12. Contact</h2>
+        <p>For questions regarding this policy or identity verification requirements, users may contact CryptoProp support through the official website.</p>
+      </div>
+
+      <div class="doc-footer">CryptoProp LLC · Indiana, United States</div>
+    </div>
+
+    <!-- Payout Policy -->
+    <div class="legal-doc" id="doc-payout">
+      <div class="doc-header">
+        <h1>Payout <span>Policy</span></h1>
+        <div class="doc-meta">
+          <span><strong>Company:</strong> CryptoProp LLC</span>
+          <span><strong>Effective:</strong> 2026</span>
+          <span><strong>Location:</strong> Indiana, United States</span>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>1. Overview</h2>
+        <p>This Payout Policy describes the rules and procedures governing profit payouts from simulated funded accounts on the CryptoProp platform. By participating in the CryptoProp challenge program and requesting payouts, users agree to comply with the terms outlined in this policy.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>2. Nature of Payouts</h2>
+        <p>CryptoProp provides a simulated trading evaluation platform. Any payouts issued by CryptoProp are discretionary payments made at the sole discretion of the Company based on simulated trading performance and compliance with platform rules. Payouts do not represent investment returns, brokerage profits, or management of client funds.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>3. Eligibility for Payouts</h2>
+        <p>To become eligible for payouts, users must:</p>
+        <ul>
+          <li>Successfully complete all challenge evaluation steps</li>
+          <li>Maintain compliance with all trading rules</li>
+          <li>Complete required identity verification (KYC)</li>
+          <li>Satisfy the minimum profit buffer requirement</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>4. Profit Split</h2>
+        <div class="split-grid">
+          <div class="split-card">
+            <div class="pct">80%</div>
+            <div class="label">Trader</div>
+          </div>
+          <div class="split-card">
+            <div class="pct" style="color:var(--term-blue)">20%</div>
+            <div class="label">CryptoProp</div>
+          </div>
+        </div>
+        <p>The profit split applies to eligible profits generated within the simulated funded account.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>5. Profit Buffer Requirement</h2>
+        <div class="highlight-box">
+          <p>Before requesting payouts, the account must reach a minimum profit buffer of <strong>8% of the starting account balance</strong>.</p>
+          <p style="margin-top:8px;font-size:11px;color:var(--term-muted)">Example: $100,000 account → $8,000 profit buffer required before payout eligibility.</p>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <h2>6. Daily Profit Cap for Payout Eligibility</h2>
+        <p>To promote consistent trading behavior, the amount of profit that counts toward payout eligibility from any single trading day is limited to <strong>4% of account balance</strong>. Profits above this level may still exist in the account balance but may not count toward payout eligibility calculations.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>7. Consistency Rule</h2>
+        <p>CryptoProp enforces a consistency rule designed to prevent excessive reliance on a single trading day. Maximum profit from a single day may not exceed <strong>40% of total accumulated profits</strong>. If a single trading day exceeds this threshold, additional trading activity may be required before a payout becomes eligible.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>8. Minimum Trading Days</h2>
+        <ul>
+          <li>Step 1 minimum trading days: <strong>5</strong></li>
+          <li>Step 2 minimum trading days: <strong>7</strong></li>
+        </ul>
+        <p>Funded accounts may also require a minimum number of active trading days prior to payout requests.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>9. Payout Request Review</h2>
+        <p>All payout requests are subject to internal review by CryptoProp. The review process may include verification of account compliance, review of trading activity, confirmation of identity verification, and detection of system abuse or manipulation. CryptoProp reserves the right to delay, deny, or adjust payouts if irregular or abusive activity is detected.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>10. Verification Requirements</h2>
+        <p>Prior to issuing any payout, CryptoProp may require identity verification including government-issued identification, proof of address, selfie or biometric verification, and additional documentation as necessary. Failure to complete verification may result in delayed or denied payouts.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>11. Prohibited Trading Behavior</h2>
+        <p>Certain trading behaviors may invalidate payout eligibility, including but not limited to:</p>
+        <ul>
+          <li>Exploiting system errors</li>
+          <li>Coordinated multi-account trading</li>
+          <li>Arbitrage against simulated pricing</li>
+          <li>Automated strategies designed to exploit platform mechanics</li>
+          <li>Manipulation of execution systems</li>
+        </ul>
+      </div>
+
+      <div class="policy-section">
+        <h2>12. Payment Methods</h2>
+        <p>Approved payouts may be issued via bank transfer, digital payment providers, or other payment methods determined by CryptoProp. Payment methods may change at the discretion of the Company.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>13. Processing Time</h2>
+        <p>Payout requests may take a reasonable period to review and process depending on verification status, payout volume, and payment provider processing times. CryptoProp does not guarantee immediate payout processing.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>14. Taxes and Financial Responsibility</h2>
+        <p>Users are solely responsible for determining and complying with any tax obligations associated with payouts received from CryptoProp. CryptoProp does not provide tax advice.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>15. Right to Modify or Deny Payouts</h2>
+        <p>CryptoProp reserves the right to modify, delay, or deny any payout request if trading rules were violated, platform abuse is suspected, fraudulent activity is detected, or identity verification cannot be completed. The Company's determination regarding payout eligibility shall be final.</p>
+      </div>
+
+      <div class="policy-section">
+        <h2>16. Policy Updates</h2>
+        <p>CryptoProp reserves the right to modify this Payout Policy at any time. Continued use of the platform constitutes acceptance of any updated policies.</p>
+      </div>
+
+      <div class="doc-footer">CryptoProp LLC · Indiana, United States</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Auth check
+  async function init(){
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if(!d.user){ location.href = '/auth.html'; return; }
+    document.getElementById('topbarEmail').textContent = d.user.email;
+  }
+
+  async function doLogout(){
+    await fetch('/api/auth/logout', {method:'POST'});
+    location.href = '/auth.html';
+  }
+
+  function showDoc(id, el){
+    // Hide all docs
+    document.querySelectorAll('.legal-doc').forEach(d => d.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    // Show selected
+    document.getElementById('doc-' + id).classList.add('active');
+    el.classList.add('active');
+    window.scrollTo(0, 0);
+    return false;
+  }
+
+  // Handle hash on load
+  function checkHash(){
+    const hash = location.hash.replace('#','');
+    if(hash){
+      const el = document.querySelector(`.sidebar-nav a[href="#${hash}"]`);
+      if(el) showDoc(hash, el);
+    }
+  }
+
+  init();
+  checkHash();
+</script>
+</body>
+</html>
