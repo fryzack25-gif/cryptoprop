@@ -89,7 +89,7 @@
       <a href="rules.html">Rules</a>
       <a href="payout.html">Payout</a>
       <a href="kyc.html" class="on">KYC</a>
-    </nav>
+      <a href="legal.html">Legal</a>
   </div>
   <div class="topbar-right">
     <span id="whoEl"></span>
@@ -243,11 +243,31 @@ async function init() {
   var params = new URLSearchParams(window.location.search);
   var sessionId = params.get('session_id');
   if (sessionId) {
-    // Poll status after return
+    // Poll until we get approved or failed — webhook may take a few seconds
     renderStatus('pending');
     document.getElementById('ctaNote').textContent = 'Checking your verification result…';
-    // give webhook a moment then re-check
-    setTimeout(checkStatus, 2000);
+    var attempts = 0;
+    var maxAttempts = 15; // poll for up to ~30 seconds
+    var pollInterval = setInterval(async function() {
+      attempts++;
+      try {
+        var r = await fetch('/api/kyc/status');
+        if (!r.ok) return;
+        var d = await r.json();
+        if (d.status === 'approved' || d.status === 'failed') {
+          clearInterval(pollInterval);
+          // Clean URL
+          window.history.replaceState({}, '', '/kyc.html');
+          renderStatus(d.status, d.failReason);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          window.history.replaceState({}, '', '/kyc.html');
+          renderStatus('pending');
+          var note = document.getElementById('ctaNote');
+          if(note) note.textContent = 'Still processing — check back in a few minutes.';
+        }
+      } catch(e) {}
+    }, 2000);
     return;
   }
 
