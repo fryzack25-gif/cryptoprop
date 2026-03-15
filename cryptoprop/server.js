@@ -639,31 +639,7 @@ app.post("/api/verify/confirm-email", requireAuth, async (req, res) => {
   return res.status(400).json({ error:"Invalid code" });
 });
 
-app.post("/api/verify/request-phone", requireAuth, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-  noteDeviceAndIp(acct, req);
-  const phone = (req.body?.phone || "").toString().slice(0, 32);
-  acct.phone = phone || acct.phone || null;
-  acct.phoneVerifyCode = genCode(6);
-  await saveAccount(email, acct);
-  // In production: send code via SMS. Logged to server console only.
-  console.log("[CryptoProp] Phone verify code for", email, "=>", acct.phoneVerifyCode);
-  return res.json({ ok:true, message: "Verification code sent to your phone." });
-});
 
-app.post("/api/verify/confirm-phone", requireAuth, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-  const code = (req.body?.code || "").toString();
-  if(code && acct.phoneVerifyCode && code === acct.phoneVerifyCode){
-    acct.phoneVerified = true;
-    acct.phoneVerifyCode = null;
-    await saveAccount(email, acct);
-    return res.json({ ok:true });
-  }
-  return res.status(400).json({ error:"Invalid code" });
-});
 
 app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   const email = currentEmail(req);
@@ -2536,7 +2512,7 @@ app.post("/api/plan/choose", requireAuth, async (req, res) => {
       customer_email: email,
       allow_promotion_codes: true,
       success_url: `${baseUrl}/payment-success.html`,
-      cancel_url: `${baseUrl}/plans.html`,
+      cancel_url: `${baseUrl}/onboard.html`,
       metadata: { userEmail: email, planId },
     });
     await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
