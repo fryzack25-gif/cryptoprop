@@ -2514,7 +2514,7 @@ app.post("/api/admin/promo/delete", requireAdmin, async (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
+app.post("/api/plan/choose", requireAuth, async (req, res) => {
   const planId = (req.body?.planId || "").toString();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
@@ -2857,7 +2857,7 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/api/plan/retry-offer", requireAuth, requireTermsAccepted, async (req, res) => {
+app.post("/api/plan/retry-offer", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   const planId = acct.planId;
