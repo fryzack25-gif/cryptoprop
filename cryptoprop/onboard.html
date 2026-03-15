@@ -226,19 +226,23 @@
     /* Step 3 — Plans */
     .plans-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
     .plans-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-    .plan-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+    .plan-grid-top { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px; }
+    .plan-grid-bottom { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 20px; max-width: 66%; margin-left: auto; margin-right: auto; }
     .plan-card {
       border: 2px solid var(--border);
       border-radius: 12px;
-      padding: 20px 16px;
+      padding: 18px 14px;
       text-align: center;
       cursor: pointer;
       transition: all 0.18s;
       background: rgba(255,255,255,0.02);
       position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
-    .plan-card:hover { border-color: var(--border-bright); background: rgba(255,255,255,0.04); }
-    .plan-card.selected { border-color: var(--green); background: rgba(0,229,160,0.06); box-shadow: 0 0 0 4px var(--green-dim); }
+    .plan-card:hover { border-color: var(--border-bright); background: rgba(255,255,255,0.04); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .plan-card.selected { border-color: var(--green); background: rgba(0,229,160,0.06); box-shadow: 0 0 0 3px var(--green-dim); }
     .plan-card.popular::before {
       content: 'POPULAR';
       position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
@@ -246,10 +250,26 @@
       font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
       padding: 3px 10px; border-radius: 20px;
     }
-    .plan-size { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .plan-label { font-size: 11px; color: var(--muted); margin-bottom: 12px; font-family: var(--mono); }
-    .plan-price { font-size: 26px; font-weight: 800; color: var(--text); }
-    .plan-price-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+    .plan-size { font-family: var(--display); font-size: 20px; font-weight: 800; color: var(--text); }
+    .plan-label { font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+    .plan-price { font-family: var(--display); font-size: 24px; font-weight: 800; color: var(--green); }
+    .plan-price-sub { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; }
+    .plan-select-btn {
+      margin-top: auto;
+      padding: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      width: 100%;
+    }
+    .plan-card:hover .plan-select-btn { background: rgba(0,229,160,0.1); border-color: rgba(0,229,160,0.3); color: var(--green); }
+    .plan-card.selected .plan-select-btn { background: var(--green); border-color: var(--green); color: #000; }
 
 
     /* Buttons */
@@ -284,7 +304,8 @@
     @media (max-width: 520px) {
       .card { padding: 24px 20px; }
       .how-grid { grid-template-columns: 1fr; }
-      .plan-grid { grid-template-columns: 1fr; }
+      .plan-grid-top { grid-template-columns: 1fr; }
+      .plan-grid-bottom { grid-template-columns: 1fr; max-width: 100%; }
       .welcome-title { font-size: 24px; }
     }
   </style>
@@ -395,36 +416,44 @@
       <div class="plans-title">Choose Your Plan</div>
       <p class="plans-sub">Select your account size. All plans include the same challenge rules — just different capital amounts.</p>
 
-      <div class="plan-grid" style="grid-template-columns:repeat(5,1fr);">
+      <div class="plan-grid-top">
         <div class="plan-card" id="plan-25k" onclick="selectPlan('25k')">
           <div class="plan-size">$25K</div>
           <div class="plan-label">Starter</div>
           <div class="plan-price" id="price-25k">$149</div>
           <div class="plan-price-sub">one-time fee</div>
+          <button class="plan-select-btn">Select</button>
         </div>
         <div class="plan-card" id="plan-50k" onclick="selectPlan('50k')">
           <div class="plan-size">$50K</div>
           <div class="plan-label">Standard</div>
           <div class="plan-price" id="price-50k">$279</div>
           <div class="plan-price-sub">one-time fee</div>
+          <button class="plan-select-btn">Select</button>
         </div>
         <div class="plan-card popular" id="plan-100k" onclick="selectPlan('100k')">
           <div class="plan-size">$100K</div>
           <div class="plan-label">Pro</div>
           <div class="plan-price" id="price-100k">$499</div>
           <div class="plan-price-sub">one-time fee</div>
+          <button class="plan-select-btn">Select</button>
         </div>
+      </div>
+
+      <div class="plan-grid-bottom">
         <div class="plan-card" id="plan-200k" onclick="selectPlan('200k')">
           <div class="plan-size">$200K</div>
           <div class="plan-label">Elite</div>
           <div class="plan-price" id="price-200k">$849</div>
           <div class="plan-price-sub">one-time fee</div>
+          <button class="plan-select-btn">Select</button>
         </div>
         <div class="plan-card" id="plan-500k" onclick="selectPlan('500k')">
           <div class="plan-size">$500K</div>
           <div class="plan-label">Premier</div>
           <div class="plan-price" id="price-500k">$1,799</div>
           <div class="plan-price-sub">one-time fee</div>
+          <button class="plan-select-btn">Select</button>
         </div>
       </div>
 
@@ -493,8 +522,14 @@ async function acceptTerms() {
 // ---- Plan selection ----
 function selectPlan(id) {
   selectedPlan = id;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.plan-card').forEach(c => {
+    c.classList.remove('selected');
+    const btn = c.querySelector('.plan-select-btn');
+    if(btn) btn.textContent = 'Select';
+  });
   document.getElementById('plan-' + id).classList.add('selected');
+  const selBtn = document.querySelector('#plan-' + id + ' .plan-select-btn');
+  if(selBtn) selBtn.textContent = 'Selected ✓';
   updateBuyBtn();
 }
 
