@@ -231,8 +231,17 @@ async function buyPlan() {
   btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
   try {
-    const endpoint = '/api/plan/choose';
-    const res = await fetch(endpoint, {
+    // Ensure terms are accepted before checkout
+    const termsRes = await fetch('/api/terms/status');
+    const termsData = await termsRes.json();
+    if(!termsData.accepted) {
+      await fetch('/api/terms/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accept: true })
+      });
+    }
+    const res = await fetch('/api/plan/choose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ planId: selectedPlan })
