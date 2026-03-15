@@ -239,7 +239,17 @@ details summary:hover{color:#9098c0}
             </div>
           </div>
           <div class="ops-card">
-            <div class="ops-lbl">Emergency</div>
+            <div class="ops-lbl">Plan Management</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+              <select id="ops-plan" class="f" style="flex:1">
+                <option value="25k">$25K Challenge ($149)</option>
+                <option value="50k">$50K Challenge ($279)</option>
+                <option value="100k">$100K Challenge ($499)</option>
+              </select>
+              <button class="btn s" style="background:rgba(0,229,160,0.15);color:#00e5a0;border-color:rgba(0,229,160,0.3)" onclick="opsAction('grant-plan')">✅ Grant Plan</button>
+            </div>
+            <button class="btn s d" style="width:100%" onclick="opsAction('remove-plan')">🗑 Remove Plan / Reset to No Plan</button>
+          </div>
             <div style="display:flex;gap:8px;margin-bottom:8px">
               <input id="ops-reason" class="f" style="flex:1" placeholder="Flatten reason">
               <button class="btn s d" onclick="opsAction('flatten')">Flatten</button>
@@ -665,8 +675,10 @@ async function opsAction(action, param){
   if(action==='set-phase') body.phase = g('ops-phase').value;
   if(action==='kyc-approve') body.status = 'approved';
   if(action==='kyc-revoke') body.status = 'not_started';
+  if(action==='grant-plan') body.planId = g('ops-plan').value;
   if(action==='reset' && !confirm('Reset this account?')) return;
-  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase','verify-email':'/api/admin/user/verify-email','kyc-approve':'/api/admin/kyc/set-status','kyc-revoke':'/api/admin/kyc/set-status'};
+  if(action==='remove-plan' && !confirm('Remove this user\'s plan? This will clear their account and challenge progress.')) return;
+  var urlMap = {freeze:'/api/admin/account/freeze','unlock-daily':'/api/admin/account/unlock-daily',flatten:'/api/admin/account/flatten',reset:'/api/admin/account/reset','set-phase':'/api/admin/account/set-phase','verify-email':'/api/admin/user/verify-email','kyc-approve':'/api/admin/kyc/set-status','kyc-revoke':'/api/admin/kyc/set-status','grant-plan':'/api/admin/account/grant-plan','remove-plan':'/api/admin/account/remove-plan'};
   try{
     await api(urlMap[action],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     await opsLoad();
