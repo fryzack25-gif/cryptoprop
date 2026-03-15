@@ -2841,7 +2841,6 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
       discounts: [{ coupon: couponId }],
-      allow_promotion_codes: false,
       success_url: `${baseUrl}/payment-success.html`,
       cancel_url: `${baseUrl}/onboard.html?retry=1`,
       metadata: { userEmail: email, planId, retryType: "retry" },
