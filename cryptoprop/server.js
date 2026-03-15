@@ -2833,16 +2833,17 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
   const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
 
   try {
-    const coupon = await stripe.coupons.create({ percent_off: 50, duration: "once", name: "RETRY50" });
+    const couponId = process.env.STRIPE_RETRY_COUPON_ID;
+    if(!couponId) return res.status(500).json({ error: "Retry coupon not configured" });
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
-      discounts: [{ coupon: coupon.id }],
+      discounts: [{ coupon: couponId }],
       allow_promotion_codes: false,
       success_url: `${baseUrl}/payment-success.html`,
-      cancel_url: `${baseUrl}/paper.html`,
+      cancel_url: `${baseUrl}/onboard.html?retry=1`,
       metadata: { userEmail: email, planId, retryType: "retry" },
     });
     // Mark used immediately so they can't generate multiple discount sessions
@@ -2853,7 +2854,7 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
     return res.json({ ok: true, checkoutUrl });
   } catch(e) {
     console.error("Stripe retry session error:", e.message);
-    return res.status(500).json({ error: "Failed to create checkout session" });
+    return res.status(500).json({ error: e.message || "Failed to create checkout session" });
   }
 });
 
