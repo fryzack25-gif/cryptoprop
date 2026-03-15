@@ -431,6 +431,7 @@
 const PLANS = { '25k': 149, '50k': 279, '100k': 499 };
 let selectedPlan = null;
 let currentStep = 1;
+const isRetry = new URLSearchParams(window.location.search).get('retry') === '1';
 
 function goStep(n) {
   document.getElementById('step' + currentStep).classList.remove('active');
@@ -488,8 +489,10 @@ function selectPlan(id) {
 function updateBuyBtn() {
   const btn = document.getElementById('buyBtn');
   if(!selectedPlan) { btn.disabled = true; btn.textContent = 'Select a plan to continue'; return; }
+  const base = PLANS[selectedPlan];
+  const price = isRetry ? Math.round(base * 0.5) : base;
   btn.disabled = false;
-  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${PLANS[selectedPlan]}`;
+  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${price}`;
 }
 
 async function buyPlan() {
@@ -499,7 +502,8 @@ async function buyPlan() {
   btn.disabled = true; btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
   try {
-    const res = await fetch('/api/plan/choose', {
+    const endpoint = isRetry ? '/api/plan/retry-checkout' : '/api/plan/choose';
+    const res = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ planId: selectedPlan })
     });
@@ -527,7 +531,19 @@ async function buyPlan() {
     if(acct.planId && !acct.challengeFailed) { window.location.href = '/dashboard.html'; return; }
 
     // Everyone else lands on the plans step
-    if(acct.termsAccepted) { currentStep = 1; goStep(3); return; }
+    if(acct.termsAccepted) {
+      currentStep = 1; goStep(3);
+      // Show 50% off prices if retry mode
+      if(isRetry) {
+        document.querySelector('.plans-title').textContent = '🎁 One-Time Retry Offer';
+        document.querySelector('.plans-sub').textContent = '50% off any plan — this offer is available once and will not appear again.';
+        Object.entries(PLANS).forEach(([id, base]) => {
+          const el = document.getElementById('price-' + id);
+          if(el) el.innerHTML = `<span style="font-size:14px;text-decoration:line-through;color:var(--muted);font-weight:400">$${base}</span> $${Math.round(base*0.5)}`;
+        });
+      }
+      return;
+    }
   } catch(e) {}
 })();
 </script>
