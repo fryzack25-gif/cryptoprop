@@ -81,7 +81,7 @@ function renderFailPlans() {
 }
 
 window.buyFailPlan = function(planId) {
-  window.location.href = '/onboard.html';
+  window.location.href = '/onboard.html?retry=1';
 };
 
 function renderLockBanner(account){
