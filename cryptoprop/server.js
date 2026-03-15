@@ -2963,48 +2963,6 @@ app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
 });
 
 
-// Purchase challenge extension (+14 days)
-app.post("/api/challenge/extend", requireAuth, requireTermsAccepted, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-
-  if(acct.challengePhase !== "challenge" || acct.challengeFailed){
-    return res.status(400).json({ error:"Extension only available during active challenge" });
-  }
-
-  const step = acct.challengeStep || 1;
-  acct.extensionsUsed = acct.extensionsUsed || {};
-  if(acct.extensionsUsed[step]){
-    return res.status(400).json({ error:"Extension already used for this step" });
-  }
-
-  const cfgInitial = getStepConfig(acct);
-  acct.extensionsUsed[step] = true;
-
-  // override max days for this step
-  acct.stepMaxDaysOverride = (cfgInitial.maxDays + EXTENSION_DAYS);
-
-  const cfg = getStepConfig(acct);
-  const elapsed = daysSince(acct.stepStartDate);
-  const maxDays = acct.stepMaxDaysOverride || cfg.maxDays;
-  const daysLeft = Math.max(0, maxDays - elapsed);
-  const dynamicPrice = dynamicExtensionPrice(daysLeft);
-
-  acct.lastPurchase = {
-    time: new Date().toISOString(),
-    type: "extension",
-    step,
-    amount: dynamicPrice
-  };
-
-  await saveAccount(email, acct);
-
-  return res.json({
-    ok:true,
-    extension:{ days:EXTENSION_DAYS, fee:EXTENSION_FEE }
-  });
-});
-
 // ---- INSTANT_RESET_V1 ----
 // Allows reset mid-challenge for $79
 app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, async (req, res) => {
