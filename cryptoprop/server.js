@@ -2516,7 +2516,6 @@ app.post("/api/admin/promo/delete", requireAdmin, async (req, res) => {
 
 app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
   const planId = (req.body?.planId || "").toString();
-  const promoCode = (req.body?.promoCode || "").toString().trim().toUpperCase();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error:"Invalid plan" });
   if(!stripe) return res.status(500).json({ error:"Payment processing not configured" });
@@ -2529,66 +2528,27 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
     return res.status(400).json({ error:"You already have an active challenge in progress." });
   }
 
-  // Validate promo code if provided (discount applied via Stripe coupon or price override)
-  let discountPct = 0;
-  let promoApplied = null;
-  if(promoCode){
-    const codes = await getPromoCodes();
-    const promo = codes[promoCode];
-    if(!promo) return res.status(400).json({ error: "Invalid promo code" });
-    if(promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime())
-      return res.status(400).json({ error: "Promo code has expired" });
-    if(promo.maxUses && (promo.uses || 0) >= promo.maxUses)
-      return res.status(400).json({ error: "Promo code has reached its usage limit" });
-    discountPct = promo.discountPct;
-    promoApplied = { code: promoCode, discountPct };
-    // increment uses now (will be confirmed on webhook)
-    promo.uses = (promo.uses || 0) + 1;
-    codes[promoCode] = promo;
-    await savePromoCodes(codes);
-  }
-
   const priceId = STRIPE_PRICE_IDS[planId];
-  if(!priceId) return res.status(500).json({ error:"No price configured for this plan" });
+  if(!priceId) return res.status(500).json({ error:"No price configured for this plan. Please contact support." });
 
   const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
 
-  // Build line items — apply discount as Stripe coupon if needed
-  const lineItems = [{ price: priceId, quantity: 1 }];
-
-  const sessionParams = {
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: lineItems,
-    customer_email: email,
-    allow_promotion_codes: true,
-    success_url: `${baseUrl}/payment-success.html`,
-    cancel_url: `${baseUrl}/plans.html`,
-    metadata: {
-      userEmail: email,
-      planId,
-      promoCode: promoCode || "",
-    },
-  };
-
-  // Apply discount coupon if promo code provided
-  if(discountPct > 0){
-    try {
-      const coupon = await stripe.coupons.create({ percent_off: discountPct, duration: "once", name: promoCode });
-      sessionParams.discounts = [{ coupon: coupon.id }];
-    } catch(e) {
-      console.error("Stripe coupon creation failed:", e.message);
-    }
-  }
-
   try {
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    const checkoutUrl = session.url;
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: email,
+      allow_promotion_codes: true,
+      success_url: `${baseUrl}/payment-success.html`,
+      cancel_url: `${baseUrl}/plans.html`,
+      metadata: { userEmail: email, planId },
+    });
     await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
-    return res.json({ ok: true, checkoutUrl });
+    return res.json({ ok: true, checkoutUrl: session.url });
   } catch(e) {
     console.error("Stripe session error:", e.message);
-    return res.status(500).json({ error: "Failed to create checkout session" });
+    return res.status(500).json({ error: e.message || "Failed to create checkout session" });
   }
 });
 
