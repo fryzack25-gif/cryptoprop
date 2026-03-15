@@ -263,6 +263,17 @@ async function init() {
     banner.className = 'status-banner active';
     banner.style.display = 'block';
     banner.innerHTML = `✅ You have an active <strong>${acct.planId.toUpperCase()}</strong> challenge in progress. <a href="/dashboard.html" style="color:var(--green)">Go to Dashboard →</a>`;
+    // Disable all plan cards and buy button
+    document.querySelectorAll('.plan-card').forEach(c => {
+      c.style.opacity = '0.4';
+      c.style.pointerEvents = 'none';
+      c.style.cursor = 'not-allowed';
+    });
+    document.getElementById('buyBtn').disabled = true;
+  }
+    banner.className = 'status-banner active';
+    banner.style.display = 'block';
+    banner.innerHTML = `✅ You have an active <strong>${acct.planId.toUpperCase()}</strong> challenge in progress. <a href="/dashboard.html" style="color:var(--green)">Go to Dashboard →</a>`;
   }
 }
 
