@@ -57,14 +57,24 @@ async function showFailedModal(account) {
 function renderFailPlans() {
   const container = document.getElementById("failModalPlans");
   if(!container) return;
+
+  if(_failOfferUsed) {
+    // Offer already used — don't show plan cards, redirect to onboard for full price
+    container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:12px 0">
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:14px">Your one-time discount has been used. Purchase a new challenge at full price.</div>
+      <a href="/onboard.html" style="display:inline-block;background:#00e5a0;color:#000;border:none;border-radius:8px;padding:12px 32px;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none;letter-spacing:0.03em">View Plans →</a>
+    </div>`;
+    return;
+  }
+
   container.innerHTML = PLANS_INFO.map(p => {
-    const discounted = _failOfferUsed ? p.price : Math.round(p.price * 0.5);
+    const discounted = Math.round(p.price * 0.5);
     return `<div style="border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;text-align:center;background:rgba(255,255,255,0.03)">
       <div style="font-size:18px;font-weight:800;color:#e8eaed">${p.label}</div>
       <div style="font-size:11px;color:rgba(255,255,255,0.4);margin:3px 0 10px">Challenge Account</div>
-      ${!_failOfferUsed ? `<div style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:line-through">$${p.price}</div>` : ""}
-      <div style="font-size:22px;font-weight:800;color:${!_failOfferUsed ? "#00e5a0" : "#fff"}">$${discounted}</div>
-      ${!_failOfferUsed ? `<div style="font-size:10px;color:#00e5a0;font-weight:700;margin-top:2px">50% OFF</div>` : ""}
+      <div style="font-size:11px;color:rgba(255,255,255,0.35);text-decoration:line-through">$${p.price}</div>
+      <div style="font-size:22px;font-weight:800;color:#00e5a0">$${discounted}</div>
+      <div style="font-size:10px;color:#00e5a0;font-weight:700;margin-top:2px">50% OFF — ONE TIME</div>
       <button onclick="buyFailPlan('${p.id}')" style="margin-top:12px;width:100%;background:#00e5a0;color:#000;border:none;border-radius:6px;padding:9px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:0.03em">Buy Now</button>
     </div>`;
   }).join("");
