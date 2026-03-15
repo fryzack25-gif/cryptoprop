@@ -200,25 +200,14 @@ async function buyPlan(id) {
   const planId = id || selectedPlan;
   if(!planId) return;
 
-  // Disable all buy buttons to prevent double-click
   document.querySelectorAll('.select-btn').forEach(b => { b.disabled = true; });
   document.getElementById('selbtn-' + planId).textContent = 'Redirecting…';
 
   const err = document.getElementById('errMsg');
   err.textContent = '';
-  document.getElementById('checkoutArea').style.display = 'none';
+  err.style.display = 'none';
 
   try {
-    // Ensure terms are accepted
-    const termsRes = await fetch('/api/terms/status');
-    const termsData = await termsRes.json();
-    if(!termsData.accepted) {
-      await fetch('/api/terms/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accept: true })
-      });
-    }
     const res = await fetch('/api/plan/choose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
