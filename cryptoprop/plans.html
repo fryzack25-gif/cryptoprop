@@ -227,7 +227,9 @@ async function init() {
   const r = await fetch('/api/auth/me');
   const me = await r.json();
   if(!me.user) { window.location.href = '/auth.html'; return; }
-  document.getElementById('whoEl').textContent = me.user.email;
+  // Go directly to onboard page which has working Stripe checkout
+  window.location.href = '/onboard.html';
+}
 
   // Get account state
   const acctRes = await fetch('/api/account');
