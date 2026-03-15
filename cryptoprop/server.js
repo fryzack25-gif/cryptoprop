@@ -103,6 +103,7 @@ function resetTradingStateToStart(acct){
   const start = Number(acct.startEquity || acct.cash || 0);
   acct.cash = start;
   acct.equity = start;
+  acct.baseEquity = start;
   acct.positions = {};
   acct.avgCost = {};
   acct.realizedPnL = 0;
@@ -2795,9 +2796,15 @@ async function activatePlan(email, planId, amountPaid, type = "initial", meta = 
   acct.attemptsByPlan[planId] = Number(acct.attemptsByPlan[planId] || 0) + 1;
   acct.planId = planId;
   acct.lastPurchase = { time: new Date().toISOString(), planId, amount: amountPaid, type, ...meta };
+  // Set all equity fields to the new plan value BEFORE resetChallengeAttempt
   acct.startEquity = plan.startEquity;
+  acct.baseEquity = plan.startEquity;
   acct.cash = plan.startEquity;
   acct.equity = plan.startEquity;
+  acct.peakEquity = plan.startEquity;
+  acct.dayStartEquity = plan.startEquity;
+  acct.dayLowEquity = plan.startEquity;
+  acct.lastEquityAtCheck = plan.startEquity;
   if(acct.referredBy && !acct.firstPurchaseCredited){
     await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
     acct.firstPurchaseCredited = true;
