@@ -259,11 +259,7 @@ async function init() {
 
   const banner = document.getElementById('statusBanner');
 
-  if(acct.challengeFailed) {
-    banner.className = 'status-banner failed';
-    banner.style.display = 'block';
-    banner.innerHTML = '❌ Your previous challenge failed. Purchase a new plan below at full price.';
-  } else if(acct.planId && acct.challengePhase !== 'funded') {
+  if(acct.planId && acct.challengePhase !== 'funded' && !acct.challengeFailed) {
     banner.className = 'status-banner active';
     banner.style.display = 'block';
     banner.innerHTML = `✅ You have an active <strong>${acct.planId.toUpperCase()}</strong> challenge in progress. <a href="/dashboard.html" style="color:var(--green)">Go to Dashboard →</a>`;
