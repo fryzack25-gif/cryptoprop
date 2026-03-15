@@ -473,7 +473,7 @@ async function hydrateOnceWithREST(){
   updateChallengeProgress(account);
   updatePayoutPanel(account);
   updateRetryOffer(account);
-  updateExtensionOffer(account);
+
   updateVerifyPanel(account);
   if(account.challengeStepInfo && (account.challengePhase||'challenge')==='challenge'){
     const s = account.challengeStepInfo;
@@ -642,42 +642,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-function updateExtensionOffer(account){
-  const box = document.getElementById("extendChallengeBox");
-  const msg = document.getElementById("extendMsg");
-  if(!box) return;
 
-  if(account.challengePhase === "challenge" && !account.challengeFailed){
-    const step = account.challengeStepInfo?.step || 1;
-    const used = account.extensionsUsed && account.extensionsUsed[step];
-    box.style.display = used ? "none" : "block";
-    if(msg) msg.textContent = "";
-  }else{
-    box.style.display = "none";
-  }
-}
-
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest("#buyExtension");
-  if(!btn) return;
-
-  const msg = document.getElementById("extendMsg");
-  if(msg) msg.textContent = "Processing…";
-
-  try{
-    const res = await fetch("/api/challenge/extend", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({})
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "Failed");
-    if(msg) msg.textContent = "Extension applied ✅ +14 days added.";
-    location.reload();
-  }catch(err){
-    if(msg) msg.textContent = err.message;
-  }
-});
 
 function updateConsistencyUI(account){
   const box = document.getElementById("consistencyBox");
