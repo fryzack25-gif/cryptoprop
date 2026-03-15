@@ -2122,7 +2122,7 @@ function resetChallengeAttempt(acct){
   acct.failReason = null;
   acct.failedAt = null;
   acct.frozen = false;
-  acct.retryAnyUsed = false; // reset so 50% offer is available next failure
+  // NOTE: retryAnyUsed is intentionally NOT reset — the 50% offer is one-time ever, not per-failure
 
   acct.challengeStep = 1;
   acct.stepStartDate = utcDateKey();
@@ -2855,6 +2855,7 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after a failed challenge" });
+  if(acct.retryAnyUsed) return res.status(400).json({ error: "One-time retry offer already used" });
   if(!stripe) return res.status(500).json({ error: "Payment not configured" });
 
   const planId = (req.body?.planId || "").toString();
@@ -2874,10 +2875,14 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email,
       discounts: [{ coupon: coupon.id }],
+      allow_promotion_codes: false,
       success_url: `${baseUrl}/payment-success.html`,
       cancel_url: `${baseUrl}/paper.html`,
       metadata: { userEmail: email, planId, retryType: "retry" },
     });
+    // Mark used immediately so they can't generate multiple discount sessions
+    acct.retryAnyUsed = true;
+    await saveAccount(email, acct);
     const checkoutUrl = session.url;
     await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
     return res.json({ ok: true, checkoutUrl });
