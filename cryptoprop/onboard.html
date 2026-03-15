@@ -395,23 +395,35 @@
       <div class="plans-title">Choose Your Plan</div>
       <p class="plans-sub">Select your account size. All plans include the same challenge rules — just different capital amounts.</p>
 
-      <div class="plan-grid">
+      <div class="plan-grid" style="grid-template-columns:repeat(5,1fr);">
         <div class="plan-card" id="plan-25k" onclick="selectPlan('25k')">
           <div class="plan-size">$25K</div>
           <div class="plan-label">Starter</div>
           <div class="plan-price" id="price-25k">$149</div>
           <div class="plan-price-sub">one-time fee</div>
         </div>
-        <div class="plan-card popular" id="plan-50k" onclick="selectPlan('50k')">
+        <div class="plan-card" id="plan-50k" onclick="selectPlan('50k')">
           <div class="plan-size">$50K</div>
           <div class="plan-label">Standard</div>
           <div class="plan-price" id="price-50k">$279</div>
           <div class="plan-price-sub">one-time fee</div>
         </div>
-        <div class="plan-card" id="plan-100k" onclick="selectPlan('100k')">
+        <div class="plan-card popular" id="plan-100k" onclick="selectPlan('100k')">
           <div class="plan-size">$100K</div>
           <div class="plan-label">Pro</div>
           <div class="plan-price" id="price-100k">$499</div>
+          <div class="plan-price-sub">one-time fee</div>
+        </div>
+        <div class="plan-card" id="plan-200k" onclick="selectPlan('200k')">
+          <div class="plan-size">$200K</div>
+          <div class="plan-label">Elite</div>
+          <div class="plan-price" id="price-200k">$849</div>
+          <div class="plan-price-sub">one-time fee</div>
+        </div>
+        <div class="plan-card" id="plan-500k" onclick="selectPlan('500k')">
+          <div class="plan-size">$500K</div>
+          <div class="plan-label">Premier</div>
+          <div class="plan-price" id="price-500k">$1,799</div>
           <div class="plan-price-sub">one-time fee</div>
         </div>
       </div>
@@ -428,7 +440,7 @@
 </div>
 
 <script>
-const PLANS = { '25k': 149, '50k': 279, '100k': 499 };
+const PLANS = { '25k': 149, '50k': 279, '100k': 499, '200k': 849, '500k': 1799 };
 let selectedPlan = null;
 let currentStep = 1;
 const isRetry = new URLSearchParams(window.location.search).get('retry') === '1';
