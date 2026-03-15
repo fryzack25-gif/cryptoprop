@@ -419,6 +419,9 @@
 
       <button class="btn-primary" id="buyBtn" onclick="buyPlan()" disabled>Select a plan to continue</button>
       <div class="err-msg" id="planErr"></div>
+      <div style="text-align:center;margin-top:16px">
+        <a href="/dashboard.html" id="backToDashLink" style="display:none;font-size:12px;color:rgba(255,255,255,0.35);text-decoration:none">← Back to dashboard</a>
+      </div>
     </div>
 
   </div>
@@ -509,7 +512,7 @@ async function buyPlan() {
   }
 }
 
-// ---- Init: check if already onboarded ----
+// ---- Init: check auth and account state ----
 (async function init() {
   try {
     const res = await fetch('/api/auth/me');
@@ -520,8 +523,20 @@ async function buyPlan() {
     if(!acctRes.ok) return;
     const acct = await acctRes.json();
 
-    if(acct.planId) { window.location.href = '/dashboard.html'; return; }
-    if(acct.termsAccepted) { currentStep = 1; goStep(3); return; }
+    // Only redirect to dashboard if they have an active, non-failed plan
+    if(acct.planId && !acct.challengeFailed) { window.location.href = '/dashboard.html'; return; }
+
+    // If they have a plan but failed, or no plan — show plans page directly
+    // Skip welcome/terms steps if terms already accepted
+    if(acct.termsAccepted) {
+      currentStep = 1; goStep(3);
+      // Show back link for returning failed users
+      if(acct.planId && acct.challengeFailed) {
+        const backLink = document.getElementById('backToDashLink');
+        if(backLink) backLink.style.display = 'inline';
+      }
+      return;
+    }
   } catch(e) {}
 })();
 </script>
