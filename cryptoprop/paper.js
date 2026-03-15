@@ -974,3 +974,164 @@ setInterval(async () => {
   if(_pollCount % 5 === 0) await loadAccount();
   render();
 }, 2000);
+
+// ---- EQUITY CURVE CHART ----
+let _chartMode = 'price';
+let _equityPoints = [];
+
+window.setChartMode = function(mode) {
+  _chartMode = mode;
+  const priceBtn = document.getElementById('chartModePrice');
+  const equityBtn = document.getElementById('chartModeEquity');
+  const candleCanvas = document.getElementById('candleCanvas');
+  const equityCanvas = document.getElementById('equityCanvas');
+
+  if(mode === 'equity') {
+    if(priceBtn) { priceBtn.classList.remove('active'); priceBtn.style.color = ''; }
+    if(equityBtn) { equityBtn.classList.add('active'); equityBtn.style.color = 'var(--term-green)'; }
+    if(candleCanvas) candleCanvas.style.display = 'none';
+    if(equityCanvas) equityCanvas.style.display = 'block';
+    drawEquityChart();
+  } else {
+    if(equityBtn) { equityBtn.classList.remove('active'); equityBtn.style.color = ''; }
+    if(priceBtn) { priceBtn.classList.add('active'); priceBtn.style.color = 'var(--term-green)'; }
+    if(candleCanvas) candleCanvas.style.display = 'block';
+    if(equityCanvas) equityCanvas.style.display = 'none';
+  }
+};
+
+async function loadEquityHistory() {
+  try {
+    const res = await fetch('/api/equity/history');
+    if(!res.ok) return;
+    const d = await res.json();
+    _equityPoints = Array.isArray(d.points) ? d.points : [];
+    if(_chartMode === 'equity') drawEquityChart();
+  } catch(e) {}
+}
+
+function drawEquityChart() {
+  const canvas = document.getElementById('equityCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#080b10';
+  ctx.fillRect(0, 0, W, H);
+
+  const pts = _equityPoints;
+  if(!pts || pts.length < 2) {
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '13px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('No equity history yet — start trading to see your curve', W / 2, H / 2);
+    return;
+  }
+
+  const pad = { top: 24, right: 80, bottom: 40, left: 16 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  const values = pts.map(p => Number(p.e || 0));
+  const times  = pts.map(p => Number(p.t || 0));
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+  const startEquity = values[0];
+
+  const xOf = i => pad.left + (i / (pts.length - 1)) * cW;
+  const yOf = v => pad.top + cH - ((v - minV) / range) * cH;
+
+  // Grid lines
+  const gridCount = 5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for(let i = 0; i <= gridCount; i++) {
+    const y = pad.top + (i / gridCount) * cH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    const val = maxV - (i / gridCount) * range;
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '10px JetBrains Mono, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('$' + Math.round(val).toLocaleString(), W - pad.right + 6, y + 3);
+  }
+
+  // Start equity reference line
+  const startY = yOf(startEquity);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.left, startY); ctx.lineTo(W - pad.right, startY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Determine color based on final vs start
+  const lastVal = values[values.length - 1];
+  const isUp = lastVal >= startEquity;
+  const lineColor = isUp ? '#00e5a0' : '#ff4d6a';
+  const gradColor = isUp ? 'rgba(0,229,160,' : 'rgba(255,77,106,';
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+  grad.addColorStop(0, gradColor + '0.18)');
+  grad.addColorStop(1, gradColor + '0.01)');
+
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(pts[0].e));
+  for(let i = 1; i < pts.length; i++) ctx.lineTo(xOf(i), yOf(pts[i].e));
+  ctx.lineTo(xOf(pts.length - 1), pad.top + cH);
+  ctx.lineTo(xOf(0), pad.top + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(pts[0].e));
+  for(let i = 1; i < pts.length; i++) ctx.lineTo(xOf(i), yOf(pts[i].e));
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Last point dot
+  const lx = xOf(pts.length - 1), ly = yOf(lastVal);
+  ctx.beginPath();
+  ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
+
+  // Last value label
+  const pct = ((lastVal - startEquity) / startEquity * 100);
+  const sign = pct >= 0 ? '+' : '';
+  ctx.fillStyle = lineColor;
+  ctx.font = 'bold 11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(sign + pct.toFixed(2) + '%', W - pad.right + 6, ly + 3);
+
+  // Time labels
+  const labelCount = Math.min(5, pts.length);
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '9px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for(let i = 0; i < labelCount; i++) {
+    const idx = Math.round(i / (labelCount - 1) * (pts.length - 1));
+    const x = xOf(idx);
+    const d = new Date(times[idx]);
+    const label = (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    ctx.fillText(label, x, H - 8);
+  }
+}
+
+// Load equity history on init and update on each account refresh
+loadEquityHistory();
+setInterval(() => { if(_chartMode === 'equity') loadEquityHistory(); }, 30000);
