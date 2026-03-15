@@ -58,8 +58,8 @@
     .plan-features li:last-child{border:none;}
     .plan-features li::before{content:'›';color:var(--green);font-size:14px;flex-shrink:0;}
     .select-btn{width:100%;padding:11px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;letter-spacing:0.02em;}
-    .select-btn:hover{background:rgba(255,255,255,0.08);border-color:var(--border2);}
-    .plan-card.selected .select-btn{background:var(--green);border-color:var(--green);color:#000;}
+    .select-btn:hover{background:var(--green);border-color:var(--green);color:#000;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,160,0.25);}
+    .select-btn.active{background:var(--green);border-color:var(--green);color:#000;}
 
     /* Retry offer badge */
     .retry-badge{display:none;position:absolute;top:-11px;right:12px;background:var(--amber);color:#000;font-size:9px;font-weight:800;letter-spacing:0.1em;padding:3px 10px;border-radius:20px;font-family:var(--sans);}
@@ -128,7 +128,7 @@
   </div>
 
   <div class="plan-grid">
-    <div class="plan-card" id="card-25k" onclick="selectPlan('25k')">
+    <div class="plan-card" id="card-25k">
       <div class="plan-size">$25K</div>
       <div class="plan-label">STARTER</div>
       <div class="plan-price" id="price-25k">$149</div>
@@ -140,10 +140,10 @@
         <li>80% profit split</li>
         <li>Weekly payouts</li>
       </ul>
-      <button class="select-btn" id="selbtn-25k">Select</button>
+      <button class="select-btn" id="selbtn-25k" onclick="selectPlan('25k')">Buy</button>
     </div>
 
-    <div class="plan-card popular" id="card-50k" onclick="selectPlan('50k')">
+    <div class="plan-card popular" id="card-50k">
       <div class="plan-size">$50K</div>
       <div class="plan-label">STANDARD</div>
       <div class="plan-price" id="price-50k">$279</div>
@@ -155,10 +155,10 @@
         <li>80% profit split</li>
         <li>Weekly payouts</li>
       </ul>
-      <button class="select-btn" id="selbtn-50k">Select</button>
+      <button class="select-btn" id="selbtn-50k" onclick="selectPlan('50k')">Buy</button>
     </div>
 
-    <div class="plan-card" id="card-100k" onclick="selectPlan('100k')">
+    <div class="plan-card" id="card-100k">
       <div class="plan-size">$100K</div>
       <div class="plan-label">PRO</div>
       <div class="plan-price" id="price-100k">$499</div>
@@ -170,7 +170,7 @@
         <li>80% profit split</li>
         <li>Weekly payouts</li>
       </ul>
-      <button class="select-btn" id="selbtn-100k">Select</button>
+      <button class="select-btn" id="selbtn-100k" onclick="selectPlan('100k')">Buy</button>
     </div>
   </div>
 
@@ -210,9 +210,11 @@ function doLogout() {
 function selectPlan(id) {
   selectedPlan = id;
   document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll('.select-btn').forEach(b => b.textContent = 'Select');
+  document.querySelectorAll('.select-btn').forEach(b => { b.textContent = 'Buy'; b.classList.remove('active'); });
   document.getElementById('card-' + id).classList.add('selected');
-  document.getElementById('selbtn-' + id).textContent = 'Selected ✓';
+  const btn = document.getElementById('selbtn-' + id);
+  btn.textContent = 'Selected ✓';
+  btn.classList.add('active');
 
   const p = PLANS[id];
   document.getElementById('summaryPlan').textContent = p.label;
