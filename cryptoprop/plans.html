@@ -174,23 +174,7 @@
     </div>
   </div>
 
-  <div class="checkout-area" id="checkoutArea" style="display:none">
-    <div class="checkout-row">
-      <span class="checkout-label">Selected plan</span>
-      <span class="checkout-val" id="summaryPlan">—</span>
-    </div>
-    <div class="checkout-row">
-      <span class="checkout-label">Account size</span>
-      <span class="checkout-val" id="summarySize">—</span>
-    </div>
-    <div class="checkout-divider"></div>
-    <div class="checkout-total-row">
-      <span class="checkout-total-label">Total due today</span>
-      <span class="checkout-total-val" id="summaryPrice">—</span>
-    </div>
-    <button class="buy-btn" id="buyBtn" onclick="buyPlan()">Proceed to Checkout →</button>
-    <div class="err-msg" id="errMsg"></div>
-  </div>
+  <div class="err-msg" id="errMsg" style="text-align:center;margin-top:16px;display:none"></div>
 </div>
 
 <script>
@@ -208,32 +192,24 @@ function doLogout() {
 }
 
 function selectPlan(id) {
-  selectedPlan = id;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll('.select-btn').forEach(b => { b.textContent = 'Buy'; b.classList.remove('active'); });
-  document.getElementById('card-' + id).classList.add('selected');
-  const btn = document.getElementById('selbtn-' + id);
-  btn.textContent = 'Selected ✓';
-  btn.classList.add('active');
-
-  const p = PLANS[id];
-  document.getElementById('summaryPlan').textContent = p.label;
-  document.getElementById('summarySize').textContent = p.size;
-  document.getElementById('summaryPrice').textContent = '$' + p.price;
-  document.getElementById('checkoutArea').style.display = 'block';
-  document.getElementById('buyBtn').disabled = false;
-  document.getElementById('buyBtn').textContent = 'Proceed to Checkout →';
+  // Immediately go to Stripe checkout
+  buyPlan(id);
 }
 
-async function buyPlan() {
-  if(!selectedPlan) return;
-  const btn = document.getElementById('buyBtn');
+async function buyPlan(id) {
+  const planId = id || selectedPlan;
+  if(!planId) return;
+
+  // Disable all buy buttons to prevent double-click
+  document.querySelectorAll('.select-btn').forEach(b => { b.disabled = true; });
+  document.getElementById('selbtn-' + planId).textContent = 'Redirecting…';
+
   const err = document.getElementById('errMsg');
-  btn.disabled = true;
-  btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
+  document.getElementById('checkoutArea').style.display = 'none';
+
   try {
-    // Ensure terms are accepted before checkout
+    // Ensure terms are accepted
     const termsRes = await fetch('/api/terms/status');
     const termsData = await termsRes.json();
     if(!termsData.accepted) {
@@ -246,15 +222,15 @@ async function buyPlan() {
     const res = await fetch('/api/plan/choose', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId: selectedPlan })
+      body: JSON.stringify({ planId })
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.error || 'Purchase failed');
     window.location.href = d.checkoutUrl;
   } catch(e) {
     err.textContent = e.message;
-    btn.disabled = false;
-    btn.textContent = 'Proceed to Checkout →';
+    err.style.display = 'block';
+    document.querySelectorAll('.select-btn').forEach(b => { b.disabled = false; b.textContent = 'Buy'; });
   }
 }
 
