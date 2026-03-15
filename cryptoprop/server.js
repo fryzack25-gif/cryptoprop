@@ -2524,6 +2524,11 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
 
+  // Block if they already have an active non-failed challenge
+  if(acct.planId && !acct.challengeFailed && acct.challengePhase !== "funded"){
+    return res.status(400).json({ error:"You already have an active challenge in progress." });
+  }
+
   // Validate promo code if provided (discount applied via Stripe coupon or price override)
   let discountPct = 0;
   let promoApplied = null;
