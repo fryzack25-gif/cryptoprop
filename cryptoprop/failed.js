@@ -26,37 +26,3 @@ document.getElementById("resetBtn").addEventListener("click", async () => {
 });
 
 load().catch(()=>{});
-
-async function loadRetryOffer(){
-  try{
-    const res = await fetch("/api/account");
-    const acct = await res.json();
-    const box = document.getElementById("retryOfferBox");
-    const txt = document.getElementById("retryOfferText");
-    if(!box || !txt) return;
-    if(acct.retryOffer && acct.retryOffer.eligible){
-      box.style.display = "block";
-      txt.textContent = `Retry your ${acct.retryOffer.planId} challenge for $${acct.retryOffer.discounted} (normally $${acct.retryOffer.original}). This is a ONE-TIME offer.`;
-    }else{
-      box.style.display = "none";
-    }
-  }catch(e){}
-}
-
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest("#buyRetry");
-  if(!btn) return;
-  const msg = document.getElementById("retryMsg");
-  if(msg) msg.textContent = "Processing…";
-  try{
-    const res = await fetch("/api/plan/retry-offer", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({}) });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "Failed");
-    if(msg) msg.textContent = "Success ✅ Redirecting…";
-    window.location.href = "/paper.html";
-  }catch(err){
-    if(msg) msg.textContent = err.message;
-  }
-});
-
-loadRetryOffer();
