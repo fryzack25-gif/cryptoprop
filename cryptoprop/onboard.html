@@ -251,15 +251,6 @@
     .plan-price { font-size: 26px; font-weight: 800; color: var(--text); }
     .plan-price-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
 
-    .promo-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .promo-input {
-      flex: 1; background: rgba(255,255,255,0.05);
-      border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); padding: 9px 14px;
-      font-size: 12px; font-family: var(--mono); outline: none;
-    }
-    .promo-input:focus { border-color: var(--border-bright); }
-    .promo-msg { font-size: 11px; min-height: 16px; margin-bottom: 16px; font-family: var(--mono); }
 
     /* Buttons */
     .btn-primary {
@@ -425,11 +416,6 @@
         </div>
       </div>
 
-      <div class="promo-row">
-        <input class="promo-input" id="promoInput" placeholder="Promo code (optional)" />
-        <button class="btn-ghost" onclick="applyPromo()" id="promoBtn" style="padding:9px 16px;font-size:12px">Apply</button>
-      </div>
-      <div class="promo-msg" id="promoMsg"></div>
 
       <button class="btn-primary" id="buyBtn" onclick="buyPlan()" disabled>Select a plan to continue</button>
       <div class="err-msg" id="planErr"></div>
@@ -441,15 +427,110 @@
 <script>
 const PLANS = { '25k': 149, '50k': 279, '100k': 499 };
 let selectedPlan = null;
-let promoData = null;
 let currentStep = 1;
+
+function goStep(n) {
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  const card = document.querySelector('.card');
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+  updateStepUI();
+}
+
+function updateStepUI() {
+  [1,2,3].forEach(i => {
+    const node = document.getElementById('sn' + i);
+    node.className = 'step-node';
+    if(i < currentStep) node.className = 'step-node done', node.textContent = '✓';
+    else if(i === currentStep) node.className = 'step-node active', node.textContent = i;
+    else node.textContent = i;
+  });
+  [1,2].forEach(i => {
+    document.getElementById('sl' + i).className = 'step-line' + (currentStep > i ? ' done' : '');
+  });
+}
+
+// ---- Terms ----
+document.getElementById('termsCheck').addEventListener('change', function() {
+  document.getElementById('acceptTermsBtn').disabled = !this.checked;
+});
+
+async function acceptTerms() {
+  const btn = document.getElementById('acceptTermsBtn');
+  const err = document.getElementById('termsErr');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/terms/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accept: true }) });
+    if(!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || 'Failed to accept terms');
+    }
+    goStep(3);
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Accept & Continue →';
+  }
+}
+
+// ---- Plan selection ----
+function selectPlan(id) {
+  selectedPlan = id;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan-' + id).classList.add('selected');
+  updateBuyBtn();
+}
+
+function updateBuyBtn() {
+  const btn = document.getElementById('buyBtn');
+  if(!selectedPlan) { btn.disabled = true; btn.textContent = 'Select a plan to continue'; return; }
+  btn.disabled = false;
+  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${PLANS[selectedPlan]}`;
+}
+
+async function buyPlan() {
+  if(!selectedPlan) return;
+  const btn = document.getElementById('buyBtn');
+  const err = document.getElementById('planErr');
+  btn.disabled = true; btn.textContent = 'Redirecting to checkout…';
+  err.textContent = '';
+  try {
+    const res = await fetch('/api/plan/choose', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId: selectedPlan })
+    });
+    const d = await res.json();
+    if(!res.ok) throw new Error(d.error || 'Purchase failed');
+    window.location.href = d.checkoutUrl;
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; updateBuyBtn();
+  }
+}
+
+// ---- Init: check if already onboarded ----
+(async function init() {
+  try {
+    const res = await fetch('/api/auth/me');
+    const d = await res.json();
+    if(!d.user) { window.location.href = '/auth.html'; return; }
+
+    const acctRes = await fetch('/api/account');
+    if(!acctRes.ok) return;
+    const acct = await acctRes.json();
+
+    if(acct.planId) { window.location.href = '/dashboard.html'; return; }
+    if(acct.termsAccepted) { currentStep = 1; goStep(3); return; }
+  } catch(e) {}
+})();
+</script>
 
 // ---- Step navigation ----
 function goStep(n) {
   document.getElementById('step' + currentStep).classList.remove('active');
   currentStep = n;
   document.getElementById('step' + n).classList.add('active');
-  // re-trigger animation
   const card = document.querySelector('.card');
   card.style.animation = 'none';
   requestAnimationFrame(() => { card.style.animation = ''; });
@@ -503,47 +584,8 @@ function updateBuyBtn() {
   const btn = document.getElementById('buyBtn');
   if(!selectedPlan) { btn.disabled = true; btn.textContent = 'Select a plan to continue'; return; }
   const base = PLANS[selectedPlan];
-  const final = promoData ? Math.max(0, base - Math.round(base * promoData.discountPct / 100)) : base;
   btn.disabled = false;
-  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${final}`;
-}
-
-async function applyPromo() {
-  const code = document.getElementById('promoInput').value.trim().toUpperCase();
-  const msg = document.getElementById('promoMsg');
-  const btn = document.getElementById('promoBtn');
-  if(!code) return;
-  if(!selectedPlan) { msg.style.color = 'var(--red)'; msg.textContent = 'Select a plan first.'; return; }
-  btn.disabled = true; btn.textContent = 'Checking…';
-  try {
-    const res = await fetch('/api/promo/validate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, planId: selectedPlan })
-    });
-    const d = await res.json();
-    if(!res.ok) throw new Error(d.error || 'Invalid code');
-    promoData = d;
-    msg.style.color = 'var(--green)';
-    msg.textContent = `✅ ${d.discountPct}% off applied — you save $${d.discountAmt}!`;
-    updatePrices();
-    updateBuyBtn();
-  } catch(e) {
-    promoData = null;
-    msg.style.color = 'var(--red)'; msg.textContent = e.message;
-  } finally { btn.disabled = false; btn.textContent = 'Apply'; }
-}
-
-function updatePrices() {
-  Object.entries(PLANS).forEach(([id, base]) => {
-    const el = document.getElementById('price-' + id);
-    if(!el) return;
-    if(promoData) {
-      const disc = Math.max(0, base - Math.round(base * promoData.discountPct / 100));
-      el.innerHTML = `<span style="font-size:14px;text-decoration:line-through;color:var(--muted);font-weight:400">$${base}</span> $${disc}`;
-    } else {
-      el.textContent = '$' + base;
-    }
-  });
+  btn.textContent = `Start $${selectedPlan.replace('k','K')} Challenge — $${base}`;
 }
 
 async function buyPlan() {
@@ -553,11 +595,9 @@ async function buyPlan() {
   btn.disabled = true; btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
   try {
-    const body = { planId: selectedPlan };
-    if(promoData) body.promoCode = promoData.code;
     const res = await fetch('/api/plan/choose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ planId: selectedPlan })
     });
     const d = await res.json();
     if(!res.ok) throw new Error(d.error || 'Purchase failed');
@@ -567,7 +607,52 @@ async function buyPlan() {
     btn.disabled = false; updateBuyBtn();
   }
 }
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + n).classList.add('active');
+  // re-trigger animation
+  const card = document.querySelector('.card');
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+  updateStepUI();
+}
 
+function updateStepUI() {
+  [1,2,3].forEach(i => {
+    const node = document.getElementById('sn' + i);
+    node.className = 'step-node';
+    if(i < currentStep) node.className = 'step-node done', node.textContent = '✓';
+    else if(i === currentStep) node.className = 'step-node active', node.textContent = i;
+    else node.textContent = i;
+  });
+  [1,2].forEach(i => {
+    document.getElementById('sl' + i).className = 'step-line' + (currentStep > i ? ' done' : '');
+  });
+}
+
+// ---- Terms ----
+document.getElementById('termsCheck').addEventListener('change', function() {
+  document.getElementById('acceptTermsBtn').disabled = !this.checked;
+});
+
+async function acceptTerms() {
+  const btn = document.getElementById('acceptTermsBtn');
+  const err = document.getElementById('termsErr');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/terms/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accept: true }) });
+    if(!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || 'Failed to accept terms');
+    }
+    goStep(3);
+  } catch(e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Accept & Continue →';
+  }
+}
+
+// ---- Plan selection ----
 // ---- Init: check if already onboarded ----
 (async function init() {
   try {
