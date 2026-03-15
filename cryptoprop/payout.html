@@ -98,7 +98,7 @@
     <a class="brand" href="index.html"><div class="dot"></div>CryptoProp</a>
     <nav>
       <a href="dashboard.html">Dashboard</a>
-      <a href="plans.html">Plans</a>
+      <a href="onboard.html">Plans</a>
       <a href="paper.html">Trading</a>
       <a href="rules.html">Rules</a>
       <a href="payout.html" class="on">Payout</a>
@@ -127,14 +127,7 @@
 
   <div class="stats">
     <div class="sc"><div class="lbl">Available</div><div class="val g" id="vWith">—</div><div class="hint" id="hWith">—</div></div>
-    <div class="sc"><div class="lbl">Weekly cap left</div><div class="val" id="vCap">—</div><div class="hint" id="hCap">—</div></div>
     <div class="sc"><div class="lbl">Total paid out</div><div class="val a" id="vTotal">—</div><div class="hint">All time</div></div>
-  </div>
-
-  <div class="bufcard">
-    <div class="row"><span class="lbl">3% profit buffer</span><span class="pct" id="bPct">—</span></div>
-    <div class="track"><div class="fill" id="bFill" style="width:0%"></div></div>
-    <div class="hint" id="bSub">—</div>
   </div>
 
   <div id="alertBox"></div>
@@ -185,7 +178,7 @@ async function submitPayout() {
   var msg = g('fmsg');
   if (!amount || amount <= 0) { msg.className='fmsg err'; msg.textContent='Enter a valid amount.'; return; }
   if (amount > _withdrawable) { msg.className='fmsg err'; msg.textContent='Exceeds available: ' + money(_withdrawable); return; }
-  if (amount > _capLeft)      { msg.className='fmsg err'; msg.textContent='Exceeds weekly cap: ' + money(_capLeft); return; }
+  if (amount > _withdrawable) { msg.className='fmsg err'; msg.textContent='Exceeds withdrawable: ' + money(_withdrawable); return; }
   var btn = g('subBtn');
   btn.disabled = true; btn.textContent = 'Submitting…';
   msg.className='fmsg'; msg.textContent='';
@@ -244,24 +237,11 @@ async function init() {
   g('fundedView').style.display = '';
 
   _withdrawable = Math.max(0, Number(a.withdrawable || 0));
-  _capLeft      = Math.max(0, Number(a.payoutCapRemaining || 0));
   var totalPaid = Number(a.payoutsPaidTotal || 0);
-  var eligible  = Number(a.payoutEligiblePnL || 0);
-  var buffer    = Number(a.profitBuffer || 0);
-  var bufPct    = buffer > 0 ? Math.min(100, Math.round(eligible / buffer * 100)) : 100;
 
   g('vWith').textContent  = money(_withdrawable);
-  g('hWith').textContent  = bufPct >= 100 ? 'Buffer met ✓' : 'Buffer ' + bufPct + '% reached';
-  g('vCap').textContent   = money(_capLeft);
-  g('hCap').textContent   = 'of ' + money(a.payoutCap || 0) + ' weekly';
+  g('hWith').textContent  = _withdrawable > 0 ? 'Available to withdraw' : 'No profits yet';
   g('vTotal').textContent = money(totalPaid);
-  g('bPct').textContent   = bufPct + '%';
-  g('bPct').style.color   = bufPct >= 100 ? 'var(--green)' : 'var(--amber)';
-  g('bFill').style.width  = bufPct + '%';
-  g('bFill').style.background = bufPct >= 100 ? 'var(--green)' : 'var(--amber)';
-  g('bSub').textContent   = bufPct >= 100
-    ? 'Buffer met — withdrawals unlocked.'
-    : money(eligible) + ' of ' + money(buffer) + ' — need ' + money(Math.max(0, buffer - eligible)) + ' more.';
 
   var btn = g('subBtn');
   var eligAt = a.payoutEligibleAt ? new Date(a.payoutEligibleAt).getTime() : 0;
@@ -270,12 +250,6 @@ async function init() {
   if (now < eligAt) {
     var days = Math.ceil((eligAt - now) / 86400000);
     g('alertBox').innerHTML = '<div class="alert amber">⏳ &nbsp;Payouts unlock in <strong>' + days + ' day' + (days!==1?'s':'') + '</strong> — 14-day wait after funded activation.</div>';
-    btn.disabled = true;
-  } else if (bufPct < 100) {
-    g('alertBox').innerHTML = '<div class="alert amber">ℹ️ &nbsp;Reach the 3% profit buffer before withdrawing.</div>';
-    btn.disabled = true;
-  } else if (_capLeft <= 0) {
-    g('alertBox').innerHTML = '<div class="alert amber">⏳ &nbsp;Weekly cap reached — resets in 7 days.</div>';
     btn.disabled = true;
   } else if (_withdrawable <= 0) {
     g('alertBox').innerHTML = '<div class="alert amber">ℹ️ &nbsp;No withdrawable balance yet. Keep trading.</div>';
