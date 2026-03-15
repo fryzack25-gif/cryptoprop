@@ -136,18 +136,14 @@ function statusBadge(ok){ return ok ? "✅ Verified" : "❌ Not verified"; }
 
 function updateVerifyPanel(acct){
   const e = document.getElementById("emailStatus");
-  const p = document.getElementById("phoneStatus");
   const k = document.getElementById("kycStatus");
   if(e) e.textContent = statusBadge(!!acct.emailVerified);
-  if(p) p.textContent = statusBadge(!!acct.phoneVerified);
   if(k) k.textContent = (acct.kycStatus || "not_started").toUpperCase();
 }
 
 function wireVerification(loadAccount){
   const reqEmail = document.getElementById("reqEmail");
   const confEmail = document.getElementById("confEmail");
-  const reqPhone = document.getElementById("reqPhone");
-  const confPhone = document.getElementById("confPhone");
   const kycForm = document.getElementById("kycForm");
 
   if(reqEmail) reqEmail.addEventListener("click", async () => {
@@ -171,32 +167,6 @@ function wireVerification(loadAccount){
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || "Failed");
       toast("Email verified");
-      await loadAccount();
-    }catch(err){ toast(err.message); }
-  });
-
-  if(reqPhone) reqPhone.addEventListener("click", async () => {
-    const phone = (document.getElementById("phone")?.value || "").trim();
-    const hint = document.getElementById("phoneHint");
-    if(hint) hint.textContent = "Sending…";
-    try{
-      const res = await apiFetch("/api/verify/request-phone", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ phone }) });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.error || "Failed");
-      if(hint) hint.textContent = `Demo code: ${data.code}`;
-    }catch(err){
-      if(hint) hint.textContent = err.message;
-      toast(err.message);
-    }
-  });
-
-  if(confPhone) confPhone.addEventListener("click", async () => {
-    const code = (document.getElementById("phoneCode")?.value || "").trim();
-    try{
-      const res = await apiFetch("/api/verify/confirm-phone", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ code }) });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.error || "Failed");
-      toast("Phone verified");
       await loadAccount();
     }catch(err){ toast(err.message); }
   });
