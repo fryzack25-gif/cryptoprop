@@ -201,7 +201,6 @@ const PLANS = {
 };
 
 let selectedPlan = null;
-let isRetryEligible = false;
 
 function doLogout() {
   fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
@@ -216,7 +215,7 @@ function selectPlan(id) {
   document.getElementById('selbtn-' + id).textContent = 'Selected ✓';
 
   const p = PLANS[id];
-  const finalPrice = isRetryEligible ? Math.round(p.price * 0.5) : p.price;
+  const finalPrice = PLANS[id].price;
 
   document.getElementById('summaryPlan').textContent = p.label;
   document.getElementById('summarySize').textContent = p.size;
@@ -232,7 +231,7 @@ async function buyPlan() {
   btn.textContent = 'Redirecting to checkout…';
   err.textContent = '';
   try {
-    const endpoint = isRetryEligible ? '/api/plan/retry-checkout' : '/api/plan/choose';
+    const endpoint = '/api/plan/choose';
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -255,32 +254,15 @@ async function init() {
   document.getElementById('whoEl').textContent = me.user.email;
 
   // Get account state
-  const [acctRes, retryRes] = await Promise.all([
-    fetch('/api/account'),
-    fetch('/api/plan/retry-status')
-  ]);
+  const acctRes = await fetch('/api/account');
   const acct = acctRes.ok ? await acctRes.json() : {};
-  const retry = retryRes.ok ? await retryRes.json() : {};
 
   const banner = document.getElementById('statusBanner');
 
   if(acct.challengeFailed) {
-    // Show retry offer if eligible and not yet used
-    if(retry.eligible && !retry.used) {
-      isRetryEligible = true;
-      banner.className = 'status-banner retry';
-      banner.style.display = 'block';
-      banner.innerHTML = '🎁 <strong>One-time offer:</strong> Your challenge failed — retry any plan at 50% off. This offer is available once and will not appear again.';
-      // Show 50% off prices
-      Object.entries(PLANS).forEach(([id, p]) => {
-        const el = document.getElementById('price-' + id);
-        if(el) el.innerHTML = `<span style="font-size:16px;text-decoration:line-through;color:var(--muted);font-weight:400">$${p.price}</span> $${Math.round(p.price * 0.5)}`;
-      });
-    } else {
-      banner.className = 'status-banner failed';
-      banner.style.display = 'block';
-      banner.innerHTML = '❌ Your previous challenge failed. Purchase a new plan below at full price.';
-    }
+    banner.className = 'status-banner failed';
+    banner.style.display = 'block';
+    banner.innerHTML = '❌ Your previous challenge failed. Purchase a new plan below at full price.';
   } else if(acct.planId && acct.challengePhase !== 'funded') {
     banner.className = 'status-banner active';
     banner.style.display = 'block';
