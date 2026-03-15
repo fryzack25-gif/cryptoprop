@@ -19,6 +19,8 @@ const STRIPE_PRICE_IDS = {
   "25k": process.env.STRIPE_PRICE_25K,
   "50k": process.env.STRIPE_PRICE_50K,
   "100k": process.env.STRIPE_PRICE_100K,
+  "200k": process.env.STRIPE_PRICE_200K,
+  "500k": process.env.STRIPE_PRICE_500K,
 };
 
 // ---- EMAIL via Resend ----
@@ -2237,9 +2239,11 @@ app.post("/api/terms/accept", requireAuth, async (req, res) => {
 // ------------------- Plan Selection (demo) -------------------
 // In production, this should be driven by Stripe webhooks.
 const PLANS = {
-  "25k": { startEquity: 25000, price: 149 },
-  "50k": { startEquity: 50000, price: 279 },
-  "100k": { startEquity: 100000, price: 499 }
+  "25k":  { startEquity: 25000,   price: 149  },
+  "50k":  { startEquity: 50000,   price: 279  },
+  "100k": { startEquity: 100000,  price: 499  },
+  "200k": { startEquity: 200000,  price: 849  },
+  "500k": { startEquity: 500000,  price: 1799 },
 };
 
 
