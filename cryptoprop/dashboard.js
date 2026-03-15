@@ -472,7 +472,7 @@ async function hydrateOnceWithREST(){
   if(window.updateCheckoutBanner) window.updateCheckoutBanner(account);
   updateChallengeProgress(account);
   updatePayoutPanel(account);
-  updateRetryOffer(account);
+
 
   updateVerifyPanel(account);
   if(account.challengeStepInfo && (account.challengePhase||'challenge')==='challenge'){
@@ -611,36 +611,7 @@ if(payoutForm){
 
 wireVerification(loadAccount);
 
-function updateRetryOffer(account){
-  const box = document.getElementById("retryOfferBox");
-  const txt = document.getElementById("retryOfferText");
-  const msg = document.getElementById("retryMsg");
-  if(!box || !txt) return;
-  if(account.retryOffer && account.retryOffer.eligible){
-    box.style.display = "block";
-    txt.textContent = `Retry your ${account.retryOffer.planId} challenge for $${account.retryOffer.discounted} (normally $${account.retryOffer.original}). This is a ONE-TIME offer.`;
-  }else{
-    box.style.display = "none";
-    if(msg) msg.textContent = "";
-  }
-}
 
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest("#buyRetry");
-  if(!btn) return;
-  const msg = document.getElementById("retryMsg");
-  if(msg) msg.textContent = "Processing…";
-  try{
-    const res = await apiFetch("/api/plan/retry-offer", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({}) });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "Failed");
-    if(msg) msg.textContent = "Success ✅ Redirecting…";
-    window.location.href = "/paper.html";
-  }catch(err){
-    if(msg) msg.textContent = err.message;
-    toast(err.message);
-  }
-});
 
 
 
@@ -689,40 +660,6 @@ function updateConsistencyUI(account){
     badge.style.color = "#22c55e";
   }
 }
-
-function updateResetOffer(account){
-  const box = document.getElementById("instantResetBox");
-  if(!box) return;
-  if(account.challengePhase === "challenge" && !account.challengeFailed){
-    box.style.display = "block";
-  }else{
-    box.style.display = "none";
-  }
-}
-
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest("#buyReset");
-  if(!btn) return;
-
-  const msg = document.getElementById("resetMsg");
-  if(msg) msg.textContent = "Processing…";
-
-  try{
-    const res = await fetch("/api/challenge/reset-now", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({})
-    });
-    if(!res.ok){
-      const data = await res.json();
-      throw new Error(data.error || "Failed");
-    }
-    if(msg) msg.textContent = "Reset successful ✅";
-    location.reload();
-  }catch(err){
-    if(msg) msg.textContent = err.message;
-  }
-});
 
 // ===== CHECKOUT MODAL =====
 (function(){
