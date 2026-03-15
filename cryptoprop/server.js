@@ -2138,11 +2138,6 @@ function resetChallengeAttempt(acct){
   ensureStepFields(acct);
 }
 
-function planPrice(planId){
-  const plan = PLANS[planId];
-  return plan ? Number(plan.price || 0) : 0;
-}
-
 
 
 // ---- CLICKWRAP_TERMS_V1 ----
@@ -2743,15 +2738,6 @@ app.post("/api/admin/account/remove-plan", requireAdmin, async (req, res) => {
 
 
 
-// One-time retry offer: if you fail a challenge, you can repurchase the SAME plan once for $20 less.
-
-// ---- ESCALATING_RETRY_V1 ----
-function retryDiscount(planId, attempts){
-  if(attempts === 0) return 20;
-  if(attempts === 1) return 10;
-  return 0;
-}
-
 // ---- Helper: activate plan after confirmed payment ----
 async function activatePlan(email, planId, amountPaid, type = "initial", meta = {}) {
   const plan = PLANS[planId];
@@ -2857,65 +2843,10 @@ app.post("/api/plan/retry-checkout", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/api/plan/retry-offer", requireAuth, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-  const planId = acct.planId;
-  if(!planId || !PLANS[planId]) return res.status(400).json({ error:"No active plan" });
-  if(!acct.challengeFailed) return res.status(400).json({ error:"Retry offer available only after failing a challenge" });
-
-  acct.retryOfferUsed = acct.retryOfferUsed || {};
-  if(acct.retryOfferUsed[planId]) return res.status(400).json({ error:"Retry offer already used" });
-
-  const original = planPrice(planId);
-  const attempts = Number(acct.attemptsByPlan?.[planId] || 0);
-  const discount = retryDiscount(planId, attempts);
-  const discounted = Math.max(0, original - discount);
-
-  // mark used and reset attempt
-  acct.retryOfferUsed[planId] = true;
-  acct.attemptsByPlan = acct.attemptsByPlan || {};
-  acct.attemptsByPlan[planId] = Number(acct.attemptsByPlan[planId] || 0) + 1;
-  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: discounted, type: "retry_offer" };
-
-  // keep same plan and equity
-  acct.startEquity = PLANS[planId].startEquity;
-  resetChallengeAttempt(acct);
-
-  await saveAccount(email, acct);
-  return res.json({ ok:true, account: acct, offer: { original, discounted, oneTime:true } });
-});
-
-// ---- RETRY_ANY_PLAN_50PCT ----
-app.post("/api/plan/retry-any", requireAuth, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-  if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after a failed challenge" });
-  const planId = (req.body?.planId || "").toString();
-  const plan = PLANS[planId];
-  if(!plan) return res.status(400).json({ error: "Invalid plan" });
-
-  const original = plan.price;
-  const finalPrice = Math.round(original * 0.5);
-
-  // Mark used, reset challenge with new plan
-  acct.retryAnyUsed = true;
-  acct.planId = planId;
-  acct.startEquity = plan.startEquity;
-  acct.lastPurchase = { time: new Date().toISOString(), planId, amount: finalPrice, type: "retry_50pct" };
-  acct.attemptsByPlan = acct.attemptsByPlan || {};
-  acct.attemptsByPlan[planId] = Number(acct.attemptsByPlan[planId] || 0) + 1;
-  resetChallengeAttempt(acct);
-
-  await saveAccount(email, acct);
-  return res.json({ ok: true, account: acct, offer: { original, finalPrice, discountPct: 50, oneTime: true } });
-});
-
 // ---- CHECK RETRY OFFER STATUS ----
 app.get("/api/plan/retry-status", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
-  // Offer is available whenever they have failed and haven't used it this failure
   return res.json({ eligible: !!acct.challengeFailed, used: !!acct.retryAnyUsed });
 });
 
@@ -2963,27 +2894,6 @@ app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
 });
 
 
-// ---- INSTANT_RESET_V1 ----
-// Allows reset mid-challenge for $79
-app.post("/api/challenge/reset-now", requireAuth, requireTermsAccepted, async (req, res) => {
-  const email = currentEmail(req);
-  const acct = await getOrCreateAccount(email);
-
-  if(acct.challengePhase !== "challenge" || acct.challengeFailed){
-    return res.status(400).json({ error:"Reset only during active challenge" });
-  }
-
-  acct.lastPurchase = {
-    time: new Date().toISOString(),
-    type: "instant_reset",
-    amount: 79
-  };
-
-  resetChallengeAttempt(acct);
-  await saveAccount(email, acct);
-
-  return res.json({ ok:true });
-});
 // ---- DATA PERSISTENCE ----
 // readData() and await writeData() are now imported from db.js (PostgreSQL).
 // Kept as async wrappers — callers that were synchronous now need await.
