@@ -2563,7 +2563,7 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
     customer_email: email,
     allow_promotion_codes: true,
     success_url: `${baseUrl}/payment-success.html`,
-    cancel_url: `${baseUrl}/onboard.html`,
+    cancel_url: `${baseUrl}/plans.html`,
     metadata: {
       userEmail: email,
       planId,
