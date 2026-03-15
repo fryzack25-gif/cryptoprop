@@ -108,7 +108,7 @@
     </a>
     <nav class="topbar-nav">
       <a href="dashboard.html">Dashboard</a>
-      <a href="plans.html">Plans</a>
+      <a href="onboard.html">Plans</a>
       <a href="paper.html">Trading</a>
       <a href="rules.html" class="active">Rules</a>
       <a href="payout.html">Payout</a>
@@ -142,12 +142,12 @@
       </div>
       <div class="risk-card">
         <div class="risk-icon">🔻</div>
-        <div class="risk-number red">5%</div>
+        <div class="risk-number red">7%</div>
         <div class="risk-label">Max trailing drawdown from peak equity (ever)</div>
       </div>
       <div class="risk-card">
         <div class="risk-icon">📦</div>
-        <div class="risk-number amber">2.5%</div>
+        <div class="risk-number amber">10%</div>
         <div class="risk-label">Max position size per asset (of starting equity)</div>
       </div>
     </div>
@@ -159,7 +159,7 @@
 
     <div class="callout amber">
       <span class="callout-icon">ℹ️</span>
-      <span>The trailing drawdown follows your <strong>peak equity ever reached</strong>, not your starting equity. If you grow your account to $55K on a $50K challenge, your floor moves to $52,250 (5% below $55K) and never drops back down.</span>
+      <span>The trailing drawdown follows your <strong>peak equity ever reached</strong>, not your starting equity. If you grow your account to $55K on a $50K challenge, your floor moves to $51,150 (7% below $55K) and never drops back down.</span>
     </div>
   </div>
 
@@ -185,7 +185,7 @@
         </div>
         <div class="rule-row">
           <span class="rule-key">Max trailing drawdown</span>
-          <span class="rule-val danger">5%</span>
+          <span class="rule-val danger">7%</span>
         </div>
         <div class="rule-row">
           <span class="rule-key">Max daily drawdown</span>
@@ -214,7 +214,7 @@
         </div>
         <div class="rule-row">
           <span class="rule-key">Max trailing drawdown</span>
-          <span class="rule-val danger">4%</span>
+          <span class="rule-val danger">7%</span>
         </div>
         <div class="rule-row">
           <span class="rule-key">Max daily drawdown</span>
@@ -258,7 +258,7 @@
           </tr>
           <tr>
             <td class="row-label">Max position size</td>
-            <td>2.5%</td>
+            <td>10%</td>
             <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Of your starting account equity, per asset.</td>
           </tr>
           <tr>
@@ -284,14 +284,6 @@
       <div class="payout-stat">
         <div class="payout-stat-num">80%</div>
         <div class="payout-stat-label">Profit split to trader</div>
-      </div>
-      <div class="payout-stat">
-        <div class="payout-stat-num">2%</div>
-        <div class="payout-stat-label">Max payout per 7-day period</div>
-      </div>
-      <div class="payout-stat">
-        <div class="payout-stat-num">3%</div>
-        <div class="payout-stat-label">Profit buffer before first payout</div>
       </div>
       <div class="payout-stat">
         <div class="payout-stat-num">14d</div>
@@ -321,16 +313,8 @@
             <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Weekly — once every 7 days after the first payout becomes available.</td>
           </tr>
           <tr>
-            <td class="row-label">Weekly cap</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Max 2% of starting equity per 7-day period. ($500 on $25K, $1,000 on $50K, $2,000 on $100K)</td>
-          </tr>
-          <tr>
-            <td class="row-label">Profit buffer</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Must earn 3% above starting equity before withdrawing anything. This buffer stays in the account at all times.</td>
-          </tr>
-          <tr>
-            <td class="row-label">Daily profit cap</td>
-            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Daily gains counted toward payouts are capped at 4% of starting equity. Losses count in full.</td>
+            <td class="row-label">No weekly cap</td>
+            <td style="color:var(--term-muted);font-size:12px;font-family:inherit">Withdraw all available profits each week — no cap on payout amount.</td>
           </tr>
         </tbody>
       </table>
