@@ -110,8 +110,11 @@ function resetTradingStateToStart(acct){
   acct.liquidations = [];
   acct.equityHistory = [];
   acct.highWatermark = start;
-  acct.dayDate = null;
+  acct.peakEquity = start;
+  acct.dayDate = utcDateKey();
   acct.dayStartEquity = start;
+  acct.dayLowEquity = start;
+  acct.lastEquityAtCheck = start;
   acct.dailyProfitHistory = {};
   acct.dailyLocked = false;
   acct.lockedUntil = null;
