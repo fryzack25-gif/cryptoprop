@@ -264,7 +264,7 @@
     </a>
     <nav class="topbar-nav">
       <a href="dashboard.html">Dashboard</a>
-      <a href="plans.html">Plans</a>
+      <a href="onboard.html">Plans</a>
       <a href="paper.html" class="active">Trading</a>
       <a href="rules.html">Rules</a>
       <a href="payout.html">Payout</a>
@@ -421,10 +421,14 @@
         <option value="100">100 bars</option>
         <option value="200">200 bars</option>
       </select>
+      <div class="gran-sep"></div>
+      <button class="gran-btn active" id="chartModePrice" style="color:var(--term-green)" onclick="setChartMode('price')">Price</button>
+      <button class="gran-btn" id="chartModeEquity" onclick="setChartMode('equity')">Equity</button>
     </div>
 
     <div class="chart-wrap">
       <canvas id="candleCanvas"></canvas>
+      <canvas id="equityCanvas" style="display:none;position:absolute;inset:0;width:100%!important;height:100%!important;"></canvas>
     </div>
 
     <div class="tables-area">
