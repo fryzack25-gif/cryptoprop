@@ -201,6 +201,7 @@ function requireAuth(req, res, next){
 
 app.use((req, res, next) => {
   if(req.path === "/api/stripe/webhook") return next();
+  if(req.path === "/api/stripe/identity-webhook") return next();
   express.json()(req, res, next);
 });
 app.use(rateLimitByIp);
