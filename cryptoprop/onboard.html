@@ -526,17 +526,8 @@ async function buyPlan() {
     // Only redirect to dashboard if they have an active, non-failed plan
     if(acct.planId && !acct.challengeFailed) { window.location.href = '/dashboard.html'; return; }
 
-    // If they have a plan but failed, or no plan — show plans page directly
-    // Skip welcome/terms steps if terms already accepted
-    if(acct.termsAccepted) {
-      currentStep = 1; goStep(3);
-      // Show back link for returning failed users
-      if(acct.planId && acct.challengeFailed) {
-        const backLink = document.getElementById('backToDashLink');
-        if(backLink) backLink.style.display = 'inline';
-      }
-      return;
-    }
+    // Everyone else lands on the plans step
+    if(acct.termsAccepted) { currentStep = 1; goStep(3); return; }
   } catch(e) {}
 })();
 </script>
