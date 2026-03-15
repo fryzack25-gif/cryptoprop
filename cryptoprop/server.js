@@ -2701,13 +2701,75 @@ app.post("/api/admin/account/set-phase", requireAdmin, async (req, res) => {
   if(phase === "funded"){
     a.challengeFailed = false;
     a.frozen = false;
-    // reset payout period on funding
     resetPayoutPeriodIfNeeded(a);
   }
   db.accounts[email] = a;
   await writeData(db);
   await auditLog(req, "set_phase", email, { phase });
   return res.json({ ok:true });
+});
+
+// Grant a plan to a user (admin — no payment required)
+app.post("/api/admin/account/grant-plan", requireAdmin, async (req, res) => {
+  const { email, planId } = req.body || {};
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error:"Invalid planId" });
+  const a = await getOrCreateAccount(email);
+  if(!a) return res.status(404).json({ error:"Account not found" });
+
+  a.planId = planId;
+  a.startEquity = plan.startEquity;
+  a.lastPurchase = { time: new Date().toISOString(), planId, amount: 0, type: "admin_grant" };
+  a.attemptsByPlan = a.attemptsByPlan || {};
+  a.attemptsByPlan[planId] = (Number(a.attemptsByPlan[planId] || 0)) + 1;
+
+  resetChallengeAttempt(a);
+  await saveAccount(email, a);
+  await auditLog(req, "grant_plan", email, { planId, startEquity: plan.startEquity });
+  return res.json({ ok:true, planId, startEquity: plan.startEquity });
+});
+
+// Remove a user's plan (admin — clears account back to no-plan state)
+app.post("/api/admin/account/remove-plan", requireAdmin, async (req, res) => {
+  const { email } = req.body || {};
+  const a = await getOrCreateAccount(email);
+  if(!a) return res.status(404).json({ error:"Account not found" });
+
+  const prevPlan = a.planId || null;
+  a.planId = null;
+  a.startEquity = 0;
+  a.cash = 0;
+  a.equity = 0;
+  a.positions = {};
+  a.openOrders = [];
+  a.pendingOrders = [];
+  a.orders = [];
+  a.realizedPnL = 0;
+  a.challengePhase = "challenge";
+  a.challengeFailed = false;
+  a.challengeStep = null;
+  a.stepStartDate = null;
+  a.stepStartEquity = null;
+  a.frozen = false;
+  a.dailyLocked = false;
+  a.lockedUntil = null;
+  a.lockReason = null;
+  a.failReason = null;
+  a.failedAt = null;
+  a.payouts = [];
+  a.payoutRequests = [];
+  a.payoutsPaidTotal = 0;
+  a.payoutsPaidThisPeriod = 0;
+  a.payoutPeriodStart = null;
+  a.payoutEligibleAt = null;
+  a.lastPurchase = null;
+  a.equityHistory = [];
+  a.dailyProfitHistory = {};
+  a.tradingDays = [];
+
+  await saveAccount(email, a);
+  await auditLog(req, "remove_plan", email, { prevPlan });
+  return res.json({ ok:true, prevPlan });
 });
 
 
