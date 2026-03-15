@@ -65,15 +65,15 @@ const MIN_TRADING_DAYS_STEP1 = 5;
 const MIN_TRADING_DAYS_STEP2 = 7;
 const MAX_SINGLE_DAY_PROFIT_SHARE = 0.40; // 40%
 // ---- TWO_STEP_CHALLENGE_V1 ----
-// Step 1: 8% target in 30 days, 5% trailing DD
-// Step 2: 5% target in 60 days, 4% trailing DD
+// Step 1: 8% target in 30 days, 7% trailing DD
+// Step 2: 5% target in 60 days, 7% trailing DD
 const STEP1_TARGET_PCT = 0.08;
 const STEP1_MAX_DAYS = 30;
-const STEP1_TOTAL_DD = 0.05;
+const STEP1_TOTAL_DD = 0.07;
 
 const STEP2_TARGET_PCT = 0.05;
 const STEP2_MAX_DAYS = 45;
-const STEP2_TOTAL_DD = 0.04;
+const STEP2_TOTAL_DD = 0.07;
 
 function utcDateKey(d=new Date()){
   return d.toISOString().slice(0,10);
@@ -141,8 +141,8 @@ function archiveChallengeStep(acct, result){
 }
 
 // Profit buffer before payouts + daily profit cap for payout eligibility
-const PAYOUT_PROFIT_BUFFER_PCT = 0.03; // must earn 3% before any payout
-const PAYOUT_DAILY_PROFIT_CAP_PCT = 0.04; // per-day profit counted toward payout capped at 4%
+// No profit buffer — traders can withdraw from first eligible payout
+// No daily profit cap — all realized profit counts toward payouts
 
 
 
@@ -589,15 +589,9 @@ app.post("/api/payout/request", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Invalid payout amount." });
   }
 
-  const withdrawable = Math.max(0, Number(acct.realizedPnL || 0) - Number(acct.payoutsPaidTotal || 0));
-  const cap = Number(acct.startEquity || 0) * PAYOUT_CAP_PCT;
-  const capRemaining = Math.max(0, cap - Number(acct.payoutsPaidThisPeriod || 0));
-
+  const withdrawable = withdrawableAmount(acct);
   if(amount > withdrawable){
     return res.status(400).json({ error: "Amount exceeds withdrawable.", withdrawable });
-  }
-  if(amount > capRemaining){
-    return res.status(400).json({ error: "Amount exceeds weekly cap.", capRemaining, cap });
   }
 
   acct.payoutRequests = Array.isArray(acct.payoutRequests) ? acct.payoutRequests : [];
@@ -823,7 +817,7 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
     return res.status(502).json({ error: err.message || "Market data unavailable." });
   }
 
-  const FEE_RATE = 0.02; // 2% fee
+  const FEE_RATE = 0.001; // 0.1% fee
   const notional = q * price;
   const fee = notional * FEE_RATE;
   const id = cryptoRandomId();
@@ -836,10 +830,10 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
 
     // 1% of original starting capital per position
     const startEq = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
-    const maxNotional = startEq * 0.025;
+    const maxNotional = startEq * 0.10;
     const currentPosVal = acct.positions[p] ? (acct.positions[p].qty * price) : 0;
     if(currentPosVal + notional > maxNotional)
-      return res.status(400).json({ error: `Max position size is 2.5% of starting capital ($${maxNotional.toFixed(2)}). Current: $${currentPosVal.toFixed(2)}.` });
+      return res.status(400).json({ error: `Max position size is 10% of starting capital ($${maxNotional.toFixed(2)}). Current: $${currentPosVal.toFixed(2)}.` });
 
     // Deduct cash immediately
     acct.cash = round8((acct.cash || 0) - totalCost);
@@ -1056,7 +1050,7 @@ app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) =>
         continue;
       }
 
-      // Max position size check (1%): if buy would exceed limit, cancel and refund reservation
+      // Max position size check (10%): if buy would exceed limit, cancel and refund reservation
       const maxNotional = maxTradeNotional(acct);
       if(o.side === "buy"){
         const posNotional = positionNotional(acct, o.product, o.limitPrice);
@@ -1126,8 +1120,8 @@ app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) =>
 // ---- Prop rules ----
 const PROFIT_SPLIT_TRADER = 0.80; // 80% to trader
 const PROFIT_SPLIT_FIRM = 0.20;   // 20% to firm
-const MAX_TRADE_PCT = 0.01; // 1% of base equity max position
-const TAKER_FEE = 0.0010; // 0.10% taker fee (sim)
+const MAX_TRADE_PCT = 0.10; // 10% of base equity max position
+const TAKER_FEE = 0.001; // 0.10% taker fee (sim)
 const MAKER_FEE = 0.0005; // 0.05% maker fee (sim)
 
 // ---- Recommended parameters (v1) ----
@@ -1138,11 +1132,10 @@ const MIN_TRADING_DAYS = 5;
 const CONSISTENCY_MAX_DAY_SHARE = 0.40; // max single-day profit share of total profit to pass
 const PAYOUT_FIRST_DELAY_DAYS = 14;     // first payout available 14 days after funded activation
 const PAYOUT_PERIOD_DAYS = 7;           // weekly payout cadence
-const PAYOUT_CAP_PCT = 0.02;            // max 2% of starting equity per payout period
 
 // ---- Challenge rules (demo) ----
 const CHALLENGE_DAILY_DD = 0.02;  // 2% daily max drawdown
-const CHALLENGE_TOTAL_DD = 0.05;  // 5% max drawdown (TRAILING from peak equity)
+const CHALLENGE_TOTAL_DD = 0.07;  // 7% max drawdown (TRAILING from peak equity)
 
 // price cache for equity calc
 const EQ_TICKER_CACHE_MS = 2000;
@@ -1276,52 +1269,29 @@ function resetToStartingBalanceOnPass(acct){
 
 
 function profitBufferDollar(acct){
-  return Number(acct.startEquity || 0) * PAYOUT_PROFIT_BUFFER_PCT;
+  return 0; // no profit buffer
 }
 
 function dailyProfitCapDollar(acct){
-  return Number(acct.startEquity || 0) * PAYOUT_DAILY_PROFIT_CAP_PCT;
+  return Infinity; // no daily cap
 }
 
 function eligibleProfitForPayout(acct){
-  // Net PnL, but cap *positive* daily profit contributions (losses count fully).
-  const hist = acct.dailyProfitHistory || {};
-  const start = Number(acct.startEquity || 0);
-  const cap = dailyProfitCapDollar(acct);
-  let sum = 0;
-
-  // include historical days
-  for(const k of Object.keys(hist)){
-    const v = Number(hist[k] || 0);
-    if(v >= 0) sum += Math.min(v, cap);
-    else sum += v;
-  }
-
-  // include current day-to-date profit (not yet in history) so UI feels real-time
-  const todayKey = (new Date()).toISOString().slice(0,10);
-  const curDay = Number(acct.equity || 0) - Number(acct.dayStartEquity || 0);
-  if(!(todayKey in hist)){
-    if(curDay >= 0) sum += Math.min(curDay, cap);
-    else sum += curDay;
-  }
-
-  return sum;
+  // All realized PnL counts — no daily cap, no buffer
+  return Number(acct.realizedPnL || 0);
 }
 
 function withdrawableAmount(acct){
   const pending = (Array.isArray(acct.payoutRequests)?acct.payoutRequests:[]).filter(r=>r.status==='pending').reduce((a,r)=>a+Number(r.amount||0),0);
-  const eligible = eligibleProfitForPayout(acct);
-  const buffer = profitBufferDollar(acct);
-  return Math.max(0, eligible - buffer - Number(acct.payoutsPaidTotal || 0) - pending);
+  return Math.max(0, Number(acct.realizedPnL || 0) - Number(acct.payoutsPaidTotal || 0) - pending);
 }
 
 function payoutCap(acct){
-  return Number(acct.startEquity || 0) * PAYOUT_CAP_PCT;
+  return Infinity; // no weekly cap
 }
 
 function payoutCapRemaining(acct){
-  const cap = payoutCap(acct);
-  return Math.max(0, cap - Number(acct.payoutsPaidThisPeriod || 0));
+  return Infinity; // no weekly cap
 }
 
 function pushEquityPoint(acct, equity){
