@@ -215,12 +215,12 @@ function selectPlan(id) {
   document.getElementById('selbtn-' + id).textContent = 'Selected ✓';
 
   const p = PLANS[id];
-  const finalPrice = PLANS[id].price;
-
   document.getElementById('summaryPlan').textContent = p.label;
   document.getElementById('summarySize').textContent = p.size;
-  document.getElementById('summaryPrice').textContent = '$' + finalPrice;
+  document.getElementById('summaryPrice').textContent = '$' + p.price;
   document.getElementById('checkoutArea').style.display = 'block';
+  document.getElementById('buyBtn').disabled = false;
+  document.getElementById('buyBtn').textContent = 'Proceed to Checkout →';
 }
 
 async function buyPlan() {
