@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
 
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -14,6 +13,8 @@ import Stripe from "stripe";
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || null;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || null;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+
+const STRIPE_RETRY_COUPON_ID = process.env.STRIPE_RETRY_COUPON_ID || null;
 
 const STRIPE_PRICE_IDS = {
   "25k": process.env.STRIPE_PRICE_25K,
@@ -50,25 +51,9 @@ async function sendEmail({ to, subject, html }) {
   }
 }
 
-// ---- CHALLENGE_EXTENSION_FEE_V1 ----
-// Users can purchase +14 days once per step for $39
-
-// ---- DYNAMIC_EXTENSION_PRICING_V1 ----
-function dynamicExtensionPrice(daysLeft){
-  if(daysLeft <= 1) return 19;
-  if(daysLeft <= 3) return 29;
-  return 39;
-}
-const EXTENSION_DAYS = 14;
-const EXTENSION_FEE = 39;
-
-// ---- CONSISTENCY_RULE_V1 ----
 const MIN_TRADING_DAYS_STEP1 = 5;
 const MIN_TRADING_DAYS_STEP2 = 7;
 const MAX_SINGLE_DAY_PROFIT_SHARE = 0.40; // 40%
-// ---- TWO_STEP_CHALLENGE_V1 ----
-// Step 1: 8% target in 30 days, 7% trailing DD
-// Step 2: 5% target in 60 days, 7% trailing DD
 const STEP1_TARGET_PCT = 0.08;
 const STEP1_MAX_DAYS = 30;
 const STEP1_TOTAL_DD = 0.07;
@@ -126,6 +111,23 @@ function resetTradingStateToStart(acct){
   return acct;
 }
 
+function resetChallengeAttempt(acct){
+  acct.challengePhase = "challenge";
+  acct.challengeFailed = false;
+  acct.failReason = null;
+  acct.failedAt = null;
+  acct.frozen = false;
+  acct.challengeStep = 1;
+  acct.stepStartDate = utcDateKey();
+  acct.stepStartEquity = Number(acct.startEquity || 0);
+  acct.dailyLocked = false;
+  acct.lockedUntil = null;
+  acct.lockReason = null;
+  acct.stepMaxDaysOverride = null;
+  resetTradingStateToStart(acct);
+  ensureStepFields(acct);
+}
+
 function archiveChallengeStep(acct, result){
   acct.challengeHistory = Array.isArray(acct.challengeHistory) ? acct.challengeHistory : [];
   acct.challengeHistory.unshift({
@@ -142,21 +144,12 @@ function archiveChallengeStep(acct, result){
   acct.challengeHistory = acct.challengeHistory.slice(0, 50);
 }
 
-// Profit buffer before payouts + daily profit cap for payout eligibility
-// No profit buffer — traders can withdraw from first eligible payout
-// No daily profit cap — all realized profit counts toward payouts
-
-
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
-// ---- REAL_AUTH_V1 ----
 app.set("trust proxy", 1);
 app.use(cookieParser());
 
@@ -187,8 +180,6 @@ app.use(session({
   }
 }));
 
-function ensureUsers(db){ db.users = db.users || {}; return db; }
-function sanitizeEmail(email){ return (email||"").toString().trim().toLowerCase(); }
 function getSessionUser(req){ return req.session && req.session.user ? req.session.user : null; }
 function currentEmail(req){
   const u = getSessionUser(req);
@@ -201,7 +192,6 @@ function requireAuth(req, res, next){
   return next();
 }
 
-
 app.use((req, res, next) => {
   if(req.path === "/api/stripe/webhook") return next();
   if(req.path === "/api/stripe/identity-webhook") return next();
@@ -209,7 +199,6 @@ app.use((req, res, next) => {
 });
 app.use(rateLimitByIp);
 
-// ---- ANTI_ABUSE_V1 ----
 const MAX_REQS_PER_MIN_PER_IP = 180;
 const MAX_ORDERS_PER_MIN_PER_ACCOUNT = 15;
 const MIN_HOLD_SECONDS = 0; // no hold restriction
@@ -242,16 +231,9 @@ function rateLimitOrders(email){
 }
 
 function enforceMinHold(email, product){
-  const key = `${email}|${product}`;
-  const now = Date.now();
-  const last = lastTradeBySymbol.get(key) || 0;
-  if(last && (now - last) < MIN_HOLD_SECONDS*1000){
-    return { ok:false, waitMs: (MIN_HOLD_SECONDS*1000) - (now-last) };
-  }
-  lastTradeBySymbol.set(key, now);
+  lastTradeBySymbol.set(`${email}|${product}`, Date.now());
   return { ok:true, waitMs: 0 };
 }
-
 
 function requireAdmin(req, res, next){
   if(!ADMIN_KEY) return res.status(500).json({ error:"ADMIN_KEY not configured on server" });
@@ -261,6 +243,11 @@ function requireAdmin(req, res, next){
 }
 
 const TERMS_VERSION = "2026-02-25-e24c9e37f4c48042";
+
+function clientIp(req){
+  return (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").toString().split(",")[0].trim();
+}
+
 async function requireTermsAccepted(req, res, next){
   const email = currentEmail(req);
   if(!email) return res.status(401).json({ error:"Not authenticated" });
@@ -269,12 +256,7 @@ async function requireTermsAccepted(req, res, next){
   return res.status(403).json({ error:"Terms not accepted", termsVersion: TERMS_VERSION });
 }
 
-
-
-// ---- Market universe: Coinbase top 50 by market cap (demo) ----
-// We build a universe by:
-// 1) Fetching top 50 coins by market cap (CoinGecko)
-// 2) Intersecting with Coinbase Exchange USD trading pairs (/products)
+// ---- Market universe: top 50 by market cap (CoinGecko x Coinbase) ----
 const TOP50_CACHE_MS = 10 * 60 * 1000; // 10 minutes
 let top50ProductIds = [];
 let top50LastUpdated = 0;
@@ -326,9 +308,107 @@ app.get("/api/market/top50", async (req, res) => {
   return res.json({ product_ids: (list && list.length >= 10 ? list : fallback), updated_at: top50LastUpdated });
 });
 
+app.post("/api/auth/register", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const password = (req.body?.password || "").toString();
+  if(!email || !password) return res.status(400).json({ error: "Email and password required" });
+  if(password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
 
-// ---- API ----
-// Legacy /api/login removed — use /api/auth/login instead
+  const existing = await getUser(email);
+  if(existing) return res.status(400).json({ error: "Account already exists" });
+
+  const hash = await bcrypt.hash(password, 10);
+  const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const autoVerified = !RESEND_API_KEY;
+
+  await saveUser(email, { email, passwordHash: hash, createdAt: new Date().toISOString(), emailVerified: autoVerified, verifyCode: autoVerified ? null : verifyCode, isAdmin: false });
+
+  if(!autoVerified){
+    await sendEmail(email, "Verify your CryptoProp account", `<p>Hi,</p><p>Your CryptoProp email verification code is:</p><h2 style="letter-spacing:4px">${verifyCode}</h2><p>Enter this code on the verification page to activate your account.</p>`);
+  }
+
+  return res.json({ ok: true, autoVerified, message: "Account created. You can now log in." });
+});
+
+app.post("/api/auth/verify-email", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const u = await getUser(email);
+  if(!u) return res.status(400).json({ error: "Account not found" });
+  if(u.emailVerified) return res.json({ ok: true, message: "Already verified" });
+  if(!code || code !== (u.verifyCode || "").toUpperCase()) return res.status(400).json({ error: "Invalid code" });
+  u.emailVerified = true;
+  u.verifyCode = null;
+  await saveUser(email, u);
+  return res.json({ ok: true });
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const password = (req.body?.password || "").toString();
+  if(!email || !password) return res.status(400).json({ error: "Email and password required" });
+
+  const u = await getUser(email);
+  if(!u) return res.status(401).json({ error: "Invalid email or password" });
+  const match = await bcrypt.compare(password, u.passwordHash || "");
+  if(!match) return res.status(401).json({ error: "Invalid email or password" });
+  if(!u.emailVerified) return res.status(403).json({ error: "Email not verified", needsVerification: true });
+
+  req.session.user = { email: u.email, isAdmin: !!u.isAdmin };
+  return res.json({ ok: true, user: { email: u.email, isAdmin: !!u.isAdmin } });
+});
+
+app.post("/api/auth/logout", async (req, res) => {
+  req.session.destroy(() => {});
+  return res.json({ ok: true });
+});
+
+app.get("/api/auth/me", async (req, res) => {
+  const u = getSessionUser(req);
+  if(!u) return res.json({ user: null });
+  return res.json({ user: { email: u.email, isAdmin: !!u.isAdmin } });
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const u = await getUser(email);
+  if(!u) return res.json({ ok: true }); // don't reveal if account exists
+  const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  u.resetToken = token;
+  u.resetTokenExpiry = Date.now() + 3600000; // 1 hour
+  await saveUser(email, u);
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
+  const resetLink = `${baseUrl}/auth.html?reset=${token}&email=${encodeURIComponent(email)}`;
+  await sendEmail(email, "Reset your CryptoProp password", `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetLink}">${resetLink}</a></p>`);
+  return res.json({ ok: true });
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const token = (req.body?.token || "").toString();
+  const password = (req.body?.password || "").toString();
+  if(password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
+  const u = await getUser(email);
+  if(!u || u.resetToken !== token || !u.resetTokenExpiry || Date.now() > u.resetTokenExpiry){
+    return res.status(400).json({ error: "Invalid or expired reset link" });
+  }
+  u.passwordHash = await bcrypt.hash(password, 10);
+  u.resetToken = null;
+  u.resetTokenExpiry = null;
+  await saveUser(email, u);
+  return res.json({ ok: true });
+});
+
+app.post("/api/auth/resend-verification", async (req, res) => {
+  const email = (req.body?.email || "").toString().trim().toLowerCase();
+  const u = await getUser(email);
+  if(!u || u.emailVerified) return res.json({ ok: true });
+  const verifyCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+  u.verifyCode = verifyCode;
+  await saveUser(email, u);
+  await sendEmail(email, "Verify your CryptoProp account", `<p>Your new verification code is:</p><h2 style="letter-spacing:4px">${verifyCode}</h2>`);
+  return res.json({ ok: true });
+});
 
 app.post("/api/applications", async (req, res) => {
   const payload = req.body || {};
@@ -360,9 +440,6 @@ app.get("/api/applications", requireAuth, async (req, res) => {
   return res.json(data.applications || []);
 });
 
-
-
-// ---- Accounts (server-side liquidity for demo) ----
 async function getOrCreateAccount(email){
   let acct = await getAccount(email);
   if(!acct){
@@ -416,8 +493,6 @@ async function getOrCreateAccount(email){
   return acct;
 }
 
-// saveAccount is imported directly from db.js — no wrapper needed
-
 const HARDCODED_PAIRS = new Set(["BTC-USD","ETH-USD","SOL-USD","XRP-USD","ADA-USD","DOGE-USD","AVAX-USD","LINK-USD","DOT-USD","MATIC-USD","LTC-USD","BCH-USD","UNI-USD","ATOM-USD","ALGO-USD","XLM-USD","SHIB-USD","TRX-USD","TON-USD","NEAR-USD","ICP-USD","APT-USD","OP-USD","ARB-USD","FIL-USD","HBAR-USD","VET-USD","SAND-USD","MANA-USD","AXS-USD","AAVE-USD","GRT-USD","STX-USD","EGLD-USD","THETA-USD","FTM-USD","FLOW-USD","ROSE-USD","ENJ-USD","CHZ-USD","ZEC-USD","DASH-USD","ETC-USD","MKR-USD","SNX-USD","CRV-USD","COMP-USD","YFI-USD","SUSHI-USD","1INCH-USD"]);
 
 function allowlistProduct(product){
@@ -426,8 +501,6 @@ function allowlistProduct(product){
   return false;
 }
 
-
-// ---- VOL_EXEC_MODEL_V1 ----
 const priceWindow = new Map(); // product -> [{t,p},...]
 const PRICE_WIN_MAX = 60;
 
@@ -487,9 +560,6 @@ async function fetchCoinbaseTicker(product){
   return price;
 }
 
-// Get account (auth required)
-
-
 async function recordReferralFirstPurchase(refCode, refereeEmail, planId, amount){
   const db = ensureReferrals(await readData());
   const ref = findReferral(db, refCode);
@@ -529,7 +599,7 @@ app.post("/api/referral/apply", requireAuth, requireTermsAccepted, async (req, r
 });
 
 app.get("/api/account", requireAuth, async (req, res) => {
-  const email = currentEmail(req); // demo token maps to single demo user
+  const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   if(!rateLimitOrders(email)) return res.status(429).json({ error: "Too many orders per minute" });
@@ -567,7 +637,6 @@ app.get("/api/equity/history", requireAuth, async (req, res) => {
   const hist = Array.isArray(acct.equityHistory) ? acct.equityHistory : [];
   return res.json({ ok: true, points: hist.slice().reverse() });
 });
-
 
 // Request a payout (simulated). This does NOT move money externally; it records a payout and reduces withdrawable.
 app.post("/api/payout/request", requireAuth, async (req, res) => {
@@ -610,15 +679,14 @@ app.post("/api/payout/request", requireAuth, async (req, res) => {
   return res.json({ ok: true, request: acct.payoutRequests[0], withdrawableAfter: withdrawableAmount(acct), account: acct });
 });
 
-
-// ------------------- Verification & KYC (demo) -------------------
+// ---- Verification & KYC ----
 app.post("/api/verify/request-email", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   noteDeviceAndIp(acct, req);
   acct.emailVerifyCode = genCode(6);
   await saveAccount(email, acct);
-  // In production: send code via email.
+  
   await sendEmail({
     to: email,
     subject: "Your CryptoProp email verification code",
@@ -639,8 +707,6 @@ app.post("/api/verify/confirm-email", requireAuth, async (req, res) => {
   }
   return res.status(400).json({ error:"Invalid code" });
 });
-
-
 
 app.post("/api/kyc/submit", requireAuth, async (req, res) => {
   const email = currentEmail(req);
@@ -730,8 +796,6 @@ app.get("/api/kyc/status", requireAuth, async (req, res) => {
   });
 });
 
-
-// Seed liquidity (auth required)
 // Place a simulated spot trade at last price (auth required)
 app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
   await refreshTop50Universe(false).catch(()=>{});
@@ -762,9 +826,8 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
     return res.status(502).json({ error: err.message || "Market data unavailable." });
   }
 
-  const FEE_RATE = 0.001; // 0.1% fee
   const notional = q * price;
-  const fee = notional * FEE_RATE;
+  const fee = notional * TAKER_FEE;
   const id = cryptoRandomId();
   const now = new Date().toISOString();
 
@@ -791,7 +854,7 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
     acct.positions[p] = pos;
 
     acct.tradingDays = uniqPush(acct.tradingDays || [], isoDay());
-    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: FEE_RATE });
+    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: TAKER_FEE });
 
     await saveAccount(email, acct);
     return res.json({ ok: true, fill: { price, qty: q, notional, fee }, account: acct });
@@ -822,7 +885,7 @@ app.post("/api/trade", requireAuth, guardChallenge, async (req, res) => {
     }
 
     acct.tradingDays = uniqPush(acct.tradingDays || [], isoDay());
-    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: FEE_RATE });
+    acct.orders.unshift({ id, time: now, product: p, side: s, type: "market", qty: round8(q), price, notional, fee, feeRate: TAKER_FEE });
 
     await saveAccount(email, acct);
     return res.json({ ok: true, fill: { price, qty: q, notional, fee }, account: acct });
@@ -969,8 +1032,8 @@ app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) =>
 
   if(acct.openOrders.length === 0){
     const _cfg = getStepConfig(acct);
-  const _elapsed = daysSince(acct.stepStartDate);
-  const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
+    const _elapsed = daysSince(acct.stepStartDate);
+    const _maxDays = acct.stepMaxDaysOverride || _cfg.maxDays;
   const _daysLeft = Math.max(0, _maxDays - _elapsed);
   const _startEq = Number(acct.stepStartEquity || acct.startEquity || 0);
   const _ret = _startEq>0 ? ((Number(acct.equity||0)-_startEq)/_startEq) : 0;
@@ -1063,22 +1126,19 @@ app.post("/api/orders/process", requireAuth, guardChallenge, async (req, res) =>
 });
 
 // ---- Prop rules ----
-const PROFIT_SPLIT_TRADER = 0.80; // 80% to trader
 const PROFIT_SPLIT_FIRM = 0.20;   // 20% to firm
 const MAX_TRADE_PCT = 0.10; // 10% of base equity max position
 const TAKER_FEE = 0.001; // 0.10% taker fee (sim)
 const MAKER_FEE = 0.0005; // 0.05% maker fee (sim)
 
 // ---- Recommended parameters (v1) ----
-const RECOMMENDED_PARAMS_V1 = true;
 const PROFIT_TARGET_PCT = 0.08;     // 8% profit target (challenge)
 const CHALLENGE_TIME_LIMIT_DAYS = 30;
 const MIN_TRADING_DAYS = 5;
 const CONSISTENCY_MAX_DAY_SHARE = 0.40; // max single-day profit share of total profit to pass
 const PAYOUT_FIRST_DELAY_DAYS = 14;     // first payout available 14 days after funded activation
-const PAYOUT_PERIOD_DAYS = 7;           // weekly payout cadence
 
-// ---- Challenge rules (demo) ----
+// ---- Challenge rules ----
 const CHALLENGE_DAILY_DD = 0.02;  // 2% daily max drawdown
 const CHALLENGE_TOTAL_DD = 0.07;  // 7% max drawdown (TRAILING from peak equity)
 
@@ -1111,8 +1171,6 @@ async function computeEquity(acct){
   const posVal = prices.reduce((a,b)=>a+b,0);
   return Number(acct.cash || 0) + posVal;
 }
-
-
 
 function uniqPush(arr, v){
   if(!Array.isArray(arr)) return [v];
@@ -1158,8 +1216,6 @@ function resetPayoutPeriodIfNeeded(acct){
     acct.payoutsPaidThisPeriod = 0;
   }
 }
-
-
 
 function archiveChallengeRun(acct, snapshot){
   acct.challengeHistory = Array.isArray(acct.challengeHistory) ? acct.challengeHistory : [];
@@ -1211,8 +1267,6 @@ function resetToStartingBalanceOnPass(acct){
   acct.passBlockedReason = null;
 }
 
-
-
 function profitBufferDollar(acct){
   return 0; // no profit buffer
 }
@@ -1248,8 +1302,6 @@ function pushEquityPoint(acct, equity){
   acct.equityHistory = acct.equityHistory.slice(0, 2000);
 }
 
-
-// ---- AUTO_FLATTEN_LOCKOUT_V1 ----
 function nextUtcMidnightIso(){
   const d = new Date();
   d.setUTCHours(24,0,0,0); // next midnight UTC
@@ -1417,8 +1469,8 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
 
   acct.lastEquityAtCheck = eqNow;
   pushEquityPoint(acct, eqNow);
-  acct.equity = eqNow;      // convenience
-  acct.dayDD = dayDD;       // convenience
+  acct.equity = eqNow;
+  acct.dayDD = dayDD;
   acct.totalDD = totalDD;
   
   // Auto-flatten + lockout on rule breach
@@ -1487,7 +1539,6 @@ if(!acct.challengeFailed && (dayDD >= CHALLENGE_DAILY_DD || totalDD >= getStepCo
       }
     }
   }
-   // convenience
 }
 
 async function guardChallenge(req, res, next){
@@ -1512,7 +1563,6 @@ async function guardChallenge(req, res, next){
     return res.status(500).json({ error: "Challenge check failed", detail: err.message });
   }
 }
-
 
 function positionNotional(acct, product, price){
   const pos = acct.positions?.[product];
@@ -1550,7 +1600,6 @@ function applyProfitSplitOnSell(acct, product, qty, sellPrice){
   }
   return 0;
 }
-
 
 // ---- Simulated fill delay (random 2–4 seconds) ----
 function randomFillDelayMs(){
@@ -1622,7 +1671,6 @@ async function executePendingOrder(acct, o){
   const notional = q * price;
   acct.tradingDays = uniqPush(acct.tradingDays || [], isoDay());
 
-
   const feeRate = o.feeRate != null ? Number(o.feeRate) : TAKER_FEE;
   const fee = notional * feeRate;
 
@@ -1677,6 +1725,10 @@ function round8(n){
   return Math.round(Number(n) * 1e8) / 1e8;
 }
 
+function cryptoRandomId(){
+  return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+}
+
 // ---- Coinbase market data proxy (public) ----
 // Uses Coinbase Exchange REST market-data endpoints (public).
 // Docs: GET https://api.exchange.coinbase.com/products/{product_id}/ticker
@@ -1709,7 +1761,6 @@ app.get("/api/market/ticker", async (req, res) => {
   }
 });
 
-
 // Candles endpoint (public, proxied)
 // Coinbase Exchange: GET /products/{product_id}/candles?granularity=...
 app.get("/api/market/candles", async (req, res) => {
@@ -1737,7 +1788,6 @@ app.get("/api/market/candles", async (req, res) => {
     return res.status(502).json({ error: "Failed to fetch candles." });
   }
 });
-
 
 // ---- Ticker cache + batch endpoint (REST fallback for UIs) ----
 const TICKER_CACHE_MS = 2000;
@@ -1790,62 +1840,7 @@ app.get("/api/market/tickers", async (req, res) => {
   return res.json({ tickers: out, ts: Date.now() });
 });
 
-
-
-
-// ------------------- Admin API (demo) -------------------
-
-
-// Activate beta session — called with admin key, sets session to beta account
-// One-time beta tokens (in-memory, expire after 30s)
-// ------------------- Admin Referral Codes -------------------
-app.get("/api/admin/referral/list", requireAdmin, async (req, res) => {
-  const db = ensureReferrals(await readData());
-  return res.json({ ok:true, referrals: db.referrals, uses: db.referralUses });
-});
-
-app.post("/api/admin/referral/create", requireAdmin, async (req, res) => {
-  const db = ensureReferrals(await readData());
-  let code = normalizeCode(req.body?.code || "");
-  const maxUses = req.body?.maxUses != null ? Number(req.body.maxUses) : null;
-  const commissionPct = req.body?.commissionPct != null ? Number(req.body.commissionPct) : DEFAULT_REFERRAL_COMMISSION_PCT;
-
-  if(!code) code = genReferralCode(8);
-  if(db.referrals.find(r => r.code === code)) return res.status(400).json({ error:"Code already exists" });
-
-  const rec = {
-    code,
-    createdAt: new Date().toISOString(),
-    createdBy: adminActor(req),
-    commissionPct: Math.max(0, Math.min(0.5, commissionPct || DEFAULT_REFERRAL_COMMISSION_PCT)),
-    maxUses: (maxUses && Number.isFinite(maxUses)) ? Math.max(1, Math.floor(maxUses)) : null,
-    uses: 0,
-    active: true,
-    note: (req.body?.note || "").toString().slice(0, 140)
-  };
-  db.referrals.unshift(rec);
-  await writeData(db);
-  await auditLog(req, "referral_create", null, { code: rec.code, maxUses: rec.maxUses, commissionPct: rec.commissionPct });
-  return res.json({ ok:true, referral: rec });
-});
-
-app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
-  const code = normalizeCode(req.body?.code || "");
-  const active = !!req.body?.active;
-  const db = ensureReferrals(await readData());
-  const r = db.referrals.find(x => x.code === code);
-  if(!r) return res.status(404).json({ error:"Not found" });
-  r.active = active;
-  await writeData(db);
-  await auditLog(req, "referral_set_active", null, { code, active });
-  return res.json({ ok:true });
-});
-
-
-// ---- DATA PERSISTENCE ----
-// readData() and await writeData() are now imported from db.js (PostgreSQL).
-// Kept as async wrappers — callers that were synchronous now need await.
-// See db.js for the implementation.
+// ---- Admin API ----
 
 // ---- DEVICE / IP TRACKING ----
 function noteDeviceAndIp(acct, req){
@@ -1947,6 +1942,637 @@ function jaccard(a, b){
   return union === 0 ? 0 : inter / union;
 }
 
+// ---- Account reset (user-facing — clears trading state, keeps plan) ----
+app.post("/api/account/reset", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  // Only wipe trading state, preserve plan/equity assignment
+  acct.positions = {};
+  acct.openOrders = [];
+  acct.pendingOrders = [];
+  acct.orders = [];
+  acct.liquidations = [];
+  acct.equityHistory = [];
+  acct.realizedPnL = 0;
+  const start = Number(acct.startEquity || 0);
+  acct.cash = start;
+  acct.equity = start;
+  acct.peakEquity = start;
+  acct.trailingFloor = start * (1 - CHALLENGE_TOTAL_DD);
+  acct.dayDate = null;
+  acct.dayStartEquity = start;
+  acct.dailyProfitHistory = {};
+  acct.dailyLocked = false;
+  acct.lockedUntil = null;
+  acct.lockReason = null;
+  acct.challengeFailed = false;
+  acct.failReason = null;
+  acct.failedAt = null;
+  acct.frozen = false;
+  acct.tradingDays = [];
+  await saveAccount(email, acct);
+  return res.json({ ok: true, account: acct });
+});
+
+// ---- Terms accept ----
+app.get("/api/terms/status", requireAuth, async (req, res) => {
+  const acct = await getOrCreateAccount(currentEmail(req));
+  return res.json({ ok: true, accepted: !!acct.termsAccepted && acct.termsVersion === TERMS_VERSION, termsVersion: TERMS_VERSION, acceptedAt: acct.termsAcceptedAt || null });
+});
+
+app.post("/api/terms/accept", requireAuth, async (req, res) => {
+  if(!req.body?.accept) return res.status(400).json({ error: "Must accept" });
+  const acct = await getOrCreateAccount(currentEmail(req));
+  acct.termsAccepted = true;
+  acct.termsAcceptedAt = new Date().toISOString();
+  acct.termsVersion = TERMS_VERSION;
+  acct.termsIp = clientIp(req);
+  acct.termsUserAgent = (req.headers["user-agent"] || "").toString().slice(0, 240);
+  await saveAccount(currentEmail(req), acct);
+  return res.json({ ok: true, termsVersion: TERMS_VERSION });
+});
+
+// ---- Promo code validation ----
+app.post("/api/promo/validate", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const planId = (req.body?.planId || "").toString();
+  if(!code) return res.status(400).json({ error: "Missing code" });
+
+  const db = await readData();
+  db.promoCodes = db.promoCodes || {};
+  const promo = db.promoCodes[code];
+  if(!promo || !promo.active) return res.status(404).json({ error: "Invalid or expired promo code" });
+  if(promo.expiresAt && new Date(promo.expiresAt) < new Date()) return res.status(400).json({ error: "Promo code expired" });
+  if(promo.maxUses && (promo.uses || 0) >= promo.maxUses) return res.status(400).json({ error: "Promo code has reached its limit" });
+  if(promo.planIds && planId && !promo.planIds.includes(planId)) return res.status(400).json({ error: "Promo not valid for this plan" });
+
+  const plan = PLANS[planId];
+  const base = plan ? Number(plan.price || 0) : 0;
+  const discountAmt = Math.round(base * (promo.discountPct || 0) / 100);
+  return res.json({ ok: true, code, discountPct: promo.discountPct || 0, discountAmt, validForPlan: planId });
+});
+
+// ---- Plan choose → Stripe checkout ----
+app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
+  const email = currentEmail(req);
+  const planId = (req.body?.planId || "").toString();
+  const promoCode = (req.body?.promoCode || "").toString().trim().toUpperCase();
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error: "Invalid plan" });
+
+  const priceId = STRIPE_PRICE_IDS[planId];
+  if(!stripe || !priceId) {
+    // Dev fallback: activate plan without payment
+    const acct = await getOrCreateAccount(email);
+    acct.planId = planId;
+    acct.startEquity = plan.startEquity;
+    acct.lastPurchase = { time: new Date().toISOString(), planId, amount: plan.price, type: "initial" };
+    if(acct.referredBy && !acct.firstPurchaseCredited){
+      await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
+      acct.firstPurchaseCredited = true;
+    }
+    resetChallengeAttempt(acct);
+    await saveAccount(email, acct);
+    return res.json({ ok: true, devMode: true, account: acct });
+  }
+
+  // Build Stripe discounts if promo code provided
+  const discounts = [];
+  if(promoCode && STRIPE_RETRY_COUPON_ID) {
+    // Could apply coupon here if we validate it
+  }
+
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "payment",
+      success_url: `${baseUrl}/onboard.html?session_id={CHECKOUT_SESSION_ID}&plan=${planId}`,
+      cancel_url: `${baseUrl}/onboard.html?canceled=1`,
+      customer_email: email,
+      metadata: { email, planId, promoCode: promoCode || "" },
+      ...(discounts.length ? { discounts } : {})
+    });
+    return res.json({ ok: true, checkoutUrl: session.url });
+  } catch(err) {
+    return res.status(500).json({ error: err.message || "Stripe error" });
+  }
+});
+
+// ---- Stripe webhook (checkout.session.completed) ----
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  let event;
+  try {
+    event = stripe && secret
+      ? stripe.webhooks.constructEvent(req.body, sig, secret)
+      : JSON.parse(req.body.toString());
+  } catch(err) {
+    return res.status(400).send("Webhook signature invalid");
+  }
+
+  if(event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const email = (session.metadata?.email || session.customer_email || "").toLowerCase();
+    const planId = session.metadata?.planId;
+    const plan = PLANS[planId];
+    if(email && plan) {
+      const acct = await getOrCreateAccount(email);
+      acct.planId = planId;
+      acct.startEquity = plan.startEquity;
+      acct.lastPurchase = { time: new Date().toISOString(), planId, amount: plan.price, type: "initial", stripeSessionId: session.id };
+      if(acct.referredBy && !acct.firstPurchaseCredited){
+        await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
+        acct.firstPurchaseCredited = true;
+      }
+      resetChallengeAttempt(acct);
+      await saveAccount(email, acct);
+    }
+  }
+  return res.json({ received: true });
+});
+
+// ---- Plan retry status (check if retry offer available) ----
+app.get("/api/plan/retry-status", requireAuth, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  const planId = acct.planId;
+  if(!planId || !PLANS[planId] || !acct.challengeFailed) {
+    return res.json({ available: false });
+  }
+  const alreadyUsed = !!(acct.retryOfferUsed && acct.retryOfferUsed[planId]);
+  return res.json({ available: !alreadyUsed, planId, planPrice: PLANS[planId].price });
+});
+
+// ---- Plan retry checkout (50% off Stripe checkout) ----
+app.post("/api/plan/retry-checkout", requireAuth, requireTermsAccepted, async (req, res) => {
+  const email = currentEmail(req);
+  const acct = await getOrCreateAccount(email);
+  const planId = acct.planId;
+  if(!planId || !PLANS[planId]) return res.status(400).json({ error: "No active plan" });
+  if(!acct.challengeFailed) return res.status(400).json({ error: "Only available after failing" });
+  acct.retryOfferUsed = acct.retryOfferUsed || {};
+  if(acct.retryOfferUsed[planId]) return res.status(400).json({ error: "Retry offer already used" });
+
+  const plan = PLANS[planId];
+  const priceId = STRIPE_PRICE_IDS[planId];
+  if(!stripe || !priceId) {
+    // Dev fallback
+    acct.retryOfferUsed[planId] = true;
+    acct.startEquity = plan.startEquity;
+    acct.lastPurchase = { time: new Date().toISOString(), planId, amount: Math.round(plan.price * 0.5), type: "retry" };
+    resetChallengeAttempt(acct);
+    await saveAccount(email, acct);
+    return res.json({ ok: true, devMode: true });
+  }
+
+  const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
+  try {
+    const sessionParams = {
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "payment",
+      success_url: `${baseUrl}/onboard.html?retry_session_id={CHECKOUT_SESSION_ID}&plan=${planId}`,
+      cancel_url: `${baseUrl}/dashboard.html?retry_canceled=1`,
+      customer_email: email,
+      metadata: { email, planId, type: "retry" },
+    };
+    if(STRIPE_RETRY_COUPON_ID) sessionParams.discounts = [{ coupon: STRIPE_RETRY_COUPON_ID }];
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    return res.json({ ok: true, checkoutUrl: session.url });
+  } catch(err) {
+    return res.status(500).json({ error: err.message || "Stripe error" });
+  }
+});
+
+// ---- Admin: validate key ----
+app.post("/api/admin/validate-key", async (req, res) => {
+  const key = (req.headers["x-admin-key"] || req.body?.adminKey || "").toString();
+  if(!key || !process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: "Invalid key" });
+  }
+  return res.json({ ok: true });
+});
+
+// ---- Admin: overview ----
+app.get("/api/admin/overview", requireAdmin, async (req, res) => {
+  const db = await readData();
+  const accounts = db.accounts || {};
+  const list = Object.keys(accounts).map(email => {
+    const a = accounts[email];
+    return {
+      email,
+      phase: a.challengePhase || "challenge",
+      step: a.challengeStep || 1,
+      failed: !!a.challengeFailed,
+      frozen: !!a.frozen,
+      equity: Number(a.equity || a.cash || 0),
+      startEquity: Number(a.startEquity || 0),
+      dayDD: Number(a.dayDD || 0),
+      totalDD: Number(a.totalDD || 0),
+      planId: a.planId || null,
+      kycStatus: a.kycStatus || "not_started",
+      withdrawable: withdrawableAmount(a),
+      pendingPayouts: (Array.isArray(a.payoutRequests) ? a.payoutRequests : []).filter(r => r.status === "pending").length,
+      deviceCount: (Array.isArray(a.devices) ? a.devices : []).length,
+      ipCount: (Array.isArray(a.ips) ? a.ips : []).length,
+    };
+  });
+  return res.json({ ok: true, accounts: list });
+});
+
+// ---- Admin: get single account ----
+app.get("/api/admin/account", requireAdmin, async (req, res) => {
+  const email = (req.query.email || "").toString();
+  const db = await readData();
+  const a = (db.accounts || {})[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  a.payoutEligiblePnL = eligibleProfitForPayout(a);
+  a.withdrawable = withdrawableAmount(a);
+  a.payoutCap = payoutCap(a);
+  a.payoutCapRemaining = payoutCapRemaining(a);
+  return res.json({ ok: true, account: a });
+});
+
+// ---- Admin: grant plan ----
+app.post("/api/admin/account/grant-plan", requireAdmin, async (req, res) => {
+  const { email, planId } = req.body || {};
+  const plan = PLANS[planId];
+  if(!plan) return res.status(400).json({ error: "Invalid plan" });
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  if(!db.accounts[email]) db.accounts[email] = await getOrCreateAccount(email);
+  const a = db.accounts[email];
+  a.planId = planId;
+  a.startEquity = plan.startEquity;
+  a.lastPurchase = { time: new Date().toISOString(), planId, amount: 0, type: "admin_grant" };
+  resetChallengeAttempt(a);
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "grant_plan", email, { planId });
+  return res.json({ ok: true });
+});
+
+// ---- Admin: remove plan ----
+app.post("/api/admin/account/remove-plan", requireAdmin, async (req, res) => {
+  const { email } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  a.planId = null;
+  a.startEquity = 0;
+  a.cash = 0;
+  a.equity = 0;
+  a.challengePhase = "challenge";
+  a.challengeFailed = false;
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "remove_plan", email, {});
+  return res.json({ ok: true });
+});
+
+// ---- Admin: freeze/unfreeze ----
+app.post("/api/admin/account/freeze", requireAdmin, async (req, res) => {
+  const { email, frozen } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  if(!db.accounts[email]) return res.status(404).json({ error: "Not found" });
+  db.accounts[email].frozen = !!frozen;
+  await writeData(db);
+  await auditLog(req, frozen ? "freeze" : "unfreeze", email, {});
+  return res.json({ ok: true });
+});
+
+// ---- Admin: set phase ----
+app.post("/api/admin/account/set-phase", requireAdmin, async (req, res) => {
+  const { email, phase } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  if(!["challenge", "funded"].includes(phase)) return res.status(400).json({ error: "Invalid phase" });
+  a.challengePhase = phase;
+  if(phase === "funded") {
+    a.challengeFailed = false;
+    a.frozen = false;
+    a.fundedActivatedAt = a.fundedActivatedAt || new Date().toISOString();
+    a.payoutEligibleAt = a.payoutEligibleAt || new Date(Date.now() + PAYOUT_FIRST_DELAY_DAYS * 24 * 3600 * 1000).toISOString();
+    resetPayoutPeriodIfNeeded(a);
+  }
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "set_phase", email, { phase });
+  return res.json({ ok: true });
+});
+
+// ---- Admin: unlock daily lockout ----
+app.post("/api/admin/account/unlock-daily", requireAdmin, async (req, res) => {
+  const { email } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  a.dailyLocked = false;
+  a.lockedUntil = null;
+  a.lockReason = null;
+  if(!a.challengeFailed) a.frozen = false;
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "unlock_daily", email, {});
+  return res.json({ ok: true });
+});
+
+// ---- Admin: flatten positions ----
+app.post("/api/admin/account/flatten", requireAdmin, async (req, res) => {
+  const { email, reason } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  await autoFlattenAllPositions(email, a, reason || "Admin flatten");
+  const db2 = await readData();
+  await auditLog(req, "flatten", email, { reason: reason || "Admin flatten" });
+  return res.json({ ok: true, account: (db2.accounts || {})[email] });
+});
+
+// ---- Admin: reset account ----
+app.post("/api/admin/account/reset", requireAdmin, async (req, res) => {
+  const { email } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  const start = Number(a.startEquity || 0);
+  a.cash = start;
+  a.equity = start;
+  a.positions = {};
+  a.openOrders = [];
+  a.pendingOrders = [];
+  a.orders = [];
+  a.liquidations = [];
+  a.equityHistory = [];
+  a.highWatermark = start;
+  a.dayDate = null;
+  a.dayStartEquity = start;
+  a.dailyProfitHistory = {};
+  a.challengeFailed = false;
+  a.failReason = null;
+  a.failedAt = null;
+  a.frozen = false;
+  a.dailyLocked = false;
+  a.lockedUntil = null;
+  a.lockReason = null;
+  a.challengePhase = "challenge";
+  a.challengeStep = 1;
+  a.stepStartDate = utcDateKey();
+  a.stepStartEquity = start;
+  a.payouts = [];
+  a.payoutRequests = [];
+  a.payoutsPaidTotal = 0;
+  a.payoutsPaidThisPeriod = 0;
+  a.payoutPeriodStart = null;
+  a.realizedPnL = 0;
+  a.tradingDays = [];
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "reset_account", email, {});
+  return res.json({ ok: true });
+});
+
+// ---- Admin: KYC pending ----
+app.get("/api/admin/kyc/pending", requireAdmin, async (req, res) => {
+  const db = await readData();
+  const accounts = db.accounts || {};
+  const pending = [];
+  for(const email of Object.keys(accounts)){
+    const a = accounts[email];
+    if(a.kycStatus === "pending"){
+      pending.push({ email, submittedAt: a.kycSubmittedAt, profile: a.kycProfile || null });
+    }
+  }
+  pending.sort((x, y) => new Date(y.submittedAt || 0).getTime() - new Date(x.submittedAt || 0).getTime());
+  return res.json({ ok: true, pending });
+});
+
+// ---- Admin: KYC set status ----
+app.post("/api/admin/kyc/set-status", requireAdmin, async (req, res) => {
+  const { email, status } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  if(!["approved", "rejected", "pending", "not_started"].includes(status)) return res.status(400).json({ error: "Invalid status" });
+  a.kycStatus = status;
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "kyc_set_status", email, { status });
+  return res.json({ ok: true });
+});
+
+// ---- Admin: payout pending ----
+app.get("/api/admin/payout/pending", requireAdmin, async (req, res) => {
+  const db = await readData();
+  const accounts = db.accounts || {};
+  const pending = [];
+  for(const email of Object.keys(accounts)){
+    const a = accounts[email];
+    const reqs = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
+    for(const r of reqs){
+      if(r.status === "pending"){
+        pending.push({ email, id: r.id, time: r.time, amount: Number(r.amount || 0), period: r.period || null });
+      }
+    }
+  }
+  pending.sort((x, y) => new Date(y.time).getTime() - new Date(x.time).getTime());
+  return res.json({ ok: true, pending });
+});
+
+// ---- Admin: approve payout ----
+app.post("/api/admin/payout/approve", requireAdmin, async (req, res) => {
+  const { email, id } = req.body || {};
+  const db = await readData();
+  db.accounts = db.accounts || {};
+  const a = db.accounts[email];
+  if(!a) return res.status(404).json({ error: "Not found" });
+  a.payoutRequests = Array.isArray(a.payoutRequests) ? a.payoutRequests : [];
+  const pr = a.payoutRequests.find(x => x.id === id);
+  if(!pr) return res.status(404).json({ error: "Request not found" });
+  if(pr.status !== "pending") return res.status(400).json({ error: "Not pending" });
+  const amount = Number(pr.amount || 0);
+  pr.status = "approved";
+  pr.approvedAt = new Date().toISOString();
+  a.payoutsPaidTotal = Number(a.payoutsPaidTotal || 0) + amount;
+  a.payoutsPaidThisPeriod = Number(a.payoutsPaidThisPeriod || 0) + amount;
+  a.payouts = Array.isArray(a.payouts) ? a.payouts : [];
+  a.payouts.unshift({ id: pr.id, time: new Date().toISOString(), amount, period: pr.period, status: "paid" });
+  db.accounts[email] = a;
+  await writeData(db);
+  await auditLog(req, "approve_payout", email, { id, amount });
+  return res.json({ ok: true });
+});
+
+// ---- Admin: risk flags ----
+app.get("/api/admin/risk/flags", requireAdmin, async (req, res) => {
+  const db = await readData();
+  const accounts = db.accounts || {};
+  const deviceMap = new Map();
+  const ipMap = new Map();
+  for(const email of Object.keys(accounts)){
+    const a = accounts[email];
+    (Array.isArray(a.devices) ? a.devices : []).forEach(d => {
+      if(!d) return;
+      const arr = deviceMap.get(d) || [];
+      if(!arr.includes(email)) arr.push(email);
+      deviceMap.set(d, arr);
+    });
+    (Array.isArray(a.ips) ? a.ips : []).forEach(ip => {
+      if(!ip) return;
+      const arr = ipMap.get(ip) || [];
+      if(!arr.includes(email)) arr.push(email);
+      ipMap.set(ip, arr);
+    });
+  }
+  const deviceFlags = [];
+  for(const [device, emails] of deviceMap.entries()){
+    if(emails.length >= 2) deviceFlags.push({ device, emails });
+  }
+  const ipFlags = [];
+  for(const [ip, emails] of ipMap.entries()){
+    if(emails.length >= 3) ipFlags.push({ ip, emails });
+  }
+  return res.json({ ok: true, deviceFlags, ipFlags });
+});
+
+// ---- Admin: trade similarity ----
+app.get("/api/admin/risk/similarity", requireAdmin, async (req, res) => {
+  const db = await readData();
+  const accounts = db.accounts || {};
+  const emails = Object.keys(accounts);
+  const sigs = {};
+  for(const e of emails){ sigs[e] = tradeSignatureSet(accounts[e], 200); }
+  const pairs = [];
+  for(let i = 0; i < emails.length; i++){
+    for(let j = i + 1; j < emails.length; j++){
+      const a = emails[i], b = emails[j];
+      const s = jaccard(sigs[a], sigs[b]);
+      if(s >= 0.6){ pairs.push({ a, b, score: s, aTrades: sigs[a].size, bTrades: sigs[b].size }); }
+    }
+  }
+  pairs.sort((x, y) => y.score - x.score);
+  return res.json({ ok: true, pairs });
+});
+
+// ---- Admin: verify user email ----
+app.post("/api/admin/user/verify-email", requireAdmin, async (req, res) => {
+  const { email } = req.body || {};
+  const u = await getUser(email);
+  if(!u) return res.status(404).json({ error: "User not found" });
+  u.emailVerified = true;
+  u.verifyCode = null;
+  await saveUser(email, u);
+  // also mark account email verified
+  const acct = await getOrCreateAccount(email);
+  acct.emailVerified = true;
+  await saveAccount(email, acct);
+  await auditLog(req, "admin_verify_email", email, {});
+  return res.json({ ok: true });
+});
+
+// ---- Admin: audit log ----
+app.get("/api/admin/audit", requireAdmin, async (req, res) => {
+  const limit = Math.max(1, Math.min(500, Number(req.query.limit || 200)));
+  const db = await readData();
+  const audit = Array.isArray(db.audit) ? db.audit : [];
+  return res.json({ ok: true, audit: audit.slice(0, limit) });
+});
+
+// ---- Admin: promo codes ----
+app.get("/api/admin/promo/list", requireAdmin, async (req, res) => {
+  const db = await readData();
+  db.promoCodes = db.promoCodes || {};
+  const list = Object.entries(db.promoCodes).map(([code, p]) => ({ code, ...p }));
+  return res.json({ ok: true, promoCodes: list });
+});
+
+app.post("/api/admin/promo/create", requireAdmin, async (req, res) => {
+  const { code, discountPct, maxUses, expiresAt, planIds, note } = req.body || {};
+  if(!code || !discountPct) return res.status(400).json({ error: "code and discountPct required" });
+  const db = await readData();
+  db.promoCodes = db.promoCodes || {};
+  const normalized = code.toString().trim().toUpperCase();
+  if(db.promoCodes[normalized]) return res.status(400).json({ error: "Code already exists" });
+  db.promoCodes[normalized] = {
+    discountPct: Number(discountPct),
+    active: true,
+    uses: 0,
+    maxUses: maxUses ? Number(maxUses) : null,
+    expiresAt: expiresAt || null,
+    planIds: planIds || null,
+    note: (note || "").toString().slice(0, 200),
+    createdAt: new Date().toISOString(),
+    createdBy: adminActor(req)
+  };
+  await writeData(db);
+  await auditLog(req, "promo_create", null, { code: normalized, discountPct });
+  return res.json({ ok: true, code: normalized });
+});
+
+app.post("/api/admin/promo/delete", requireAdmin, async (req, res) => {
+  const code = (req.body?.code || "").toString().trim().toUpperCase();
+  const db = await readData();
+  db.promoCodes = db.promoCodes || {};
+  if(!db.promoCodes[code]) return res.status(404).json({ error: "Not found" });
+  delete db.promoCodes[code];
+  await writeData(db);
+  await auditLog(req, "promo_delete", null, { code });
+  return res.json({ ok: true });
+});
+
+// ---- Admin: referral codes ----
+app.get("/api/admin/referral/list", requireAdmin, async (req, res) => {
+  const db = ensureReferrals(await readData());
+  return res.json({ ok: true, referrals: db.referrals, uses: db.referralUses });
+});
+
+app.post("/api/admin/referral/create", requireAdmin, async (req, res) => {
+  const db = ensureReferrals(await readData());
+  let code = normalizeCode(req.body?.code || "");
+  const maxUses = req.body?.maxUses != null ? Number(req.body.maxUses) : null;
+  const commissionPct = req.body?.commissionPct != null ? Number(req.body.commissionPct) : DEFAULT_REFERRAL_COMMISSION_PCT;
+  if(!code) code = genReferralCode(8);
+  if(db.referrals.find(r => r.code === code)) return res.status(400).json({ error: "Code already exists" });
+  const rec = {
+    code,
+    createdAt: new Date().toISOString(),
+    createdBy: adminActor(req),
+    commissionPct: Math.max(0, Math.min(0.5, commissionPct || DEFAULT_REFERRAL_COMMISSION_PCT)),
+    maxUses: (maxUses && Number.isFinite(maxUses)) ? Math.max(1, Math.floor(maxUses)) : null,
+    uses: 0,
+    active: true,
+    note: (req.body?.note || "").toString().slice(0, 140)
+  };
+  db.referrals.unshift(rec);
+  await writeData(db);
+  await auditLog(req, "referral_create", null, { code: rec.code });
+  return res.json({ ok: true, referral: rec });
+});
+
+app.post("/api/admin/referral/set-active", requireAdmin, async (req, res) => {
+  const code = normalizeCode(req.body?.code || "");
+  const active = !!req.body?.active;
+  const db = ensureReferrals(await readData());
+  const r = db.referrals.find(x => x.code === code);
+  if(!r) return res.status(404).json({ error: "Not found" });
+  r.active = active;
+  await writeData(db);
+  await auditLog(req, "referral_set_active", null, { code, active });
+  return res.json({ ok: true });
+});
+
 // ---- Static site (must be LAST, after all API routes) ----
 app.use(express.static(__dirname));
 
@@ -1966,8 +2592,3 @@ initDb()
     console.error("[DB] Failed to initialise database:", err.message);
     process.exit(1);
   });
-
-function cryptoRandomId(){
-  // No extra deps: small random id
-  return Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
-}
