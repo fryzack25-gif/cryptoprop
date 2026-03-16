@@ -24,6 +24,14 @@ const STRIPE_PRICE_IDS = {
   "500k": process.env.STRIPE_PRICE_500K,
 };
 
+const PLANS = {
+  "25k":  { startEquity: 25000,  price: 149  },
+  "50k":  { startEquity: 50000,  price: 279  },
+  "100k": { startEquity: 100000, price: 499  },
+  "200k": { startEquity: 200000, price: 849  },
+  "500k": { startEquity: 500000, price: 1799 },
+};
+
 // ---- EMAIL via Resend ----
 const RESEND_API_KEY = process.env.RESEND_API_KEY || null;
 const FROM_EMAIL = "CryptoProp <noreply@thecryptoprop.com>";
