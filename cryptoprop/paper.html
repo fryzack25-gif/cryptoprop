@@ -630,6 +630,31 @@
     const btn = document.getElementById('submitBtn');
     btn.className = 'submit-btn ' + s;
     btn.textContent = 'PLACE ' + s.toUpperCase() + ' ORDER';
+    updateProductDropdownForSide(s);
+  };
+
+  window.updateProductDropdownForSide = function(s) {
+    const sel = document.getElementById('product');
+    if(!sel) return;
+    const current = sel.value;
+    if(s === 'sell') {
+      // Only show products with a held position > 0
+      const positions = window._account ? (window._account.positions || {}) : {};
+      const held = Object.entries(positions).filter(([k,v]) => Number(v?.qty||0) > 0).map(([k]) => k);
+      if(held.length === 0) {
+        sel.innerHTML = '<option value="">— No positions held —</option>';
+      } else {
+        sel.innerHTML = held.map(p => `<option value="${p}">${p}</option>`).join('');
+        if(held.includes(current)) sel.value = current;
+      }
+    } else {
+      // Restore full list from ticker bar
+      const allProducts = Array.from(document.querySelectorAll('.ticker-item')).map(el => el.dataset.sym).filter(Boolean);
+      if(allProducts.length > 0) {
+        sel.innerHTML = allProducts.map(p => `<option value="${p}">${p}</option>`).join('');
+        if(allProducts.includes(current)) sel.value = current;
+      }
+    }
   };
   window.setType = function(t) {
     document.getElementById('type').value = t;
