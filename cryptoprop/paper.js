@@ -643,13 +643,13 @@ window.setMaxQty = function() {
   }
 
   if(side === "buy"){
-    // 1% of starting capital minus current position value
+    // 10% of starting capital minus current position value
     const startEq = Number(account.startEquity || account.baseEquity || account.cash || 0);
-    const maxNotional = startEq * 0.025;
+    const maxNotional = startEq * 0.10;
     const currentPosVal = account.positions?.[product] ? (account.positions[product].qty * price) : 0;
     const remaining = Math.max(0, maxNotional - currentPosVal);
-    // Also cap by available cash (minus 2% fee buffer)
-    const cashAvail = Math.max(0, (account.cash || 0) / 1.02);
+    // Also cap by available cash (minus 0.1% fee buffer)
+    const cashAvail = Math.max(0, (account.cash || 0) / 1.001);
     const notional = Math.min(remaining, cashAvail);
     const qty = notional / price;
     if(qty <= 0){ toast("At max position or insufficient cash"); return; }
