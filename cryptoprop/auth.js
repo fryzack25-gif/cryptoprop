@@ -47,8 +47,6 @@ document.getElementById("signupBtn")?.addEventListener("click", async () => {
     } else {
       if(msg) msg.textContent = "Created ✅ Check your email for a verification code.";
       show("verifyBox", true);
-      const vc = document.getElementById("verifyCode");
-      if(vc && data.verifyCode) vc.value = data.verifyCode;
     }
   }catch(e){ if(msg) msg.textContent = e.message; }
 });
