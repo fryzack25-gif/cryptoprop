@@ -1609,9 +1609,9 @@ function applyProfitSplitOnSell(acct, product, qty, sellPrice){
 }
 
 
-// ---- Simulated fill delay (random 10–15 seconds) ----
+// ---- Simulated fill delay (random 2–4 seconds) ----
 function randomFillDelayMs(){
-  return 10000 + Math.floor(Math.random() * 5000);
+  return 2000 + Math.floor(Math.random() * 2000);
 }
 
 function isDue(o){
@@ -1665,7 +1665,13 @@ async function executePendingOrder(acct, o){
   const q = Number(o.qty);
   if(!p || !side || !Number.isFinite(q) || q <= 0) return;
 
-  const mid = await fetchCoinbaseTicker(p);
+  // Retry up to 3 times if Coinbase API fails
+  let mid = null;
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{ mid = await fetchCoinbaseTicker(p); break; }
+    catch(e){ if(attempt < 2) await new Promise(r => setTimeout(r, 1000)); }
+  }
+  if(!mid || !Number.isFinite(mid)) throw new Error("Price unavailable after retries");
   const grossNotional = q * mid;
   const { spreadBps, slipBps } = execParams(p, grossNotional);
   const price = applyExecPrice(side, mid, spreadBps, slipBps);
