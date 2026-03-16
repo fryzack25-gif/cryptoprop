@@ -153,7 +153,7 @@ function wireVerification(loadAccount){
       const res = await apiFetch("/api/verify/request-email", { method:"POST" });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || "Failed");
-      if(hint) hint.textContent = `Demo code: ${data.code}`;
+      if(hint) hint.textContent = 'Code sent — check your email.';
     }catch(err){
       if(hint) hint.textContent = err.message;
       toast(err.message);
