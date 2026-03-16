@@ -2079,20 +2079,92 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     const session = event.data.object;
     const email = (session.metadata?.email || session.customer_email || "").toLowerCase();
     const planId = session.metadata?.planId;
+    const isRetry = session.metadata?.type === "retry";
     const plan = PLANS[planId];
     if(email && plan) {
       const acct = await getOrCreateAccount(email);
       acct.planId = planId;
       acct.startEquity = plan.startEquity;
-      acct.lastPurchase = { time: new Date().toISOString(), planId, amount: plan.price, type: "initial", stripeSessionId: session.id };
+      acct.lastPurchase = { time: new Date().toISOString(), planId, amount: plan.price, type: isRetry ? "retry" : "initial", stripeSessionId: session.id };
+      acct.paymentFailure = null;
+      if(isRetry){
+        acct.retryOfferUsed = acct.retryOfferUsed || {};
+        acct.retryOfferUsed[planId] = true;
+      }
       if(acct.referredBy && !acct.firstPurchaseCredited){
         await recordReferralFirstPurchase(acct.referredBy, email, planId, plan.price);
         acct.firstPurchaseCredited = true;
       }
       resetChallengeAttempt(acct);
       await saveAccount(email, acct);
+
+      // Sync internal promo code use count if a Stripe discount was applied
+      try {
+        const discounts = session.total_details?.breakdown?.discounts || [];
+        for(const d of discounts){
+          const promoCodeId = d.discount?.promotion_code;
+          if(promoCodeId && stripe){
+            const promoObj = await stripe.promotionCodes.retrieve(promoCodeId);
+            const codeStr = (promoObj?.code || "").toUpperCase();
+            if(codeStr){
+              const db = await readData();
+              db.promoCodes = db.promoCodes || {};
+              if(db.promoCodes[codeStr]){
+                db.promoCodes[codeStr].uses = (db.promoCodes[codeStr].uses || 0) + 1;
+                await writeData(db);
+              }
+            }
+          }
+        }
+      } catch(err){
+        console.error("[CryptoProp] promo use sync error:", err.message);
+      }
+
+      // Confirmation email
+      await sendEmail({
+        to: email,
+        subject: "Your CryptoProp challenge is ready",
+        html: `<p>Hi,</p><p>Your payment was successful. Your <strong>$${plan.startEquity.toLocaleString()} ${isRetry ? "retry challenge" : "challenge"}</strong> is now active.</p><p><a href="${process.env.BASE_URL || "https://thecryptoprop.com"}/dashboard.html">Go to your dashboard</a> to start trading.</p><p>Good luck!</p>`
+      });
     }
   }
+
+  // Payment failed — notify user and record on account
+  if(event.type === "payment_intent.payment_failed"){
+    const pi = event.data.object;
+    const email = (pi.metadata?.email || pi.receipt_email || "").toLowerCase();
+    const failureMsg = pi.last_payment_error?.message || "Your payment was declined.";
+    if(email){
+      try {
+        const acct = await getOrCreateAccount(email);
+        acct.paymentFailure = { time: new Date().toISOString(), reason: failureMsg };
+        await saveAccount(email, acct);
+      } catch(err){
+        console.error("[CryptoProp] payment failure record error:", err.message);
+      }
+      await sendEmail({
+        to: email,
+        subject: "Payment failed — CryptoProp",
+        html: `<p>Hi,</p><p>We were unable to process your payment.</p><p><strong>Reason:</strong> ${failureMsg}</p><p>Please <a href="${process.env.BASE_URL || "https://thecryptoprop.com"}/onboard.html">try again</a> with a different payment method.</p>`
+      });
+    }
+  }
+
+  // Checkout expired without payment
+  if(event.type === "checkout.session.expired"){
+    const session = event.data.object;
+    const email = (session.metadata?.email || session.customer_email || "").toLowerCase();
+    if(email){
+      try {
+        const acct = await getOrCreateAccount(email);
+        acct.paymentFailure = { time: new Date().toISOString(), reason: "Checkout session expired without payment." };
+        await saveAccount(email, acct);
+      } catch(err){
+        console.error("[CryptoProp] checkout expired record error:", err.message);
+      }
+    }
+  }
+
   return res.json({ received: true });
 });
 
