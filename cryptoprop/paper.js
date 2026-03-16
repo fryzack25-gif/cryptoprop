@@ -748,33 +748,6 @@ window.submitOrder = async function() {
   }
 };
 
-qs("resetBtn").addEventListener("click", async () => {
-  if(confirm("Reset trading account? This clears positions, orders, and open orders.")){
-    try{
-      const res = await apiFetch("/api/account/reset", { method:"POST" });
-      account = await res.json();
-      account.openOrders = account.openOrders || [];
-      toast("Account reset");
-      syncWsSubscriptions();
-      render();
-    }catch(err){
-      toast(err.message);
-    }
-  }
-});
-
-qs("seedBtn").addEventListener("click", async () => {
-  try{
-    const res = await apiFetch("/api/account/seed", { method:"POST" });
-    account = await res.json();
-    account.openOrders = account.openOrders || [];
-    toast("Seeded $50,000");
-    syncWsSubscriptions();
-    render();
-  }catch(err){
-    toast(err.message);
-  }
-});
 
 // -------------------- Candlestick chart (REST proxy) --------------------
 async function fetchCandles(product, gran, limit){
