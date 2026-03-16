@@ -325,6 +325,10 @@ async function loadAccount(){
   account.openOrders = account.openOrders || [];
   account.orders = account.orders || [];
   account.pendingOrders = account.pendingOrders || [];
+  window._account = account;
+  // Refresh sell dropdown if currently on sell side
+  const side = document.getElementById('side')?.value;
+  if(side === 'sell' && window.updateProductDropdownForSide) window.updateProductDropdownForSide('sell');
 }
 
 function computeEquity(){
