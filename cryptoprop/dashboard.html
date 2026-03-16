@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CryptoProp — Dashboard</title>
-  <meta name="description" content="CryptoProp trader dashboard (demo)." />
+  <meta name="description" content="CryptoProp trader dashboard." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -244,7 +244,7 @@
   <main class="wrap">
     <section style="padding-top:22px">
       <div class="section-title">
-        <h2>Trader dashboard (demo)</h2>
+        <h2>Trader dashboard</h2>
         <p class="muted">Spot-only metrics and rules status.</p>
       </div>
 
@@ -402,7 +402,7 @@
       </tr>
     `).join("");
 
-    // Load applications (admin demo)
+    // Load applications
     async function loadApps(){
       const body = qs("appsBody");
       body.innerHTML = `<tr><td colspan="3">Loading…</td></tr>`;
