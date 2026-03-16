@@ -2025,7 +2025,6 @@ app.post("/api/promo/validate", requireAuth, async (req, res) => {
 app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res) => {
   const email = currentEmail(req);
   const planId = (req.body?.planId || "").toString();
-  const promoCode = (req.body?.promoCode || "").toString().trim().toUpperCase();
   const plan = PLANS[planId];
   if(!plan) return res.status(400).json({ error: "Invalid plan" });
 
@@ -2045,23 +2044,17 @@ app.post("/api/plan/choose", requireAuth, requireTermsAccepted, async (req, res)
     return res.json({ ok: true, devMode: true, account: acct });
   }
 
-  // Build Stripe discounts if promo code provided
-  const discounts = [];
-  if(promoCode && STRIPE_RETRY_COUPON_ID) {
-    // Could apply coupon here if we validate it
-  }
-
   const baseUrl = process.env.BASE_URL || "https://thecryptoprop.com";
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
+      allow_promotion_codes: true,
       success_url: `${baseUrl}/onboard.html?session_id={CHECKOUT_SESSION_ID}&plan=${planId}`,
       cancel_url: `${baseUrl}/onboard.html?canceled=1`,
       customer_email: email,
-      metadata: { email, planId, promoCode: promoCode || "" },
-      ...(discounts.length ? { discounts } : {})
+      metadata: { email, planId },
     });
     return res.json({ ok: true, checkoutUrl: session.url });
   } catch(err) {
