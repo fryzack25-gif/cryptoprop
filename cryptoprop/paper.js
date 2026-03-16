@@ -293,6 +293,21 @@ setLimitEnabled();
 
 // -------------------- REST helpers (fallback + candles) --------------------
 async function fetchTickerREST(product){
+  // Try Coinbase directly first (faster, no server hop)
+  try{
+    const res = await fetch(`https://api.exchange.coinbase.com/products/${encodeURIComponent(product)}/ticker`, {
+      headers: { "Accept": "application/json" }
+    });
+    if(res.ok){
+      const data = await res.json();
+      const price = Number(data.price);
+      if(Number.isFinite(price)){
+        lastPrices[product] = price;
+        return price;
+      }
+    }
+  }catch{}
+  // Fallback to server proxy
   const res = await apiFetch(`/api/market/ticker?product=${encodeURIComponent(product)}`, { method:"GET" });
   const data = await res.json();
   const price = Number(data.price);
@@ -975,9 +990,9 @@ setInterval(async () => {
   _pollCount++;
   await processOpenOrders();
   await refreshSelectedPriceREST();
-  if(_pollCount % 5 === 0) await loadAccount();
+  if(_pollCount % 10 === 0) await loadAccount();
   render();
-}, 2000);
+}, 1000);
 
 // ---- EQUITY CURVE CHART ----
 let _chartMode = 'price';
