@@ -731,7 +731,7 @@ app.post("/api/account/seed", requireAuth, async (req, res) => {
   const email = currentEmail(req);
   const acct = await getOrCreateAccount(email);
   acct.cash = Math.max(acct.cash || 0, 50000);
-  acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash);
+  acct.baseEquity = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
   acct.startEquity = acct.startEquity || acct.baseEquity;
   acct.challengePhase = acct.challengePhase || "challenge";
   acct.challengeStartAt = acct.challengeStartAt || new Date().toISOString();
@@ -915,7 +915,7 @@ app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
   const notional = q * lp;
   const fee = notional * MAKER_FEE;
 
-  acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash || 0);
+  acct.baseEquity = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
   const maxNotional = maxTradeNotional(acct);
 
   if(s === "buy"){
@@ -923,7 +923,7 @@ app.post("/api/orders/limit", requireAuth, guardChallenge, async (req, res) => {
     const openNot = openBuyNotional(acct, p);
     const after = posNot + openNot + notional;
     if(after > maxNotional){
-      return res.status(400).json({ error: `Position size too large (1% max). Current+open: $${(posNot+openNot).toFixed(2)}; After: $${after.toFixed(2)}; Limit: $${maxNotional.toFixed(2)}` });
+      return res.status(400).json({ error: `Position size too large (10% max). Current+open: $${(posNot+openNot).toFixed(2)}; After: $${after.toFixed(2)}; Limit: $${maxNotional.toFixed(2)}` });
     }
   }
 
@@ -1375,7 +1375,7 @@ async function autoFlattenAllPositions(email, acct, reason){
 
 async function refreshChallengeState(acct, email){
   ensureStepFields(acct);
-  acct.baseEquity = Math.max(acct.baseEquity || 0, acct.cash || 0);
+  acct.baseEquity = Number(acct.startEquity || acct.baseEquity || acct.cash || 0);
   if(!acct.startEquity || acct.startEquity <= 0){
     // startEquity locks at the time the account is seeded/first funded
     acct.startEquity = acct.baseEquity || acct.cash || 0;
