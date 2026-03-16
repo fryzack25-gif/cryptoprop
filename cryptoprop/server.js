@@ -260,6 +260,15 @@ function requireAdmin(req, res, next){
   return res.status(403).json({ error:"Admin only" });
 }
 
+const TERMS_VERSION = "2026-02-25-e24c9e37f4c48042";
+async function requireTermsAccepted(req, res, next){
+  const email = currentEmail(req);
+  if(!email) return res.status(401).json({ error:"Not authenticated" });
+  const acct = await getOrCreateAccount(email);
+  if(acct.termsAccepted && acct.termsVersion === TERMS_VERSION) return next();
+  return res.status(403).json({ error:"Terms not accepted", termsVersion: TERMS_VERSION });
+}
+
 
 
 // ---- Market universe: Coinbase top 50 by market cap (demo) ----
